@@ -1,0 +1,46 @@
+<header class="header">
+  <div class="container">
+    <div class="header-content">
+      <!-- Logo -->
+      <div class="logo">
+        <a routerLink="/" class="logo-link">
+          <span class="logo-text">NexusPro</span>
+        </a>
+      </div>
+
+      <!-- Navigation -->
+      <nav class="nav" [class.nav-open]="isMenuOpen">
+        <ul class="nav-list">
+          <li class="nav-item">
+            <a routerLink="/" routerLinkActive="active" class="nav-link" (click)="closeMenu()">Accueil</a>
+          </li>
+          <li class="nav-item">
+            <a routerLink="/about" routerLinkActive="active" class="nav-link" (click)="closeMenu()">À propos</a>
+          </li>
+          <li class="nav-item">
+            <a routerLink="/services" routerLinkActive="active" class="nav-link" (click)="closeMenu()">Services</a>
+          </li>
+          <li class="nav-item">
+            <a routerLink="/portfolio" routerLinkActive="active" class="nav-link" (click)="closeMenu()">Portfolio</a>
+          </li>
+          <li class="nav-item">
+            <a routerLink="/contact" routerLinkActive="active" class="nav-link" (click)="closeMenu()">Contact</a>
+          </li>
+        </ul>
+      </nav>
+
+      <!-- Header Actions -->
+      <div class="header-actions">
+        <app-theme-toggle></app-theme-toggle>
+        <a href="#" class="btn btn-primary">Commencer</a>
+      </div>
+
+      <!-- Mobile Menu Toggle -->
+      <button class="mobile-menu-toggle" (click)="toggleMenu()" [attr.aria-expanded]="isMenuOpen">
+        <span class="hamburger-line" [class.active]="isMenuOpen"></span>
+        <span class="hamburger-line" [class.active]="isMenuOpen"></span>
+        <span class="hamburger-line" [class.active]="isMenuOpen"></span>
+      </button>
+    </div>
+  </div>
+</header>
