@@ -38,8 +38,8 @@ export class PortfolioComponent {
       description: 'Plateforme e-commerce complète avec gestion des commandes, paiements et inventaire.',
       image: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600&h=400&fit=crop',
       technologies: ['Angular', 'Node.js', 'MongoDB', 'Stripe'],
-      liveUrl: 'https://example.com',
-      githubUrl: 'https://github.com/example'
+      liveUrl: '#',
+      githubUrl: '#'
     },
     {
       id: '2',
@@ -48,8 +48,8 @@ export class PortfolioComponent {
       description: 'Application mobile de banque avec authentification biométrique et transferts sécurisés.',
       image: 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=600&h=400&fit=crop',
       technologies: ['React Native', 'TypeScript', 'Firebase'],
-      liveUrl: 'https://example.com',
-      githubUrl: 'https://github.com/example'
+      liveUrl: '#',
+      githubUrl: '#'
     },
     {
       id: '3',
@@ -58,8 +58,8 @@ export class PortfolioComponent {
       description: 'Tableau de bord analytique avec visualisations interactives et rapports en temps réel.',
       image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=400&fit=crop',
       technologies: ['Angular', 'D3.js', 'Chart.js', 'WebSocket'],
-      liveUrl: 'https://example.com',
-      githubUrl: 'https://github.com/example'
+      liveUrl: '#',
+      githubUrl: '#'
     },
     {
       id: '4',
@@ -68,8 +68,8 @@ export class PortfolioComponent {
       description: 'Lecteur de musique desktop avec égaliseur, playlists et synchronisation cloud.',
       image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=600&h=400&fit=crop',
       technologies: ['Electron', 'Vue.js', 'Web Audio API'],
-      liveUrl: 'https://example.com',
-      githubUrl: 'https://github.com/example'
+      liveUrl: '#',
+      githubUrl: '#'
     },
     {
       id: '5',
@@ -78,8 +78,8 @@ export class PortfolioComponent {
       description: 'Système de design complet avec composants, guidelines et outils de développement.',
       image: 'https://images.unsplash.com/photo-1558655146-d09347e92766?w=600&h=400&fit=crop',
       technologies: ['Figma', 'Storybook', 'CSS', 'JavaScript'],
-      liveUrl: 'https://example.com',
-      githubUrl: 'https://github.com/example'
+      liveUrl: '#',
+      githubUrl: '#'
     },
     {
       id: '6',
@@ -88,8 +88,8 @@ export class PortfolioComponent {
       description: 'Application de chat en temps réel avec salons privés et partage de fichiers.',
       image: 'https://images.unsplash.com/photo-1577563908411-5077b6dc7624?w=600&h=400&fit=crop',
       technologies: ['Angular', 'Socket.io', 'Express', 'Redis'],
-      liveUrl: 'https://example.com',
-      githubUrl: 'https://github.com/example'
+      liveUrl: '#',
+      githubUrl: '#'
     }
   ];
 
@@ -105,7 +105,6 @@ export class PortfolioComponent {
   }
 
   openProject(item: PortfolioItem): void {
-    console.log('Ouverture du projet:', item);
     // Ici vous pouvez ajouter la logique pour ouvrir le projet
   }
 

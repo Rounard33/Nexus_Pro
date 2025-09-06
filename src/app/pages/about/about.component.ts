@@ -12,7 +12,7 @@ import {ParallaxService} from '../../services/parallax.service';
   styleUrl: './about.component.scss'
 })
 export class AboutComponent implements OnInit, AfterViewInit {
-  imageLoaded = true; // Par défaut, on assume que l'image se charge
+  imageLoaded = true; // By default, we assume the image loads
 
   constructor(
     private animationService: AnimationService,

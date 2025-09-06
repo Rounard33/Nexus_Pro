@@ -13,26 +13,34 @@ export class AnimationService {
   private initScrollAnimations(): void {
     if (typeof window === 'undefined') return;
 
-    this.observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('animate-in');
+    try {
+      this.observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('animate-in');
+            }
+          });
+        },
+        {
+          threshold: 0.1,
+          rootMargin: '0px 0px -50px 0px'
+        }
+      );
+
+      // Observe all elements with 'animate-on-scroll' class
+      setTimeout(() => {
+        const elements = document.querySelectorAll('.animate-on-scroll');
+        elements.forEach(el => {
+          if (this.observer) {
+            this.observer.observe(el);
           }
         });
-      },
-      {
-        threshold: 0.1,
-        rootMargin: '0px 0px -50px 0px'
-      }
-    );
-
-    // Observer tous les éléments avec la classe 'animate-on-scroll'
-    setTimeout(() => {
-      document.querySelectorAll('.animate-on-scroll').forEach(el => {
-        this.observer?.observe(el);
-      });
-    }, 100);
+      }, 100);
+    } catch (error) {
+      // Silently handle errors to prevent breaking the animation system
+      // In production, you might want to log this to a monitoring service
+    }
   }
 
   observeElement(element: Element): void {

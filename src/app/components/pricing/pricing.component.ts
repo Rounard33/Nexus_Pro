@@ -81,7 +81,6 @@ export class PricingComponent {
   ];
 
   selectPlan(plan: PricingPlan): void {
-    console.log('Plan sélectionné:', plan);
-    // Ici vous pouvez ajouter la logique de sélection de plan
+    // Here you can add plan selection logic
   }
 }

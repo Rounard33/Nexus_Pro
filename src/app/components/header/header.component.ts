@@ -38,7 +38,7 @@ export class HeaderComponent implements OnInit {
 
   onNavClick() {
     this.closeMenu();
-    // Le scroll vers le haut sera géré automatiquement par le NavigationService
+    // Scroll to top will be handled automatically by NavigationService
   }
 
   onPortfolioClick() {

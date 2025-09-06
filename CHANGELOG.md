@@ -1,196 +1,196 @@
 # 📝 Changelog - NexusPro Theme
 
-Toutes les modifications notables de ce projet seront documentées dans ce fichier.
+All notable changes to this project will be documented in this file.
 
-Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
-et ce projet adhère au [Versioning Sémantique](https://semver.org/lang/fr/).
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [1.0.0] - 2024-01-15
 
-### 🎉 Ajouté
-- **Version initiale** de NexusPro Theme
-- **Architecture Angular 17** avec composants standalone
-- **Design responsive** mobile-first
-- **Mode sombre** complet avec toggle
-- **Animations fluides** et micro-interactions
-- **Système de navigation** intelligent
-- **Composants réutilisables** modulaires
+### 🎉 Added
+- **Initial version** of NexusPro Theme
+- **Angular 17 architecture** with standalone components
+- **Mobile-first responsive** design
+- **Complete dark mode** with toggle
+- **Smooth animations** and micro-interactions
+- **Smart navigation** system
+- **Modular reusable** components
 
-#### Pages Principales
-- 🏠 **Page d'accueil** avec hero animé et particules
-- 👥 **Page à propos** avec présentation d'équipe
-- 🛠️ **Page services** avec grille interactive
-- 💼 **Page portfolio** avec filtres et galerie
-- 💬 **Page témoignages** avec carousel automatique
-- 💰 **Page tarifs** avec plans détaillés
-- 📞 **Page contact** avec formulaire fonctionnel
+#### Main Pages
+- 🏠 **Homepage** with animated hero and particles
+- 👥 **About page** with team presentation
+- 🛠️ **Services page** with interactive grid
+- 💼 **Portfolio page** with filters and gallery
+- 💬 **Testimonials page** with automatic carousel
+- 💰 **Pricing page** with detailed plans
+- 📞 **Contact page** with functional form
 
-#### Composants Avancés
-- ✨ **AnimatedStatsComponent** - Statistiques animées
-- 🎠 **TestimonialSliderComponent** - Carousel de témoignages
-- 🚀 **CtaSectionComponent** - Section call-to-action premium
-- 🎨 **ParticlesComponent** - Effets de particules
-- 📊 **AnimatedCounterComponent** - Compteurs animés
+#### Advanced Components
+- ✨ **AnimatedStatsComponent** - Animated statistics
+- 🎠 **TestimonialSliderComponent** - Testimonials carousel
+- 🚀 **CtaSectionComponent** - Premium call-to-action section
+- 🎨 **ParticlesComponent** - Particle effects
+- 📊 **AnimatedCounterComponent** - Animated counters
 
-#### Fonctionnalités Techniques
-- ⚡ **Lazy loading** des composants
-- 🎭 **Animations CSS** avancées avec keyframes
-- 🌙 **Système de thème** sombre/clair
-- 📱 **Responsive design** optimisé
-- 🔧 **Services Angular** modulaires
-- 🎯 **Performance** optimisée
+#### Technical Features
+- ⚡ **Lazy loading** of components
+- 🎭 **Advanced CSS animations** with keyframes
+- 🌙 **Dark/light theme** system
+- 📱 **Optimized responsive** design
+- 🔧 **Modular Angular** services
+- 🎯 **Optimized performance**
 
 #### Services
-- 🎬 **AnimationService** - Gestion des animations de scroll
-- 🌊 **ParallaxService** - Effets de parallax
-- 🧭 **NavigationService** - Navigation intelligente
-- 🎨 **ThemeService** - Gestion des thèmes
+- 🎬 **AnimationService** - Scroll animations management
+- 🌊 **ParallaxService** - Parallax effects
+- 🧭 **NavigationService** - Smart navigation
+- 🎨 **ThemeService** - Theme management
 
 ### 🎨 Design
-- **Palette de couleurs** moderne et professionnelle
-- **Typographie** Inter optimisée
-- **Espacements** cohérents avec variables CSS
-- **Composants** avec hover effects sophistiqués
-- **Layout** flexible et adaptable
+- **Modern and professional** color palette
+- **Optimized Inter** typography
+- **Consistent spacing** with CSS variables
+- **Sophisticated hover effects** on components
+- **Flexible and adaptable** layout
 
 ### 📱 Responsive
-- **Mobile** : < 768px optimisé
-- **Tablet** : 768px - 1024px adapté
-- **Desktop** : > 1024px perfectionné
-- **Touch-friendly** sur tous les écrans
+- **Mobile**: < 768px optimized
+- **Tablet**: 768px - 1024px adapted
+- **Desktop**: > 1024px perfected
+- **Touch-friendly** on all screens
 
-### 🔧 Personnalisation
-- **Variables CSS** complètes et documentées
-- **Composants** facilement modifiables
-- **Contenu** centralisé dans les services
-- **Images** optimisées et remplaçables
+### 🔧 Customization
+- **Complete and documented** CSS variables
+- **Easily modifiable** components
+- **Centralized content** in services
+- **Optimized and replaceable** images
 
 ### 📚 Documentation
-- **README.md** complet avec aperçu
-- **INSTALLATION.md** guide détaillé
-- **CUSTOMIZATION.md** personnalisation avancée
-- **CHANGELOG.md** historique des versions
+- **Complete README.md** with overview
+- **Detailed INSTALLATION.md** guide
+- **Advanced CUSTOMIZATION.md** guide
+- **Version history** CHANGELOG.md
 
 ### 🚀 Performance
-- **Bundle size** optimisé
-- **Images** compressées
-- **CSS** minifié en production
-- **Animations** performantes
+- **Optimized bundle** size
+- **Compressed** images
+- **Minified CSS** in production
+- **Performant** animations
 
-### 🌐 Compatibilité
+### 🌐 Compatibility
 - **Angular** 17+
 - **TypeScript** 5+
 - **Node.js** 18+
-- **Navigateurs** modernes (Chrome, Firefox, Safari, Edge)
+- **Modern browsers** (Chrome, Firefox, Safari, Edge)
 
 ### 🎯 SEO
-- **Meta tags** optimisés
-- **Structure HTML** sémantique
-- **Images** avec alt text
-- **Navigation** accessible
+- **Optimized meta** tags
+- **Semantic HTML** structure
+- **Images with alt** text
+- **Accessible** navigation
 
 ## [0.9.0] - 2024-01-10
 
 ### 🚧 Beta Version
-- Architecture de base Angular
-- Composants principaux
-- Design initial
-- Tests de compatibilité
+- Basic Angular architecture
+- Main components
+- Initial design
+- Compatibility tests
 
-### 🐛 Corrections
-- Problèmes de routing
-- Erreurs TypeScript
-- Optimisations CSS
+### 🐛 Fixes
+- Routing issues
+- TypeScript errors
+- CSS optimizations
 - Responsive design
 
 ## [0.8.0] - 2024-01-05
 
-### 🏗️ Développement Initial
-- Structure du projet
-- Composants de base
-- Services Angular
-- Configuration build
+### 🏗️ Initial Development
+- Project structure
+- Base components
+- Angular services
+- Build configuration
 
 ### 📝 Documentation
-- Commentaires dans le code
-- Structure des fichiers
-- Guide de développement
+- Code comments
+- File structure
+- Development guide
 
 ---
 
-## 🔮 Roadmap Future
+## 🔮 Future Roadmap
 
-### Version 1.1.0 (Prévue : Février 2024)
-- [ ] **Thèmes prédéfinis** (3-4 variantes)
-- [ ] **Page 404** personnalisée
-- [ ] **Blog** ou actualités
-- [ ] **Multilingue** (i18n)
+### Version 1.1.0 (Planned: February 2024)
+- [ ] **Predefined themes** (3-4 variants)
+- [ ] **Custom 404** page
+- [ ] **Blog** or news
+- [ ] **Multilingual** (i18n)
 - [ ] **PWA** capabilities
 
-### Version 1.2.0 (Prévue : Mars 2024)
-- [ ] **Dashboard** admin
-- [ ] **Formulaires** avancés
-- [ ] **Intégration** APIs
-- [ ] **Tests** unitaires
+### Version 1.2.0 (Planned: March 2024)
+- [ ] **Admin dashboard**
+- [ ] **Advanced forms**
+- [ ] **API integration**
+- [ ] **Unit tests**
 - [ ] **Storybook** documentation
 
-### Version 2.0.0 (Prévue : Avril 2024)
+### Version 2.0.0 (Planned: April 2024)
 - [ ] **Angular 18** support
-- [ ] **Signals** Angular
+- [ ] **Angular Signals**
 - [ ] **SSR** (Server-Side Rendering)
 - [ ] **Micro-frontends**
-- [ ] **Design System** complet
+- [ ] **Complete Design System**
 
-## 🐛 Corrections de Bugs
-
-### Version 1.0.0
-- ✅ Correction du routing sur les pages
-- ✅ Optimisation des images
-- ✅ Amélioration des animations
-- ✅ Fix du mode sombre
-- ✅ Responsive design mobile
-
-## 🔄 Mises à Jour de Sécurité
+## 🐛 Bug Fixes
 
 ### Version 1.0.0
-- ✅ Dépendances Angular à jour
-- ✅ Packages npm sécurisés
-- ✅ Configuration build optimisée
+- ✅ Page routing fixes
+- ✅ Image optimization
+- ✅ Animation improvements
+- ✅ Dark mode fixes
+- ✅ Mobile responsive design
 
-## 📊 Statistiques
+## 🔄 Security Updates
 
 ### Version 1.0.0
-- **Lignes de code** : ~15,000
-- **Composants** : 12
-- **Services** : 4
-- **Pages** : 5
-- **Taille bundle** : ~2.5MB
-- **Performance** : 95/100 (Lighthouse)
+- ✅ Angular dependencies up to date
+- ✅ Secure npm packages
+- ✅ Optimized build configuration
 
-## 🙏 Remerciements
+## 📊 Statistics
 
-### Contributeurs
-- **Équipe NexusPro** - Développement principal
-- **Communauté Angular** - Retours et suggestions
-- **Beta Testers** - Tests et feedback
+### Version 1.0.0
+- **Lines of code**: ~15,000
+- **Components**: 12
+- **Services**: 4
+- **Pages**: 5
+- **Bundle size**: ~2.5MB
+- **Performance**: 95/100 (Lighthouse)
+
+## 🙏 Acknowledgments
+
+### Contributors
+- **NexusPro Team** - Main development
+- **Angular Community** - Feedback and suggestions
+- **Beta Testers** - Testing and feedback
 
 ### Technologies
-- **Angular Team** - Framework exceptionnel
-- **TypeScript Team** - Langage robuste
-- **SCSS** - Styling avancé
-- **Unsplash** - Images de démonstration
+- **Angular Team** - Exceptional framework
+- **TypeScript Team** - Robust language
+- **SCSS** - Advanced styling
+- **Unsplash** - Demo images
 
 ## 📞 Support
 
 ### Version 1.0.0
-- **Email** : support@nexuspro.com
-- **GitHub** : [Issues](https://github.com/nexuspro/theme/issues)
-- **Forum** : [Discussions](https://github.com/nexuspro/theme/discussions)
-- **Documentation** : [Wiki](https://github.com/nexuspro/theme/wiki)
+- **Email**: support@nexuspro.com
+- **GitHub**: [Issues](https://github.com/nexuspro/theme/issues)
+- **Forum**: [Discussions](https://github.com/nexuspro/theme/discussions)
+- **Documentation**: [Wiki](https://github.com/nexuspro/theme/wiki)
 
 ---
 
 <div align="center">
-  <p>📝 <strong>Note :</strong> Ce changelog est maintenu à jour avec chaque version.</p>
-  <p>🔔 <strong>Abonnez-vous</strong> aux notifications pour être informé des nouvelles versions.</p>
+  <p>📝 <strong>Note:</strong> This changelog is maintained with each version.</p>
+  <p>🔔 <strong>Subscribe</strong> to notifications to be informed of new versions.</p>
 </div>

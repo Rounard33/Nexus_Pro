@@ -1,70 +1,70 @@
-# 🎨 Guide de Personnalisation - NexusPro Theme
+# 🎨 Customization Guide - NexusPro Theme
 
-## 📋 Table des Matières
+## 📋 Table of Contents
 
-1. [Vue d'ensemble](#vue-densemble)
-2. [Personnalisation des Couleurs](#personnalisation-des-couleurs)
-3. [Typographie](#typographie)
-4. [Layout et Structure](#layout-et-structure)
-5. [Contenu des Pages](#contenu-des-pages)
-6. [Images et Assets](#images-et-assets)
+1. [Overview](#overview)
+2. [Color Customization](#color-customization)
+3. [Typography](#typography)
+4. [Layout and Structure](#layout-and-structure)
+5. [Page Content](#page-content)
+6. [Images and Assets](#images-and-assets)
 7. [Animations](#animations)
-8. [Composants Personnalisés](#composants-personnalisés)
-9. [Thèmes Prédéfinis](#thèmes-prédéfinis)
-10. [Bonnes Pratiques](#bonnes-pratiques)
+8. [Custom Components](#custom-components)
+9. [Predefined Themes](#predefined-themes)
+10. [Best Practices](#best-practices)
 
-## 🎯 Vue d'ensemble
+## 🎯 Overview
 
-NexusPro est conçu pour être facilement personnalisable. Ce guide vous explique comment modifier tous les aspects du thème selon vos besoins.
+NexusPro is designed to be easily customizable. This guide explains how to modify all aspects of the theme according to your needs.
 
-### Structure des Fichiers
+### File Structure
 ```
 src/
 ├── app/
-│   ├── components/          # Composants réutilisables
-│   ├── pages/              # Pages principales
-│   └── services/           # Services Angular
+│   ├── components/          # Reusable components
+│   ├── pages/              # Main pages
+│   └── services/           # Angular services
 ├── assets/
-│   └── images/             # Images et assets
-└── styles.scss             # Variables CSS globales
+│   └── images/             # Images and assets
+└── styles.scss             # Global CSS variables
 ```
 
-## 🎨 Personnalisation des Couleurs
+## 🎨 Color Customization
 
-### Variables CSS Principales
-Modifiez les couleurs dans `src/styles.scss` :
+### Main CSS Variables
+Modify colors in `src/styles.scss`:
 
 ```scss
 :root {
-  // Couleurs principales
+  // Primary colors
   --primary-50: #f0f9ff;
   --primary-100: #e0f2fe;
   --primary-200: #bae6fd;
   --primary-300: #7dd3fc;
   --primary-400: #38bdf8;
   --primary-500: #0ea5e9;
-  --primary-600: #0284c7;    // Couleur principale
+  --primary-600: #0284c7;    // Main color
   --primary-700: #0369a1;
   --primary-800: #075985;
   --primary-900: #0c4a6e;
 
-  // Couleurs secondaires
+  // Secondary colors
   --secondary-50: #fdf4ff;
   --secondary-100: #fae8ff;
   --secondary-200: #f5d0fe;
   --secondary-300: #f0abfc;
   --secondary-400: #e879f9;
   --secondary-500: #d946ef;
-  --secondary-600: #c026d3;  // Couleur secondaire
+  --secondary-600: #c026d3;  // Secondary color
   --secondary-700: #a21caf;
   --secondary-800: #86198f;
   --secondary-900: #701a75;
 }
 ```
 
-### Exemples de Palettes
+### Color Palette Examples
 
-#### Palette Minimaliste
+#### Minimalist Palette
 ```scss
 :root {
   --primary-600: #000000;
@@ -73,7 +73,7 @@ Modifiez les couleurs dans `src/styles.scss` :
 }
 ```
 
-#### Palette Colorée
+#### Colorful Palette
 ```scss
 :root {
   --primary-600: #ff6b6b;
@@ -82,7 +82,7 @@ Modifiez les couleurs dans `src/styles.scss` :
 }
 ```
 
-#### Palette Professionnelle
+#### Professional Palette
 ```scss
 :root {
   --primary-600: #2c3e50;
@@ -91,26 +91,26 @@ Modifiez les couleurs dans `src/styles.scss` :
 }
 ```
 
-## 📝 Typographie
+## 📝 Typography
 
-### Polices Disponibles
+### Available Fonts
 ```scss
 :root {
-  // Police principale
+  // Main font
   --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   
-  // Police des titres
+  // Heading font
   --heading-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 ```
 
-### Ajouter une Nouvelle Police
-1. **Importer la police** dans `src/styles.scss` :
+### Adding a New Font
+1. **Import the font** in `src/styles.scss`:
 ```scss
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 ```
 
-2. **Modifier les variables** :
+2. **Modify the variables**:
 ```scss
 :root {
   --font-family: 'Poppins', sans-serif;
@@ -118,7 +118,7 @@ Modifiez les couleurs dans `src/styles.scss` :
 }
 ```
 
-### Tailles de Police
+### Font Sizes
 ```scss
 :root {
   --font-size-xs: 0.75rem;    // 12px
@@ -132,16 +132,16 @@ Modifiez les couleurs dans `src/styles.scss` :
 }
 ```
 
-## 🏗️ Layout et Structure
+## 🏗️ Layout and Structure
 
-### Largeur du Conteneur
+### Container Width
 ```scss
 :root {
-  --container-width: 1200px;  // Largeur maximale
+  --container-width: 1200px;  // Maximum width
 }
 ```
 
-### Espacements
+### Spacing
 ```scss
 :root {
   --spacing-xs: 0.25rem;   // 4px
@@ -154,7 +154,7 @@ Modifiez les couleurs dans `src/styles.scss` :
 }
 ```
 
-### Arrondi des Coins
+### Border Radius
 ```scss
 :root {
   --radius-sm: 0.25rem;    // 4px
@@ -165,205 +165,205 @@ Modifiez les couleurs dans `src/styles.scss` :
 }
 ```
 
-## 📄 Contenu des Pages
+## 📄 Page Content
 
-### Page d'Accueil
-Modifiez `src/app/pages/home/home.component.ts` :
+### Homepage
+Modify `src/app/pages/home/home.component.ts`:
 
 ```typescript
-// Section Hero
-heroTitle = "Votre Titre Principal";
-heroDescription = "Votre description accrocheuse...";
+// Hero Section
+heroTitle = "Your Main Title";
+heroDescription = "Your catchy description...";
 
-// Fonctionnalités
+// Features
 features = [
   {
     icon: 'design',
-    title: 'Votre Fonctionnalité',
-    description: 'Description de votre fonctionnalité...'
+    title: 'Your Feature',
+    description: 'Description of your feature...'
   }
 ];
 
-// Témoignages
+// Testimonials
 testimonials = [
   {
-    name: 'Nom du Client',
-    role: 'Poste, Entreprise',
-    content: 'Témoignage du client...',
-    avatar: 'chemin/vers/avatar.jpg'
+    name: 'Client Name',
+    role: 'Position, Company',
+    content: 'Client testimonial...',
+    avatar: 'path/to/avatar.jpg'
   }
 ];
 ```
 
-### Page À Propos
-Modifiez `src/app/pages/about/about.component.ts` :
+### About Page
+Modify `src/app/pages/about/about.component.ts`:
 
 ```typescript
-// Équipe
+// Team
 team = [
   {
-    name: 'Nom du Membre',
-    role: 'Poste',
-    bio: 'Biographie...',
-    image: 'chemin/vers/photo.jpg',
+    name: 'Member Name',
+    role: 'Position',
+    bio: 'Biography...',
+    image: 'path/to/photo.jpg',
     social: {
-      linkedin: 'https://linkedin.com/in/profil',
-      twitter: 'https://twitter.com/compte'
+      linkedin: 'https://linkedin.com/in/profile',
+      twitter: 'https://twitter.com/account'
     }
   }
 ];
 ```
 
-### Page Services
-Modifiez `src/app/pages/services/services.component.ts` :
+### Services Page
+Modify `src/app/pages/services/services.component.ts`:
 
 ```typescript
 services = [
   {
-    title: 'Votre Service',
-    description: 'Description du service...',
+    title: 'Your Service',
+    description: 'Service description...',
     icon: '🚀',
-    features: ['Fonctionnalité 1', 'Fonctionnalité 2'],
-    price: 'À partir de 999€'
+    features: ['Feature 1', 'Feature 2'],
+    price: 'Starting from $999'
   }
 ];
 ```
 
-### Page Portfolio
-Modifiez `src/app/pages/portfolio/portfolio.component.ts` :
+### Portfolio Page
+Modify `src/app/pages/portfolio/portfolio.component.ts`:
 
 ```typescript
 projects = [
   {
-    title: 'Votre Projet',
-    description: 'Description du projet...',
-    image: 'chemin/vers/image.jpg',
+    title: 'Your Project',
+    description: 'Project description...',
+    image: 'path/to/image.jpg',
     technologies: ['Angular', 'TypeScript'],
     category: 'web',
-    link: 'https://votre-projet.com'
+    link: 'https://your-project.com'
   }
 ];
 ```
 
-### Page Contact
-Modifiez `src/app/pages/contact/contact.component.ts` :
+### Contact Page
+Modify `src/app/pages/contact/contact.component.ts`:
 
 ```typescript
 contactInfo = {
-  email: 'contact@votre-entreprise.com',
-  phone: '+33 1 23 45 67 89',
-  address: 'Votre Adresse Complète',
-  mapEmbed: 'Code d\'intégration Google Maps'
+  email: 'contact@your-company.com',
+  phone: '+1 234 567 8900',
+  address: 'Your Complete Address',
+  mapEmbed: 'Google Maps integration code'
 };
 ```
 
-## 🖼️ Images et Assets
+## 🖼️ Images and Assets
 
-### Remplacement des Images
-Placez vos images dans `src/assets/images/` :
+### Image Replacement
+Place your images in `src/assets/images/`:
 
 ```
 src/assets/images/
 ├── logo.png              # Logo (200x60px)
-├── hero-bg.jpg           # Image hero (1920x1080px)
-├── about-image.jpg       # Image à propos (600x400px)
-├── portfolio/            # Images portfolio
+├── hero-bg.jpg           # Hero image (1920x1080px)
+├── about-image.jpg       # About image (600x400px)
+├── portfolio/            # Portfolio images
 │   ├── project1.jpg
 │   └── project2.jpg
-└── team/                 # Photos équipe
+└── team/                 # Team photos
     ├── member1.jpg
     └── member2.jpg
 ```
 
-### Optimisation des Images
+### Image Optimization
 ```bash
-# Optimiser les images avec ImageOptim (Mac)
-# ou TinyPNG (Web)
-# ou imagemin (Node.js)
+# Optimize images with ImageOptim (Mac)
+# or TinyPNG (Web)
+# or imagemin (Node.js)
 npm install -g imagemin-cli
 imagemin src/assets/images/*.jpg --out-dir=src/assets/images/optimized
 ```
 
-### Formats Recommandés
-- **Logo** : PNG (transparent) ou SVG
-- **Photos** : JPG (qualité 85%)
-- **Icônes** : SVG ou PNG 24x24px
-- **Images hero** : JPG 1920x1080px
+### Recommended Formats
+- **Logo**: PNG (transparent) or SVG
+- **Photos**: JPG (85% quality)
+- **Icons**: SVG or PNG 24x24px
+- **Hero images**: JPG 1920x1080px
 
 ## ✨ Animations
 
-### Désactiver les Animations
+### Disable Animations
 ```scss
-// Dans src/styles.scss
+// In src/styles.scss
 .no-animations * {
   animation: none !important;
   transition: none !important;
 }
 ```
 
-### Modifier la Vitesse
+### Modify Speed
 ```scss
 :root {
-  --animation-duration: 0.5s;  // Plus rapide : 0.3s, Plus lent : 0.8s
+  --animation-duration: 0.5s;  // Faster: 0.3s, Slower: 0.8s
 }
 ```
 
-### Créer une Nouvelle Animation
+### Create a New Animation
 ```scss
-@keyframes mon-animation {
+@keyframes my-animation {
   0% { opacity: 0; transform: translateY(20px); }
   100% { opacity: 1; transform: translateY(0); }
 }
 
-.mon-element {
-  animation: mon-animation 0.6s ease-out;
+.my-element {
+  animation: my-animation 0.6s ease-out;
 }
 ```
 
-## 🧩 Composants Personnalisés
+## 🧩 Custom Components
 
-### Créer un Nouveau Composant
+### Create a New Component
 ```bash
-ng generate component mon-composant
+ng generate component my-component
 ```
 
-### Exemple de Composant
+### Component Example
 ```typescript
-// src/app/components/mon-composant/mon-composant.component.ts
+// src/app/components/my-component/my-component.component.ts
 import { Component } from '@angular/core';
 
 @Component({
-  selector: 'app-mon-composant',
+  selector: 'app-my-component',
   standalone: true,
   template: `
-    <div class="mon-composant">
-      <h2>{{ titre }}</h2>
+    <div class="my-component">
+      <h2>{{ title }}</h2>
       <p>{{ description }}</p>
     </div>
   `,
   styles: [`
-    .mon-composant {
+    .my-component {
       padding: var(--spacing-lg);
       background: var(--card-bg);
       border-radius: var(--radius-md);
     }
   `]
 })
-export class MonComposantComponent {
-  titre = 'Mon Titre';
-  description = 'Ma description...';
+export class MyComponentComponent {
+  title = 'My Title';
+  description = 'My description...';
 }
 ```
 
-### Utiliser le Composant
+### Use the Component
 ```html
-<!-- Dans n'importe quelle page -->
-<app-mon-composant></app-mon-composant>
+<!-- In any page -->
+<app-my-component></app-my-component>
 ```
 
-## 🎨 Thèmes Prédéfinis
+## 🎨 Predefined Themes
 
-### Thème Minimaliste
+### Minimalist Theme
 ```scss
 // src/styles.scss
 :root {
@@ -374,7 +374,7 @@ export class MonComposantComponent {
 }
 ```
 
-### Thème Coloré
+### Colorful Theme
 ```scss
 :root {
   --primary-600: #ff6b6b;
@@ -384,7 +384,7 @@ export class MonComposantComponent {
 }
 ```
 
-### Thème Sombre
+### Dark Theme
 ```scss
 .dark {
   --primary-600: #60a5fa;
@@ -399,27 +399,27 @@ export class MonComposantComponent {
 ```scss
 // Mobile
 @media (max-width: 768px) {
-  .mon-element {
+  .my-element {
     font-size: 14px;
   }
 }
 
 // Tablet
 @media (min-width: 769px) and (max-width: 1024px) {
-  .mon-element {
+  .my-element {
     font-size: 16px;
   }
 }
 
 // Desktop
 @media (min-width: 1025px) {
-  .mon-element {
+  .my-element {
     font-size: 18px;
   }
 }
 ```
 
-### Grilles Responsives
+### Responsive Grids
 ```scss
 .grid {
   display: grid;
@@ -428,36 +428,36 @@ export class MonComposantComponent {
 }
 ```
 
-## 🔧 Bonnes Pratiques
+## 🔧 Best Practices
 
-### 1. Utiliser les Variables CSS
+### 1. Use CSS Variables
 ```scss
-// ✅ Bon
-.mon-element {
+// ✅ Good
+.my-element {
   color: var(--primary-600);
   padding: var(--spacing-md);
 }
 
-// ❌ Éviter
-.mon-element {
+// ❌ Avoid
+.my-element {
   color: #3b82f6;
   padding: 16px;
 }
 ```
 
-### 2. Structure des Composants
+### 2. Component Structure
 ```typescript
-// ✅ Bon - Composant simple et réutilisable
+// ✅ Good - Simple and reusable component
 @Component({
-  selector: 'app-bouton',
+  selector: 'app-button',
   template: `
-    <button [class]="classe" (click)="onClick()">
+    <button [class]="className" (click)="onClick()">
       <ng-content></ng-content>
     </button>
   `
 })
-export class BoutonComponent {
-  @Input() classe = 'btn btn-primary';
+export class ButtonComponent {
+  @Input() className = 'btn btn-primary';
   @Output() click = new EventEmitter();
   
   onClick() {
@@ -468,7 +468,7 @@ export class BoutonComponent {
 
 ### 3. Performance
 ```typescript
-// ✅ Bon - Lazy loading
+// ✅ Good - Lazy loading
 const routes: Routes = [
   {
     path: 'about',
@@ -477,47 +477,47 @@ const routes: Routes = [
 ];
 ```
 
-### 4. Accessibilité
+### 4. Accessibility
 ```html
-<!-- ✅ Bon -->
-<button aria-label="Fermer la modal" (click)="fermer()">
+<!-- ✅ Good -->
+<button aria-label="Close modal" (click)="close()">
   <span aria-hidden="true">&times;</span>
 </button>
 
-<!-- ✅ Bon -->
-<img src="image.jpg" alt="Description de l'image">
+<!-- ✅ Good -->
+<img src="image.jpg" alt="Image description">
 ```
 
-## 🚀 Déploiement
+## 🚀 Deployment
 
-### Build de Production
+### Production Build
 ```bash
 ng build --configuration production
 ```
 
-### Vérification
+### Verification
 ```bash
-# Tester le build localement
+# Test the build locally
 npx http-server dist -p 4200
 ```
 
 ## 📞 Support
 
-### Ressources
-- 📖 **Documentation** : [Guide d'Installation](INSTALLATION.md)
-- 🐛 **Bugs** : [GitHub Issues](https://github.com/nexuspro/theme/issues)
-- 💬 **Forum** : [GitHub Discussions](https://github.com/nexuspro/theme/discussions)
+### Resources
+- 📖 **Documentation**: [Installation Guide](INSTALLATION.md)
+- 🐛 **Bugs**: [GitHub Issues](https://github.com/nexuspro/theme/issues)
+- 💬 **Forum**: [GitHub Discussions](https://github.com/nexuspro/theme/discussions)
 
-### Informations de Debug
-En cas de problème, fournissez :
-- Code de votre personnalisation
-- Message d'erreur complet
-- Navigateur et version
-- Étapes pour reproduire
+### Debug Information
+In case of problems, provide:
+- Your customization code
+- Complete error message
+- Browser and version
+- Steps to reproduce
 
 ---
 
 <div align="center">
-  <p>🎉 Votre thème NexusPro est maintenant personnalisé !</p>
-  <p>N'hésitez pas à partager vos créations avec la communauté.</p>
+  <p>🎉 Your NexusPro theme is now customized!</p>
+  <p>Feel free to share your creations with the community.</p>
 </div>

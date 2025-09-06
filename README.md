@@ -9,181 +9,181 @@
   [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 </div>
 
-## ✨ Aperçu
+## ✨ Overview
 
-**NexusPro** est un thème Angular professionnel et moderne, conçu pour créer des expériences web exceptionnelles. Parfait pour les agences, freelancers, startups et entreprises qui recherchent un design élégant et des performances optimales.
+**NexusPro** is a professional and modern Angular theme, designed to create exceptional web experiences. Perfect for agencies, freelancers, startups and businesses looking for elegant design and optimal performance.
 
-## 🎨 Caractéristiques Principales
+## 🎨 Key Features
 
-### 🚀 **Technologies Modernes**
-- **Angular 17** avec composants standalone
-- **TypeScript 5** pour un code robuste
-- **SCSS** pour un styling avancé
-- **RxJS** pour la gestion d'état
-- **Responsive Design** mobile-first
+### 🚀 **Modern Technologies**
+- **Angular 17** with standalone components
+- **TypeScript 5** for robust code
+- **SCSS** for advanced styling
+- **RxJS** for state management
+- **Mobile-first** responsive design
 
-### 🎯 **Fonctionnalités Avancées**
-- ✨ **Animations fluides** et micro-interactions
-- 🌙 **Mode sombre** complet
+### 🎯 **Advanced Features**
+- ✨ **Smooth animations** and micro-interactions
+- 🌙 **Complete dark mode** support
 - 📱 **100% Responsive** (Mobile, Tablet, Desktop)
-- ⚡ **Performance optimisée** avec lazy loading
-- 🎨 **Design moderne** et professionnel
-- 🔧 **Facilement personnalisable**
+- ⚡ **Optimized performance** with lazy loading
+- 🎨 **Modern and professional** design
+- 🔧 **Easily customizable**
 
-### 📄 **Sections Incluses**
-- 🏠 **Page d'accueil** avec hero animé
-- 👥 **À propos** avec présentation d'équipe
-- 🛠️ **Services** détaillés avec filtres
-- 💼 **Portfolio** avec galerie interactive
-- 💬 **Témoignages** avec carousel automatique
-- 💰 **Tarifs** et plans détaillés
-- 📞 **Contact** avec formulaire fonctionnel
+### 📄 **Included Sections**
+- 🏠 **Homepage** with animated hero
+- 👥 **About** with team presentation
+- 🛠️ **Services** with detailed filters
+- 💼 **Portfolio** with interactive gallery
+- 💬 **Testimonials** with automatic carousel
+- 💰 **Pricing** with detailed plans
+- 📞 **Contact** with functional form
 
-## 🚀 Démarrage Rapide
+## 🚀 Quick Start
 
-### Prérequis
+### Prerequisites
 - Node.js 18+ 
-- npm 9+ ou yarn
+- npm 9+ or yarn
 - Angular CLI 17+
 
 ### Installation
 
-1. **Télécharger le thème**
+1. **Download the theme**
    ```bash
-   # Extraire l'archive dans votre dossier de projet
+   # Extract the archive to your project folder
    unzip nexuspro-theme.zip
    cd nexuspro-theme
    ```
 
-2. **Installer les dépendances**
+2. **Install dependencies**
    ```bash
    npm install
-   # ou
+   # or
    yarn install
    ```
 
-3. **Lancer le serveur de développement**
+3. **Start development server**
    ```bash
    ng serve
-   # ou
+   # or
    npm start
    ```
 
-4. **Ouvrir dans le navigateur**
+4. **Open in browser**
    ```
    http://localhost:4200
    ```
 
-## 🎨 Personnalisation
+## 🎨 Customization
 
-### Couleurs
-Modifiez les variables CSS dans `src/styles.scss` :
+### Colors
+Modify CSS variables in `src/styles.scss`:
 
 ```scss
 :root {
-  --primary-600: #3b82f6;    // Couleur principale
-  --secondary-600: #8b5cf6;  // Couleur secondaire
-  --accent-600: #f59e0b;     // Couleur d'accent
+  --primary-600: #3b82f6;    // Primary color
+  --secondary-600: #8b5cf6;  // Secondary color
+  --accent-600: #f59e0b;     // Accent color
 }
 ```
 
-### Contenu
-Éditez les données dans les composants :
+### Content
+Edit data in components:
 
 ```typescript
 // src/app/pages/home/home.component.ts
 features = [
   {
     icon: 'design',
-    title: 'Votre Titre',
-    description: 'Votre description...'
+    title: 'Your Title',
+    description: 'Your description...'
   }
 ];
 ```
 
 ### Images
-Remplacez les images dans `src/assets/images/` :
-- `logo.png` - Votre logo
-- `hero-bg.jpg` - Image de fond hero
-- `about-image.jpg` - Image section à propos
+Replace images in `src/assets/images/`:
+- `logo.png` - Your logo
+- `hero-bg.jpg` - Hero background image
+- `about-image.jpg` - About section image
 
 ## 📱 Responsive Design
 
-Le thème s'adapte parfaitement à tous les écrans :
+The theme adapts perfectly to all screens:
 
-- **Mobile** : < 768px
-- **Tablet** : 768px - 1024px  
-- **Desktop** : > 1024px
+- **Mobile**: < 768px
+- **Tablet**: 768px - 1024px  
+- **Desktop**: > 1024px
 
-## 🌙 Mode Sombre
+## 🌙 Dark Mode
 
-Le mode sombre est activé automatiquement selon les préférences système ou via le toggle dans le header.
+Dark mode is automatically enabled based on system preferences or via the toggle in the header.
 
 ## ⚡ Performance
 
-- **Lazy Loading** des composants
-- **Images optimisées** et compressées
-- **CSS minifié** en production
-- **Animations performantes** avec `requestAnimationFrame`
+- **Lazy Loading** of components
+- **Optimized and compressed** images
+- **Minified CSS** in production
+- **Performant animations** with `requestAnimationFrame`
 
-## 🛠️ Build et Déploiement
+## 🛠️ Build and Deployment
 
-### Build de Production
+### Production Build
 ```bash
 ng build --configuration production
 ```
 
-### Déploiement
+### Deployment
 ```bash
-# Les fichiers de production sont dans dist/
-# Uploadez le contenu de dist/ sur votre serveur
+# Production files are in dist/
+# Upload the content of dist/ to your server
 ```
 
 ## 📚 Documentation
 
-- [Guide d'Installation](INSTALLATION.md)
-- [Guide de Personnalisation](CUSTOMIZATION.md)
+- [Installation Guide](INSTALLATION.md)
+- [Customization Guide](CUSTOMIZATION.md)
 - [Changelog](CHANGELOG.md)
 
-## 🎯 Compatibilité
+## 🎯 Compatibility
 
-### Navigateurs Supportés
+### Supported Browsers
 - Chrome 90+
 - Firefox 88+
 - Safari 14+
 - Edge 90+
 
-### Versions Angular
+### Angular Versions
 - Angular 17+
 - TypeScript 5+
 - Node.js 18+
 
 ## 🆘 Support
 
-### Support Inclus
-- 📧 **Email** : support@nexuspro.com
-- 📖 **Documentation** complète
-- 🐛 **Corrections** de bugs
-- 🔄 **Mises à jour** gratuites
+### Included Support
+- 📧 **Email**: support@nexuspro.com
+- 📖 **Complete documentation**
+- 🐛 **Bug fixes**
+- 🔄 **Free updates**
 
-### Communauté
-- 💬 **Forum** : [GitHub Discussions](https://github.com/nexuspro/theme/discussions)
-- 🐛 **Bugs** : [GitHub Issues](https://github.com/nexuspro/theme/issues)
-- 💡 **Suggestions** : [GitHub Discussions](https://github.com/nexuspro/theme/discussions)
+### Community
+- 💬 **Forum**: [GitHub Discussions](https://github.com/nexuspro/theme/discussions)
+- 🐛 **Bugs**: [GitHub Issues](https://github.com/nexuspro/theme/issues)
+- 💡 **Suggestions**: [GitHub Discussions](https://github.com/nexuspro/theme/discussions)
 
-## 📄 Licence
+## 📄 License
 
-Ce thème est sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus de détails.
+This theme is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
-## 🙏 Remerciements
+## 🙏 Acknowledgments
 
-- **Angular Team** pour le framework exceptionnel
-- **Unsplash** pour les images de démonstration
-- **Communauté** pour les retours et suggestions
+- **Angular Team** for the exceptional framework
+- **Unsplash** for demo images
+- **Community** for feedback and suggestions
 
 ---
 
 <div align="center">
-  <p>Créé avec ❤️ pour la communauté Angular</p>
-  <p>© 2024 NexusPro. Tous droits réservés.</p>
+  <p>Made with ❤️ for the Angular community</p>
+  <p>© 2024 NexusPro. All rights reserved.</p>
 </div>

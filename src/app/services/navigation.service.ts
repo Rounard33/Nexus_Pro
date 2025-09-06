@@ -30,12 +30,17 @@ export class NavigationService {
 
   scrollToElement(elementId: string): void {
     if (typeof window !== 'undefined') {
-      const element = document.getElementById(elementId);
-      if (element) {
-        element.scrollIntoView({
-          behavior: 'smooth',
-          block: 'start'
-        });
+      try {
+        const element = document.getElementById(elementId);
+        if (element) {
+          element.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          });
+        }
+      } catch (error) {
+        // Silently handle errors to prevent breaking navigation
+        // In production, you might want to log this to a monitoring service
       }
     }
   }

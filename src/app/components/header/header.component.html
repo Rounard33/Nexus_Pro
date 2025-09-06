@@ -9,9 +9,13 @@
       </div>
 
       <!-- Navigation -->
-      <nav class="nav" [class.nav-open]="isMenuOpen">
+      <nav class="nav" [class.nav-open]="isMenuOpen" id="mobile-menu" role="navigation" aria-label="Menu principal">
         <!-- Close Button -->
-        <button class="nav-close" (click)="toggleMenu()" *ngIf="isMenuOpen">
+        <button 
+          class="nav-close" 
+          (click)="toggleMenu()" 
+          *ngIf="isMenuOpen"
+          aria-label="Fermer le menu">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -63,7 +67,12 @@
       </div>
 
       <!-- Mobile Menu Toggle -->
-      <button class="mobile-menu-toggle" (click)="toggleMenu()" [attr.aria-expanded]="isMenuOpen">
+      <button 
+        class="mobile-menu-toggle" 
+        (click)="toggleMenu()" 
+        [attr.aria-expanded]="isMenuOpen"
+        [attr.aria-label]="isMenuOpen ? 'Fermer le menu' : 'Ouvrir le menu'"
+        aria-controls="mobile-menu">
         <span class="hamburger-line" [class.active]="isMenuOpen"></span>
         <span class="hamburger-line" [class.active]="isMenuOpen"></span>
         <span class="hamburger-line" [class.active]="isMenuOpen"></span>

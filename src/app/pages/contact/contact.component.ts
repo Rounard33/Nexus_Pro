@@ -64,11 +64,13 @@ export class ContactComponent implements OnInit, AfterViewInit {
   };
 
   onSubmit(): void {
-    // Ici vous pouvez ajouter la logique d'envoi du formulaire
-    console.log('Formulaire soumis:', this.contactForm);
-    alert('Merci pour votre message ! Nous vous répondrons dans les plus brefs délais.');
+    // Here you can add form submission logic
+    // For demo purposes, we'll show a success message
+    if (typeof window !== 'undefined') {
+      alert('Thank you for your message! We will get back to you as soon as possible.');
+    }
     
-    // Reset du formulaire
+    // Reset form
     this.contactForm = {
       name: '',
       email: '',

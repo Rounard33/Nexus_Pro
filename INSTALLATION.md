@@ -1,83 +1,83 @@
-# 🚀 Guide d'Installation - NexusPro Theme
+# 🚀 Installation Guide - NexusPro Theme
 
-## 📋 Table des Matières
+## 📋 Table of Contents
 
-1. [Prérequis](#prérequis)
+1. [Prerequisites](#prerequisites)
 2. [Installation](#installation)
 3. [Configuration](#configuration)
-4. [Premier Lancement](#premier-lancement)
-5. [Déploiement](#déploiement)
-6. [Dépannage](#dépannage)
+4. [First Launch](#first-launch)
+5. [Deployment](#deployment)
+6. [Troubleshooting](#troubleshooting)
 
-## 🔧 Prérequis
+## 🔧 Prerequisites
 
-### Logiciels Requis
-- **Node.js** 18.0.0 ou supérieur
-- **npm** 9.0.0 ou supérieur (ou yarn 1.22.0+)
-- **Angular CLI** 17.0.0 ou supérieur
-- **Git** (optionnel, pour le versioning)
+### Required Software
+- **Node.js** 18.0.0 or higher
+- **npm** 9.0.0 or higher (or yarn 1.22.0+)
+- **Angular CLI** 17.0.0 or higher
+- **Git** (optional, for versioning)
 
-### Vérification des Prérequis
+### Prerequisites Check
 ```bash
-# Vérifier Node.js
+# Check Node.js
 node --version
-# Doit afficher v18.0.0 ou supérieur
+# Should display v18.0.0 or higher
 
-# Vérifier npm
+# Check npm
 npm --version
-# Doit afficher 9.0.0 ou supérieur
+# Should display 9.0.0 or higher
 
-# Vérifier Angular CLI
+# Check Angular CLI
 ng version
-# Doit afficher Angular CLI 17.0.0 ou supérieur
+# Should display Angular CLI 17.0.0 or higher
 ```
 
-### Installation d'Angular CLI (si nécessaire)
+### Angular CLI Installation (if needed)
 ```bash
 npm install -g @angular/cli@17
-# ou
+# or
 yarn global add @angular/cli@17
 ```
 
 ## 📦 Installation
 
-### Étape 1 : Téléchargement
-1. Téléchargez l'archive `nexuspro-theme.zip`
-2. Extrayez l'archive dans votre dossier de travail
-3. Renommez le dossier en `nexuspro-project` (optionnel)
+### Step 1: Download
+1. Download the `nexuspro-theme.zip` archive
+2. Extract the archive to your working folder
+3. Rename the folder to `nexuspro-project` (optional)
 
-### Étape 2 : Installation des Dépendances
+### Step 2: Dependencies Installation
 ```bash
-# Naviguer vers le dossier du projet
+# Navigate to the project folder
 cd nexuspro-project
 
-# Installer les dépendances
+# Install dependencies
 npm install
-# ou
+# or
 yarn install
 ```
 
-### Étape 3 : Vérification de l'Installation
+### Step 3: Installation Verification
 ```bash
-# Vérifier que tout est installé correctement
+# Verify everything is installed correctly
 ng version
 npm list --depth=0
 ```
 
 ## ⚙️ Configuration
 
-### Configuration de Base
-Le thème est prêt à l'emploi, mais vous pouvez personnaliser :
+### Basic Configuration
+The theme is ready to use, but you can customize:
 
-#### 1. Variables CSS (src/styles.scss)
+#### 1. CSS Variables (src/styles.scss)
 ```scss
 :root {
-  // Couleurs principales
-  --primary-600: #3b82f6;    // Bleu principal
-  --secondary-600: #8b5cf6;  // Violet secondaire
-  --accent-600: #f59e0b;     // Orange accent
+  // Primary colors
+  --primary-600: #3b82f6;    // Main blue
+  --secondary-600: #8b5cf6;  // Secondary purple
+  --accent-600: #f59e0b;     // Accent orange
   
-  // Polices
+  // Fonts
   --font-family: 'Inter', sans-serif;
   --heading-font: 'Inter', sans-serif;
   
@@ -87,71 +87,71 @@ Le thème est prêt à l'emploi, mais vous pouvez personnaliser :
 }
 ```
 
-#### 2. Contenu des Pages
-Modifiez les données dans les composants :
+#### 2. Page Content
+Modify data in components:
 
-**Page d'accueil** (`src/app/pages/home/home.component.ts`) :
+**Homepage** (`src/app/pages/home/home.component.ts`):
 ```typescript
 features = [
   {
     icon: 'design',
-    title: 'Votre Titre',
-    description: 'Votre description...'
+    title: 'Your Title',
+    description: 'Your description...'
   }
 ];
 ```
 
-**Informations de contact** (`src/app/pages/contact/contact.component.ts`) :
+**Contact information** (`src/app/pages/contact/contact.component.ts`):
 ```typescript
 contactInfo = {
-  email: 'contact@votre-entreprise.com',
-  phone: '+33 1 23 45 67 89',
-  address: 'Votre Adresse'
+  email: 'contact@your-company.com',
+  phone: '+1 234 567 8900',
+  address: 'Your Address'
 };
 ```
 
-#### 3. Images et Assets
-Remplacez les images dans `src/assets/images/` :
-- `logo.png` - Votre logo (recommandé : 200x60px)
-- `hero-bg.jpg` - Image de fond hero (recommandé : 1920x1080px)
-- `about-image.jpg` - Image section à propos (recommandé : 600x400px)
+#### 3. Images and Assets
+Replace images in `src/assets/images/`:
+- `logo.png` - Your logo (recommended: 200x60px)
+- `hero-bg.jpg` - Hero background image (recommended: 1920x1080px)
+- `about-image.jpg` - About section image (recommended: 600x400px)
 
-## 🚀 Premier Lancement
+## 🚀 First Launch
 
-### Serveur de Développement
+### Development Server
 ```bash
-# Lancer le serveur de développement
+# Start development server
 ng serve
-# ou
+# or
 npm start
 
-# Le site sera accessible sur http://localhost:4200
+# The site will be accessible at http://localhost:4200
 ```
 
-### Build de Production
+### Production Build
 ```bash
-# Créer un build de production
+# Create production build
 ng build --configuration production
 
-# Les fichiers de production seront dans dist/
+# Production files will be in dist/
 ```
 
-### Vérification
-1. Ouvrez http://localhost:4200 dans votre navigateur
-2. Vérifiez que toutes les pages se chargent correctement
-3. Testez la navigation entre les pages
-4. Vérifiez le mode sombre/clair
-5. Testez la responsivité sur mobile
+### Verification
+1. Open http://localhost:4200 in your browser
+2. Verify all pages load correctly
+3. Test navigation between pages
+4. Check dark/light mode
+5. Test responsiveness on mobile
 
-## 🌐 Déploiement
+## 🌐 Deployment
 
-### Option 1 : Serveur Web Standard
+### Option 1: Standard Web Server
 ```bash
-# Build de production
+# Production build
 ng build --configuration production
 
-# Copier les fichiers de dist/ vers votre serveur web
-# Configuration Apache (.htaccess)
+# Copy files from dist/ to your web server
+# Apache configuration (.htaccess)
 RewriteEngine On
 RewriteBase /
 RewriteRule ^index\.html$ - [L]
@@ -160,33 +160,33 @@ RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule . /index.html [L]
 ```
 
-### Option 2 : Netlify
-1. Connectez votre repository GitHub
-2. Configurez les paramètres de build :
-   - **Build command** : `ng build --configuration production`
-   - **Publish directory** : `dist`
-3. Déployez automatiquement
+### Option 2: Netlify
+1. Connect your GitHub repository
+2. Configure build settings:
+   - **Build command**: `ng build --configuration production`
+   - **Publish directory**: `dist`
+3. Deploy automatically
 
-### Option 3 : Vercel
+### Option 3: Vercel
 ```bash
-# Installer Vercel CLI
+# Install Vercel CLI
 npm i -g vercel
 
-# Déployer
+# Deploy
 vercel --prod
 ```
 
-### Option 4 : GitHub Pages
+### Option 4: GitHub Pages
 ```bash
-# Installer angular-cli-ghpages
+# Install angular-cli-ghpages
 npm install -g angular-cli-ghpages
 
-# Build et déploiement
-ng build --configuration production --base-href "https://votre-username.github.io/votre-repo/"
+# Build and deploy
+ng build --configuration production --base-href "https://your-username.github.io/your-repo/"
 ngh --dir=dist
 ```
 
-## 🔧 Configuration Serveur
+## 🔧 Server Configuration
 
 ### Apache (.htaccess)
 ```apache
@@ -197,7 +197,7 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule . /index.html [L]
 
-# Compression GZIP
+# GZIP Compression
 <IfModule mod_deflate.c>
     AddOutputFilterByType DEFLATE text/plain
     AddOutputFilterByType DEFLATE text/html
@@ -225,7 +225,7 @@ RewriteRule . /index.html [L]
 ```nginx
 server {
     listen 80;
-    server_name votre-domaine.com;
+    server_name your-domain.com;
     root /var/www/nexuspro/dist;
     index index.html;
 
@@ -245,73 +245,73 @@ server {
 }
 ```
 
-## 🐛 Dépannage
+## 🐛 Troubleshooting
 
-### Problèmes Courants
+### Common Issues
 
-#### 1. Erreur "ng command not found"
+#### 1. "ng command not found" Error
 ```bash
-# Solution : Installer Angular CLI globalement
+# Solution: Install Angular CLI globally
 npm install -g @angular/cli@17
 ```
 
-#### 2. Erreur de dépendances
+#### 2. Dependencies Error
 ```bash
-# Solution : Nettoyer et réinstaller
+# Solution: Clean and reinstall
 rm -rf node_modules package-lock.json
 npm install
 ```
 
-#### 3. Erreur de build
+#### 3. Build Error
 ```bash
-# Solution : Vérifier la version de Node.js
+# Solution: Check Node.js version
 node --version
-# Doit être 18.0.0 ou supérieur
+# Must be 18.0.0 or higher
 ```
 
-#### 4. Problème de routing en production
+#### 4. Production Routing Issue
 ```bash
-# Solution : Vérifier la configuration du serveur
-# Assurez-vous que toutes les routes redirigent vers index.html
+# Solution: Check server configuration
+# Make sure all routes redirect to index.html
 ```
 
-#### 5. Images qui ne se chargent pas
+#### 5. Images Not Loading
 ```bash
-# Solution : Vérifier les chemins dans src/assets/
-# Utilisez des chemins relatifs : ./assets/images/logo.png
+# Solution: Check paths in src/assets/
+# Use relative paths: ./assets/images/logo.png
 ```
 
-### Logs de Débogage
+### Debug Logs
 ```bash
-# Mode debug
+# Debug mode
 ng serve --verbose
 
-# Build avec source maps
+# Build with source maps
 ng build --source-map
 
-# Analyse du bundle
+# Bundle analysis
 ng build --stats-json
 npx webpack-bundle-analyzer dist/stats.json
 ```
 
 ## 📞 Support
 
-### Ressources d'Aide
-- 📖 **Documentation** : [Guide de Personnalisation](CUSTOMIZATION.md)
-- 🐛 **Bugs** : [GitHub Issues](https://github.com/nexuspro/theme/issues)
-- 💬 **Forum** : [GitHub Discussions](https://github.com/nexuspro/theme/discussions)
-- 📧 **Email** : support@nexuspro.com
+### Help Resources
+- 📖 **Documentation**: [Customization Guide](CUSTOMIZATION.md)
+- 🐛 **Bugs**: [GitHub Issues](https://github.com/nexuspro/theme/issues)
+- 💬 **Forum**: [GitHub Discussions](https://github.com/nexuspro/theme/discussions)
+- 📧 **Email**: support@nexuspro.com
 
-### Informations de Debug
-En cas de problème, fournissez :
-- Version de Node.js : `node --version`
-- Version d'Angular CLI : `ng version`
-- Message d'erreur complet
-- Étapes pour reproduire le problème
+### Debug Information
+In case of problems, provide:
+- Node.js version: `node --version`
+- Angular CLI version: `ng version`
+- Complete error message
+- Steps to reproduce the problem
 
 ---
 
 <div align="center">
-  <p>🎉 Félicitations ! Votre site NexusPro est maintenant prêt !</p>
-  <p>Pour toute question, n'hésitez pas à nous contacter.</p>
+  <p>🎉 Congratulations! Your NexusPro site is now ready!</p>
+  <p>For any questions, don't hesitate to contact us.</p>
 </div>

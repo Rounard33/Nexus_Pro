@@ -63,7 +63,7 @@ export class AnimatedStatsComponent implements OnInit, OnDestroy {
   }
 
   private startAnimation(): void {
-    // Animer les stats une par une avec un délai
+    // Animate stats one by one with a delay
     this.animatedStats.forEach((stat, index) => {
       setTimeout(() => {
         this.animateStat(stat);

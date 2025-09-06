@@ -23,11 +23,19 @@ export class ParallaxService {
     const rate = scrolled * -0.5;
 
     this.parallaxElements.forEach(element => {
-      const rect = element.getBoundingClientRect();
-      const speed = element.getAttribute('data-parallax-speed') || '0.5';
-      const offset = (scrolled - rect.top) * parseFloat(speed);
-      
-      (element as HTMLElement).style.setProperty('--parallax-offset', `${offset}px`);
+      try {
+        const rect = element.getBoundingClientRect();
+        const speed = element.getAttribute('data-parallax-speed') || '0.5';
+        const speedValue = parseFloat(speed);
+        
+        if (!isNaN(speedValue)) {
+          const offset = (scrolled - rect.top) * speedValue;
+          (element as HTMLElement).style.setProperty('--parallax-offset', `${offset}px`);
+        }
+      } catch (error) {
+        // Silently handle errors to prevent breaking the parallax effect
+        // In production, you might want to log this to a monitoring service
+      }
     });
   }
 

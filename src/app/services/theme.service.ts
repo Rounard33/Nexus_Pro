@@ -9,22 +9,38 @@ export class ThemeService {
   public isDarkMode$ = this.isDarkMode.asObservable();
 
   constructor() {
+    // Initialize theme after a small delay to ensure DOM is ready
+    setTimeout(() => {
+      this.initializeTheme();
+    }, 0);
+  }
+
+  private initializeTheme(): void {
     // Check for saved theme preference or default to light mode
     const savedTheme = localStorage.getItem('theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     
+    // Apply theme immediately
     if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
       this.setDarkMode(true);
+    } else {
+      this.setDarkMode(false);
     }
+    
+    // Listen for system theme changes
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+      // Only auto-switch if no theme preference is saved
+      if (!localStorage.getItem('theme')) {
+        this.setDarkMode(e.matches);
+      }
+    });
   }
 
   toggleTheme(): void {
-    console.log('Toggling theme from', this.isDarkMode.value, 'to', !this.isDarkMode.value);
     this.setDarkMode(!this.isDarkMode.value);
   }
 
   setDarkMode(isDark: boolean): void {
-    console.log('Setting dark mode to:', isDark);
     this.isDarkMode.next(isDark);
     
     // Remove existing theme classes
@@ -37,7 +53,6 @@ export class ThemeService {
     document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
     
     localStorage.setItem('theme', isDark ? 'dark' : 'light');
-    console.log('Theme class set to:', document.documentElement.className);
   }
 
   getCurrentTheme(): boolean {
