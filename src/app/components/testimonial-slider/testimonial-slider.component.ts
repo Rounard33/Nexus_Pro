@@ -19,7 +19,7 @@ export class TestimonialSliderComponent implements OnInit, OnDestroy {
       role: 'CEO, TechCorp',
       content: 'NexusPro a transformé notre présence digitale. Le design est exceptionnel et les performances sont remarquables.',
       rating: 5,
-      avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&h=100&fit=crop&crop=face',
+      avatar: 'https://via.placeholder.com/100x100/667eea/ffffff?text=MD',
       company: 'TechCorp',
       imageLoaded: false
     },
@@ -29,7 +29,7 @@ export class TestimonialSliderComponent implements OnInit, OnDestroy {
       role: 'Directeur Marketing, InnovateLab',
       content: 'Un thème professionnel et moderne qui correspond parfaitement à notre image de marque. Je le recommande vivement !',
       rating: 5,
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
+      avatar: 'https://via.placeholder.com/100x100/764ba2/ffffff?text=JM',
       company: 'InnovateLab',
       imageLoaded: false
     },
@@ -39,7 +39,7 @@ export class TestimonialSliderComponent implements OnInit, OnDestroy {
       role: 'Fondatrice, CreativeStudio',
       content: 'La personnalisation est incroyablement facile. En quelques heures, nous avions un site parfaitement adapté à nos besoins.',
       rating: 5,
-      avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face',
+      avatar: 'https://via.placeholder.com/100x100/f093fb/ffffff?text=SL',
       company: 'CreativeStudio',
       imageLoaded: false
     },
@@ -49,7 +49,7 @@ export class TestimonialSliderComponent implements OnInit, OnDestroy {
       role: 'CTO, DigitalAgency',
       content: 'Code propre, documentation excellente, et support réactif. Tout ce qu\'on peut attendre d\'un thème premium.',
       rating: 5,
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face',
+      avatar: 'https://via.placeholder.com/100x100/4facfe/ffffff?text=PM',
       company: 'DigitalAgency',
       imageLoaded: false
     }

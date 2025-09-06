@@ -66,9 +66,7 @@ export class ContactComponent implements OnInit, AfterViewInit {
   onSubmit(): void {
     // Here you can add form submission logic
     // For demo purposes, we'll show a success message
-    if (typeof window !== 'undefined') {
-      alert('Thank you for your message! We will get back to you as soon as possible.');
-    }
+    this.showSuccessMessage();
     
     // Reset form
     this.contactForm = {
@@ -78,5 +76,57 @@ export class ContactComponent implements OnInit, AfterViewInit {
       subject: '',
       message: ''
     };
+  }
+
+  private showSuccessMessage(): void {
+    // Create a custom success notification instead of alert
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 16px 24px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 10000;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      max-width: 300px;
+      animation: slideIn 0.3s ease-out;
+    `;
+    
+    notification.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 18px;">✅</span>
+        <span>Thank you for your message! We will get back to you soon.</span>
+      </div>
+    `;
+    
+    // Add animation keyframes
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+    `;
+    document.head.appendChild(style);
+    
+    document.body.appendChild(notification);
+    
+    // Remove notification after 4 seconds
+    setTimeout(() => {
+      notification.style.animation = 'slideIn 0.3s ease-out reverse';
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.parentNode.removeChild(notification);
+        }
+        if (style.parentNode) {
+          style.parentNode.removeChild(style);
+        }
+      }, 300);
+    }, 4000);
   }
 }

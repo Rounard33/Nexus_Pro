@@ -93,19 +93,19 @@ export class HomeComponent implements OnInit, AfterViewInit {
       name: 'Marie Dubois',
       role: 'CEO, TechStart',
       content: 'NexusPro a transformé notre présence en ligne. Le design est magnifique et les performances exceptionnelles.',
-      avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face'
+      avatar: 'https://via.placeholder.com/150x150/667eea/ffffff?text=MD'
     },
     {
       name: 'Jean Martin',
       role: 'Directeur Marketing, InnovCorp',
       content: 'Un thème professionnel et facile à personnaliser. Parfait pour nos besoins commerciaux.',
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
+      avatar: 'https://via.placeholder.com/150x150/764ba2/ffffff?text=JM'
     },
     {
       name: 'Sophie Laurent',
       role: 'Designer UX, CreativeStudio',
       content: 'La qualité du code et l\'attention aux détails sont remarquables. Je le recommande vivement.',
-      avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face'
+      avatar: 'https://via.placeholder.com/150x150/f093fb/ffffff?text=SL'
     }
   ];
 

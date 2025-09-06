@@ -304,7 +304,7 @@
 // Stats Section
 .portfolio-stats {
   padding: var(--spacing-3xl) 0;
-  background: var(--primary-600);
+  background: linear-gradient(135deg, var(--primary-600), var(--secondary-600));
   color: white;
   
   .stats-grid {

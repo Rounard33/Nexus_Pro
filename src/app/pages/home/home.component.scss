@@ -613,3 +613,23 @@
     }
   }
 }
+
+// Mobile responsive styles for floating cards
+@media (max-width: 768px) {
+  .floating-card {
+    &.card-1 {
+      top: 0;
+      left: 10%;
+    }
+
+    &.card-2 {
+      top: 30%;
+      right: 11%;
+    }
+
+    &.card-3 {
+      bottom: 20%;
+      left: 20%;
+    }
+  }
+}

@@ -59,7 +59,7 @@ export class PortfolioComponent implements OnInit, AfterViewInit {
       title: 'E-commerce Moderne',
       category: 'ecommerce',
       description: 'Plateforme e-commerce complète avec panier, paiement et gestion des commandes.',
-      image: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600&h=400&fit=crop',
+      image: 'https://via.placeholder.com/600x400/667eea/ffffff?text=E-commerce+Moderne',
       technologies: ['Angular', 'Node.js', 'MongoDB', 'Stripe'],
       link: '#',
       featured: true
@@ -69,7 +69,7 @@ export class PortfolioComponent implements OnInit, AfterViewInit {
       title: 'Application Mobile Fitness',
       category: 'mobile',
       description: 'App mobile pour le suivi des entraînements et la nutrition.',
-      image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&h=400&fit=crop&crop=center&auto=format&q=80',
+      image: 'https://via.placeholder.com/600x400/764ba2/ffffff?text=Fitness+App',
       technologies: ['React Native', 'Firebase', 'Redux'],
       link: '#',
       featured: false
@@ -79,7 +79,7 @@ export class PortfolioComponent implements OnInit, AfterViewInit {
       title: 'Dashboard Analytics',
       category: 'web',
       description: 'Interface de tableau de bord pour l\'analyse de données en temps réel.',
-      image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=400&fit=crop',
+      image: 'https://via.placeholder.com/600x400/f093fb/ffffff?text=Dashboard+Analytics',
       technologies: ['Vue.js', 'D3.js', 'Express', 'PostgreSQL'],
       link: '#',
       featured: true
@@ -89,7 +89,7 @@ export class PortfolioComponent implements OnInit, AfterViewInit {
       title: 'Design System',
       category: 'design',
       description: 'Système de design complet avec composants réutilisables.',
-      image: 'https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=600&h=400&fit=crop',
+      image: 'https://via.placeholder.com/600x400/4facfe/ffffff?text=Design+System',
       technologies: ['Figma', 'Storybook', 'CSS'],
       link: '#',
       featured: false
@@ -99,7 +99,7 @@ export class PortfolioComponent implements OnInit, AfterViewInit {
       title: 'Plateforme SaaS',
       category: 'web',
       description: 'Application SaaS de gestion de projet avec collaboration en temps réel.',
-      image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&h=400&fit=crop',
+      image: 'https://via.placeholder.com/600x400/00d2ff/ffffff?text=SaaS+Platform',
       technologies: ['Angular', 'Socket.io', 'Redis', 'AWS'],
       link: '#',
       featured: true
@@ -109,7 +109,7 @@ export class PortfolioComponent implements OnInit, AfterViewInit {
       title: 'App de Livraison',
       category: 'mobile',
       description: 'Application mobile pour la livraison de repas avec géolocalisation.',
-      image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&h=400&fit=crop&crop=center&auto=format&q=80',
+      image: 'https://via.placeholder.com/600x400/ff9a9e/ffffff?text=Delivery+App',
       technologies: ['Flutter', 'Google Maps', 'Firebase'],
       link: '#',
       featured: false
