@@ -50,6 +50,7 @@
   background: linear-gradient(135deg, var(--primary-200), var(--secondary-200));
   opacity: 0.1;
   animation: float 6s ease-in-out infinite;
+  will-change: transform;
 
   &.shape-1 {
     width: 300px;

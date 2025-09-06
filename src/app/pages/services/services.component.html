@@ -1,0 +1,63 @@
+<!-- Hero Section -->
+<section class="services-hero">
+  <div class="container">
+    <div class="hero-content">
+      <h1 class="hero-title animate-on-scroll">Nos Services</h1>
+      <p class="hero-description animate-on-scroll">
+        Des solutions complètes pour tous vos besoins digitaux
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- Services Grid -->
+<section class="services-grid-section">
+  <div class="container">
+    <div class="services-grid">
+      <div class="service-card stagger-item hover-lift hover-glow" *ngFor="let service of services; let i = index">
+        <div class="service-icon animate-scale-in">{{ service.icon }}</div>
+        <h3 class="service-title">{{ service.title }}</h3>
+        <p class="service-description">{{ service.description }}</p>
+        <div class="service-features">
+          <span class="feature-tag" *ngFor="let feature of service.features">{{ feature }}</span>
+        </div>
+        <div class="service-price">{{ service.price }}</div>
+        <a href="/contact" class="btn btn-primary hover-scale">Demander un devis</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Process Section -->
+<section class="process">
+  <div class="container">
+    <div class="section-header animate-on-scroll">
+      <h2>Notre Processus</h2>
+      <p>Une approche méthodique pour garantir le succès de votre projet</p>
+    </div>
+    
+    <div class="process-grid">
+      <div class="process-step stagger-item" *ngFor="let step of process; let i = index">
+        <div class="step-number">{{ step.step }}</div>
+        <div class="step-content">
+          <h3>{{ step.title }}</h3>
+          <p>{{ step.description }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta">
+  <div class="container">
+    <div class="cta-content animate-on-scroll">
+      <h2>Prêt à démarrer votre projet ?</h2>
+      <p>Contactez-nous pour une consultation gratuite</p>
+      <div class="cta-buttons">
+        <a href="/contact" class="btn btn-primary">Commencer maintenant</a>
+        <a href="/portfolio" class="btn btn-outline">Voir nos réalisations</a>
+      </div>
+    </div>
+  </div>
+</section>

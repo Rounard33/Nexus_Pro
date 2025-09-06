@@ -1,20 +1,60 @@
 import {CommonModule} from '@angular/common';
-import {Component} from '@angular/core';
+import {AfterViewInit, Component, OnInit} from '@angular/core';
 import {RouterModule} from '@angular/router';
 import {AnimatedCounterComponent} from '../../components/animated-counter/animated-counter.component';
+import {AnimatedStatsComponent} from '../../components/animated-stats/animated-stats.component';
+import {CtaSectionComponent} from '../../components/cta-section/cta-section.component';
 import {ParticlesComponent} from '../../components/particles/particles.component';
 import {PortfolioComponent} from '../../components/portfolio/portfolio.component';
 import {PricingComponent} from '../../components/pricing/pricing.component';
-import {TestimonialCarouselComponent} from '../../components/testimonial-carousel/testimonial-carousel.component';
+import {TestimonialSliderComponent} from '../../components/testimonial-slider/testimonial-slider.component';
+import {AnimationService} from '../../services/animation.service';
+import {ParallaxService} from '../../services/parallax.service';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, RouterModule, ParticlesComponent, AnimatedCounterComponent, TestimonialCarouselComponent, PricingComponent, PortfolioComponent],
+  imports: [CommonModule, RouterModule, ParticlesComponent, AnimatedCounterComponent, AnimatedStatsComponent, CtaSectionComponent, TestimonialSliderComponent, PricingComponent, PortfolioComponent],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss'
 })
-export class HomeComponent {
+export class HomeComponent implements OnInit, AfterViewInit {
+  constructor(
+    private animationService: AnimationService,
+    private parallaxService: ParallaxService
+  ) {}
+
+  ngOnInit(): void {
+    // Initialization logic
+  }
+
+  ngAfterViewInit(): void {
+    // Initialize animations after view is ready
+    setTimeout(() => {
+      this.initAnimations();
+    }, 100);
+  }
+
+  private initAnimations(): void {
+    // Initialize scroll animations
+    const scrollElements = document.querySelectorAll('.animate-on-scroll');
+    scrollElements.forEach(el => {
+      this.animationService.observeElement(el);
+    });
+
+    // Initialize stagger animations
+    const staggerElements = document.querySelectorAll('.stagger-item');
+    staggerElements.forEach(el => {
+      this.animationService.observeElement(el);
+    });
+
+    // Initialize parallax elements
+    const parallaxElements = document.querySelectorAll('.parallax-element');
+    parallaxElements.forEach(el => {
+      this.parallaxService.addParallaxElement(el);
+    });
+  }
+
   features = [
     {
       icon: 'design',

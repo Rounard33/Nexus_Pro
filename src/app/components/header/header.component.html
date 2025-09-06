@@ -12,19 +12,19 @@
       <nav class="nav" [class.nav-open]="isMenuOpen">
         <ul class="nav-list">
           <li class="nav-item">
-            <a routerLink="/" routerLinkActive="active" class="nav-link" (click)="closeMenu()">Accueil</a>
+            <a routerLink="/home" [class.active]="isActiveRoute('/home')" class="nav-link" (click)="onNavClick()">Accueil</a>
           </li>
           <li class="nav-item">
-            <a routerLink="/about" routerLinkActive="active" class="nav-link" (click)="closeMenu()">À propos</a>
+            <a routerLink="/about" [class.active]="isActiveRoute('/about')" class="nav-link" (click)="onNavClick()">À propos</a>
           </li>
           <li class="nav-item">
-            <a routerLink="/services" routerLinkActive="active" class="nav-link" (click)="closeMenu()">Services</a>
+            <a routerLink="/services" [class.active]="isActiveRoute('/services')" class="nav-link" (click)="onNavClick()">Services</a>
           </li>
           <li class="nav-item">
-            <a routerLink="/portfolio" routerLinkActive="active" class="nav-link" (click)="closeMenu()">Portfolio</a>
+            <a routerLink="/portfolio" [class.active]="isActiveRoute('/portfolio')" class="nav-link" (click)="onNavClick()">Portfolio</a>
           </li>
           <li class="nav-item">
-            <a routerLink="/contact" routerLinkActive="active" class="nav-link" (click)="closeMenu()">Contact</a>
+            <a routerLink="/contact" [class.active]="isActiveRoute('/contact')" class="nav-link" (click)="onNavClick()">Contact</a>
           </li>
         </ul>
       </nav>

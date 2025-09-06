@@ -2,9 +2,9 @@
 <section class="hero">
   <div class="hero-background">
     <div class="hero-shapes">
-      <div class="shape shape-1"></div>
-      <div class="shape shape-2"></div>
-      <div class="shape shape-3"></div>
+      <div class="shape shape-1 parallax-element parallax-slow" data-parallax-speed="0.3"></div>
+      <div class="shape shape-2 parallax-element parallax-fast" data-parallax-speed="0.5"></div>
+      <div class="shape shape-3 parallax-element parallax-reverse" data-parallax-speed="0.2"></div>
     </div>
     <app-particles></app-particles>
   </div>
@@ -67,7 +67,7 @@
 <!-- Features Section -->
 <section id="features" class="features">
   <div class="container">
-    <div class="section-header text-center">
+    <div class="section-header text-center animate-on-scroll">
       <h2 class="section-title">Pourquoi choisir NexusPro ?</h2>
       <p class="section-description">
         Découvrez les fonctionnalités qui font de NexusPro le choix idéal pour vos projets
@@ -75,7 +75,7 @@
     </div>
     
     <div class="features-grid">
-      <div class="feature-card card animate-fade-in-up" *ngFor="let feature of features">
+      <div class="feature-card card stagger-item hover-lift hover-glow" *ngFor="let feature of features">
         <div class="feature-icon">
           <div class="icon-wrapper">
             <span class="icon">{{ getFeatureIcon(feature.icon) }}</span>
@@ -87,6 +87,9 @@
     </div>
   </div>
 </section>
+
+<!-- Animated Stats Section -->
+<app-animated-stats></app-animated-stats>
 
 <!-- About Section -->
 <section class="about">
@@ -151,28 +154,17 @@
       </p>
     </div>
     
-    <app-testimonial-carousel [testimonials]="testimonials"></app-testimonial-carousel>
+    <app-testimonial-slider></app-testimonial-slider>
   </div>
 </section>
 
 <!-- Portfolio Section -->
-<app-portfolio></app-portfolio>
+<section id="portfolio">
+  <app-portfolio></app-portfolio>
+</section>
 
 <!-- Pricing Section -->
 <app-pricing></app-pricing>
 
 <!-- CTA Section -->
-<section class="cta">
-  <div class="container">
-    <div class="cta-content text-center">
-      <h2 class="cta-title">Prêt à commencer votre projet ?</h2>
-      <p class="cta-description">
-        Téléchargez NexusPro dès aujourd'hui et créez des expériences web exceptionnelles
-      </p>
-      <div class="cta-actions">
-        <a href="#" class="btn btn-primary btn-lg">Télécharger maintenant</a>
-        <a href="#" class="btn btn-outline btn-lg">Voir la démo</a>
-      </div>
-    </div>
-  </div>
-</section>
+<app-cta-section></app-cta-section>
