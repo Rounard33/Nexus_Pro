@@ -19,8 +19,9 @@ export class TestimonialSliderComponent implements OnInit, OnDestroy {
       role: 'CEO, TechCorp',
       content: 'NexusPro a transformé notre présence digitale. Le design est exceptionnel et les performances sont remarquables.',
       rating: 5,
-      avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face',
-      company: 'TechCorp'
+      avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&h=100&fit=crop&crop=face',
+      company: 'TechCorp',
+      imageLoaded: false
     },
     {
       id: 2,
@@ -29,7 +30,8 @@ export class TestimonialSliderComponent implements OnInit, OnDestroy {
       content: 'Un thème professionnel et moderne qui correspond parfaitement à notre image de marque. Je le recommande vivement !',
       rating: 5,
       avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
-      company: 'InnovateLab'
+      company: 'InnovateLab',
+      imageLoaded: false
     },
     {
       id: 3,
@@ -38,7 +40,8 @@ export class TestimonialSliderComponent implements OnInit, OnDestroy {
       content: 'La personnalisation est incroyablement facile. En quelques heures, nous avions un site parfaitement adapté à nos besoins.',
       rating: 5,
       avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face',
-      company: 'CreativeStudio'
+      company: 'CreativeStudio',
+      imageLoaded: false
     },
     {
       id: 4,
@@ -47,7 +50,8 @@ export class TestimonialSliderComponent implements OnInit, OnDestroy {
       content: 'Code propre, documentation excellente, et support réactif. Tout ce qu\'on peut attendre d\'un thème premium.',
       rating: 5,
       avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face',
-      company: 'DigitalAgency'
+      company: 'DigitalAgency',
+      imageLoaded: false
     }
   ];
 
@@ -83,8 +87,13 @@ export class TestimonialSliderComponent implements OnInit, OnDestroy {
     this.currentIndex = index;
   }
 
-  onImageError(event: any): void {
+  onImageError(event: any, testimonial: any): void {
+    testimonial.imageLoaded = false;
     event.target.style.display = 'none';
+  }
+
+  onImageLoad(testimonial: any): void {
+    testimonial.imageLoaded = true;
   }
 
   getStars(rating: number): number[] {

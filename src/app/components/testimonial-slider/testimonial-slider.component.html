@@ -24,8 +24,13 @@
 
           <div class="testimonial-author">
             <div class="author-avatar">
-              <img [src]="testimonial.avatar" [alt]="testimonial.name" (error)="onImageError($event)">
-              <div class="avatar-fallback" [style.display]="testimonial.avatar ? 'none' : 'flex'">
+              <img 
+                [src]="testimonial.avatar" 
+                [alt]="testimonial.name" 
+                (load)="onImageLoad(testimonial)"
+                (error)="onImageError($event, testimonial)"
+                [style.display]="testimonial.imageLoaded ? 'block' : 'none'">
+              <div class="avatar-fallback" [style.display]="!testimonial.imageLoaded ? 'flex' : 'none'">
                 {{ testimonial.name.charAt(0) }}
               </div>
             </div>
