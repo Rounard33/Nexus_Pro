@@ -4,7 +4,7 @@
       <!-- Logo -->
       <div class="logo">
         <a routerLink="/" class="logo-link">
-          <span class="logo-text">NexusPro</span>
+          <span class="logo-text">Reiki avec Pauline</span>
         </a>
       </div>
 
@@ -24,47 +24,32 @@
         
         <ul class="nav-list">
           <li class="nav-item">
-            <a routerLink="/home" [class.active]="isActiveRoute('/home')" class="nav-link" (click)="onNavClick()">
-              <span class="nav-icon">🏠</span>
+            <a href="#home" class="nav-link" (click)="smoothScrollToSection('home', $event)">
               <span class="nav-text">Accueil</span>
             </a>
           </li>
           <li class="nav-item">
-            <a routerLink="/about" [class.active]="isActiveRoute('/about')" class="nav-link" (click)="onNavClick()">
-              <span class="nav-icon">👥</span>
-              <span class="nav-text">À propos</span>
+            <a href="#about" class="nav-link" (click)="smoothScrollToSection('about', $event)">
+              <span class="nav-text">Qui suis-je</span>
             </a>
           </li>
           <li class="nav-item">
-            <a routerLink="/services" [class.active]="isActiveRoute('/services')" class="nav-link" (click)="onNavClick()">
-              <span class="nav-icon">🛠️</span>
-              <span class="nav-text">Services</span>
+            <a href="#prestations" class="nav-link" (click)="smoothScrollToSection('prestations', $event)">
+              <span class="nav-text">Prestations</span>
             </a>
           </li>
           <li class="nav-item">
-            <a routerLink="/portfolio" [class.active]="isActiveRoute('/portfolio')" class="nav-link" (click)="onNavClick()">
-              <span class="nav-icon">💼</span>
-              <span class="nav-text">Portfolio</span>
+            <a href="#creations" class="nav-link" (click)="smoothScrollToSection('creations', $event)">
+              <span class="nav-text">Créations</span>
             </a>
           </li>
           <li class="nav-item">
             <a routerLink="/contact" [class.active]="isActiveRoute('/contact')" class="nav-link" (click)="onNavClick()">
-              <span class="nav-icon">📞</span>
               <span class="nav-text">Contact</span>
             </a>
           </li>
         </ul>
-        
-        <!-- Mobile Actions -->
-        <div class="mobile-actions" *ngIf="isMenuOpen">
-          <app-theme-toggle></app-theme-toggle>
-        </div>
       </nav>
-
-      <!-- Header Actions -->
-      <div class="header-actions">
-        <app-theme-toggle></app-theme-toggle>
-      </div>
 
       <!-- Mobile Menu Toggle -->
       <button 

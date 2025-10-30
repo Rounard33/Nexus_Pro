@@ -1,0 +1,460 @@
+// Portfolio Hero
+.portfolio-hero {
+  padding: var(--spacing-3xl) 0;
+  background: linear-gradient(135deg, var(--primary-50), var(--secondary-50));
+  text-align: center;
+  
+  .hero-title {
+    font-size: var(--font-size-4xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-lg);
+  }
+  
+  .hero-description {
+    font-size: var(--font-size-lg);
+    color: var(--text-secondary);
+    max-width: 600px;
+    margin: 0 auto;
+  }
+}
+
+// Featured Projects
+.featured-projects {
+  padding: var(--spacing-3xl) 0;
+  
+  .section-header {
+    text-align: center;
+    margin-bottom: var(--spacing-3xl);
+    
+    h2 {
+      font-size: var(--font-size-3xl);
+      font-weight: var(--font-weight-bold);
+      color: var(--text-primary);
+      margin-bottom: var(--spacing-md);
+    }
+    
+    p {
+      font-size: var(--font-size-lg);
+    }
+  }
+  
+  .featured-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: var(--spacing-xl);
+  }
+  
+  .featured-card {
+    background: var(--card-bg);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--gray-200);
+    transition: all 0.3s ease;
+    
+    &:hover {
+      transform: translateY(-8px);
+      box-shadow: var(--shadow-2xl);
+    }
+    
+    .project-image {
+      position: relative;
+      height: 250px;
+      overflow: hidden;
+      
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+      }
+      
+      .project-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        
+        .project-actions {
+          display: flex;
+          gap: var(--spacing-md);
+        }
+      }
+      
+      &:hover {
+        img {
+          transform: scale(1.05);
+        }
+        
+        .project-overlay {
+          opacity: 1;
+        }
+      }
+    }
+    
+    .project-content {
+      padding: var(--spacing-xl);
+      
+      .project-category {
+        font-size: var(--font-size-sm);
+        color: var(--primary-600);
+        font-weight: var(--font-weight-semibold);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: var(--spacing-sm);
+      }
+      
+      .project-title {
+        font-size: var(--font-size-xl);
+        font-weight: var(--font-weight-bold);
+        color: var(--text-primary);
+        margin-bottom: var(--spacing-md);
+      }
+      
+      .project-description {
+        color: var(--text-secondary);
+        line-height: 1.6;
+        margin-bottom: var(--spacing-lg);
+      }
+      
+      .project-technologies {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--spacing-xs);
+        
+        .tech-tag {
+          background: var(--gray-100);
+          color: var(--text-secondary);
+          padding: var(--spacing-xs) var(--spacing-sm);
+          border-radius: var(--radius-md);
+          font-size: var(--font-size-xs);
+          font-weight: var(--font-weight-medium);
+          border: 1px solid var(--gray-200);
+        }
+      }
+    }
+  }
+}
+
+// All Projects
+.all-projects {
+  padding: var(--spacing-3xl) 0;
+  background: var(--gray-50);
+  
+  .section-header {
+    text-align: center;
+    margin-bottom: var(--spacing-xl);
+    
+    h2 {
+      font-size: var(--font-size-3xl);
+      font-weight: var(--font-weight-bold);
+      color: var(--text-primary);
+      margin-bottom: var(--spacing-md);
+    }
+    
+    p {
+      font-size: var(--font-size-lg);
+    }
+  }
+  
+  .filter-buttons {
+    display: flex;
+    justify-content: center;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-3xl);
+    flex-wrap: wrap;
+    
+    .filter-btn {
+      padding: var(--spacing-sm) var(--spacing-lg);
+      border: 1px solid var(--gray-300);
+      background: var(--card-bg);
+      color: var(--text-secondary);
+      border-radius: var(--radius-lg);
+      font-weight: var(--font-weight-medium);
+      transition: all 0.3s ease;
+      cursor: pointer;
+      
+      &:hover {
+        border-color: var(--primary-500);
+        color: var(--primary-600);
+      }
+      
+      &.active {
+        background: var(--primary-600);
+        color: white;
+        border-color: var(--primary-600);
+      }
+    }
+  }
+  
+  .projects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--spacing-xl);
+  }
+  
+  .project-card {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--gray-200);
+    transition: all 0.3s ease;
+    
+    &:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+    }
+    
+    .project-image {
+      position: relative;
+      height: 200px;
+      overflow: hidden;
+      
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+      }
+      
+      .project-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        
+        .project-actions {
+          display: flex;
+          gap: var(--spacing-sm);
+        }
+      }
+      
+      &:hover {
+        img {
+          transform: scale(1.05);
+        }
+        
+        .project-overlay {
+          opacity: 1;
+        }
+      }
+    }
+    
+    .project-content {
+      padding: var(--spacing-lg);
+      
+      .project-category {
+        font-size: var(--font-size-xs);
+        color: var(--primary-600);
+        font-weight: var(--font-weight-semibold);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: var(--spacing-xs);
+      }
+      
+      .project-title {
+        font-size: var(--font-size-lg);
+        font-weight: var(--font-weight-semibold);
+        color: var(--text-primary);
+        margin-bottom: var(--spacing-sm);
+      }
+      
+      .project-description {
+        color: var(--text-secondary);
+        line-height: 1.5;
+        font-size: var(--font-size-sm);
+        margin-bottom: var(--spacing-md);
+      }
+      
+      .project-technologies {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--spacing-xs);
+        
+        .tech-tag {
+          background: var(--gray-100);
+          color: var(--text-secondary);
+          padding: 2px var(--spacing-xs);
+          border-radius: var(--radius-sm);
+          font-size: 10px;
+          font-weight: var(--font-weight-medium);
+          border: 1px solid var(--gray-200);
+        }
+      }
+    }
+  }
+}
+
+// Stats Section
+.portfolio-stats {
+  padding: var(--spacing-3xl) 0;
+  background: linear-gradient(135deg, var(--primary-600), var(--secondary-600));
+  color: white;
+  
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-xl);
+    text-align: center;
+  }
+  
+  .stat-item {
+    .stat-number {
+      font-size: var(--font-size-4xl);
+      font-weight: var(--font-weight-bold);
+      margin-bottom: var(--spacing-sm);
+    }
+    
+    .stat-label {
+      font-size: var(--font-size-lg);
+      opacity: 0.9;
+    }
+  }
+}
+
+// CTA Section
+.cta {
+  padding: var(--spacing-3xl) 0;
+  background: var(--gray-50);
+  text-align: center;
+  
+  .cta-content {
+    h2 {
+      font-size: var(--font-size-3xl);
+      font-weight: var(--font-weight-bold);
+      color: var(--text-primary);
+      margin-bottom: var(--spacing-md);
+    }
+    
+    p {
+      font-size: var(--font-size-lg);
+      color: var(--text-secondary);
+      margin-bottom: var(--spacing-xl);
+    }
+    
+    .cta-buttons {
+      display: flex;
+      gap: var(--spacing-md);
+      justify-content: center;
+      flex-wrap: wrap;
+      
+      .btn {
+        padding: var(--spacing-md) var(--spacing-xl);
+        border-radius: var(--radius-md);
+        text-decoration: none;
+        font-weight: var(--font-weight-medium);
+        transition: all 0.3s ease;
+        
+        &.btn-primary {
+          background: var(--primary-600);
+          color: white;
+          
+          &:hover {
+            background: var(--primary-700);
+          }
+        }
+        
+        &.btn-outline {
+          border: 1px solid var(--primary-600);
+          color: var(--primary-600);
+          
+          &:hover {
+            background: var(--primary-600);
+            color: white;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Dark theme
+.dark {
+  .portfolio-hero {
+    background: linear-gradient(135deg, var(--gray-800), var(--gray-900));
+  }
+  
+  .all-projects {
+    background: var(--gray-900);
+  }
+  
+  .cta {
+    background: var(--gray-900);
+  }
+  
+  .featured-card,
+  .project-card {
+    border-color: var(--gray-700);
+    
+    .project-technologies .tech-tag {
+      background: var(--gray-800);
+      border-color: var(--gray-600);
+    }
+  }
+  
+  .filter-btn {
+    background: var(--gray-800);
+    border-color: var(--gray-600);
+    color: var(--text-primary);
+    
+    &:hover {
+      border-color: var(--primary-500);
+    }
+  }
+}
+
+// Image Fallback Styles
+.image-fallback {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, var(--primary-100), var(--secondary-100));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  .fallback-content {
+    text-align: center;
+    color: var(--primary-600);
+    
+    svg {
+      margin-bottom: var(--spacing-sm);
+      opacity: 0.7;
+    }
+    
+    span {
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+      display: block;
+    }
+  }
+}
+
+// Dark theme for image fallback
+.dark {
+  .image-fallback {
+    background: linear-gradient(135deg, var(--gray-800), var(--gray-700));
+    
+    .fallback-content {
+      color: var(--primary-400);
+    }
+  }
+}

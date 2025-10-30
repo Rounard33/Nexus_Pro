@@ -1,0 +1,170 @@
+<!-- Hero Section -->
+<section class="hero">
+  <div class="hero-background">
+    <div class="hero-shapes">
+      <div class="shape shape-1 parallax-element parallax-slow" data-parallax-speed="0.3"></div>
+      <div class="shape shape-2 parallax-element parallax-fast" data-parallax-speed="0.5"></div>
+      <div class="shape shape-3 parallax-element parallax-reverse" data-parallax-speed="0.2"></div>
+    </div>
+    <app-particles></app-particles>
+  </div>
+  
+  <div class="container">
+    <div class="hero-content">
+      <div class="hero-text">
+        <h1 class="hero-title animate-fade-in-up">
+          Créez des expériences digitales
+          <span class="text-gradient">exceptionnelles</span>
+        </h1>
+        <p class="hero-description animate-fade-in-up">
+          NexusPro est un thème Angular professionnel et moderne, parfaitement adapté 
+          pour créer des sites web d'entreprise, portfolios et applications commerciales.
+        </p>
+        <div class="hero-actions animate-fade-in-up">
+          <a href="#" class="btn btn-primary btn-lg">Commencer maintenant</a>
+          <a href="#features" class="btn btn-outline btn-lg">Découvrir</a>
+        </div>
+        <div class="hero-stats animate-fade-in-up">
+          <div class="stat-item" *ngFor="let stat of stats">
+            <app-animated-counter 
+              [targetValue]="stat.number.replace('+', '').replace('%', '')" 
+              [suffix]="stat.number.includes('+') ? '+' : stat.number.includes('%') ? '%' : ''"
+              [startAnimation]="true">
+            </app-animated-counter>
+            <span class="stat-label">{{ stat.label }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="hero-visual animate-fade-in-right">
+        <div class="hero-image">
+          <div class="floating-card card-1">
+            <div class="card-content">
+              <div class="card-icon">🎨</div>
+              <h4>Design Moderne</h4>
+              <p>Interface élégante</p>
+            </div>
+          </div>
+          <div class="floating-card card-2">
+            <div class="card-content">
+              <div class="card-icon">⚡</div>
+              <h4>Performance</h4>
+              <p>Chargement rapide</p>
+            </div>
+          </div>
+          <div class="floating-card card-3">
+            <div class="card-content">
+              <div class="card-icon">📱</div>
+              <h4>Responsive</h4>
+              <p>Mobile-first</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features Section -->
+<section id="features" class="features">
+  <div class="container">
+    <div class="section-header text-center animate-on-scroll">
+      <h2 class="section-title">Pourquoi choisir NexusPro ?</h2>
+      <p class="section-description">
+        Découvrez les fonctionnalités qui font de NexusPro le choix idéal pour vos projets
+      </p>
+    </div>
+    
+    <div class="features-grid">
+      <div class="feature-card card stagger-item hover-lift hover-glow" *ngFor="let feature of features">
+        <div class="feature-icon">
+          <div class="icon-wrapper">
+            <span class="icon">{{ getFeatureIcon(feature.icon) }}</span>
+          </div>
+        </div>
+        <h3 class="feature-title">{{ feature.title }}</h3>
+        <p class="feature-description">{{ feature.description }}</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Animated Stats Section -->
+<app-animated-stats></app-animated-stats>
+
+<!-- About Section -->
+<section class="about">
+  <div class="container">
+    <div class="about-content">
+      <div class="about-text">
+        <h2 class="section-title">À propos de NexusPro</h2>
+        <p class="about-description">
+          NexusPro est né de la passion pour créer des expériences web exceptionnelles. 
+          Notre équipe d'experts a développé ce thème en pensant aux besoins réels des 
+          développeurs et designers modernes.
+        </p>
+        <div class="about-features">
+          <div class="about-feature">
+            <div class="feature-check">✓</div>
+            <span>Code propre et bien documenté</span>
+          </div>
+          <div class="about-feature">
+            <div class="feature-check">✓</div>
+            <span>Composants réutilisables</span>
+          </div>
+          <div class="about-feature">
+            <div class="feature-check">✓</div>
+            <span>Optimisé pour les performances</span>
+          </div>
+          <div class="about-feature">
+            <div class="feature-check">✓</div>
+            <span>Support et documentation</span>
+          </div>
+        </div>
+        <div class="about-actions">
+          <a href="#" class="btn btn-primary">En savoir plus</a>
+          <a href="#" class="btn btn-outline">Voir la documentation</a>
+        </div>
+      </div>
+      <div class="about-visual">
+        <div class="code-preview">
+          <div class="code-header">
+            <div class="code-dots">
+              <span class="dot red"></span>
+              <span class="dot yellow"></span>
+              <span class="dot green"></span>
+            </div>
+            <span class="code-title">nexuspro.component.ts</span>
+          </div>
+          <div class="code-content">
+            <pre><code></code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Testimonials Section -->
+<section class="testimonials">
+  <div class="container">
+    <div class="section-header text-center">
+      <h2 class="section-title">Ce que disent nos clients</h2>
+      <p class="section-description">
+        Découvrez les témoignages de nos clients satisfaits
+      </p>
+    </div>
+    
+    <app-testimonial-slider></app-testimonial-slider>
+  </div>
+</section>
+
+<!-- Portfolio Section -->
+<section id="portfolio">
+  <app-portfolio></app-portfolio>
+</section>
+
+<!-- Pricing Section -->
+<app-pricing></app-pricing>
+
+<!-- CTA Section -->
+<app-cta-section></app-cta-section>
