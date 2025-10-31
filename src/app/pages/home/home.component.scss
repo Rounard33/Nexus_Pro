@@ -593,9 +593,15 @@
   overflow: hidden;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
   background: var(--gray-200);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  position: relative;
+  width: 100%;
+}
+
+.map-iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
 }
 
 .map-placeholder {
@@ -708,12 +714,14 @@
   font-weight: 400;
   color: var(--primary-900);
   margin-bottom: 0.25rem;
+  line-height: 1.4;
 }
 
 .author-role {
   font-size: 0.95rem;
   color: var(--gray-600);
   font-weight: 300;
+  line-height: 1.4;
 }
 
 // Section FAQ
@@ -928,9 +936,125 @@
 // Responsive Design
 @media (max-width: 768px) {
   .prestations-grid,
-  .creations-grid,
+  .creations-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .testimonials-carousel-wrapper {
+    max-width: 100%;
+  }
+
+  .testimonial-card {
+    padding: 2rem;
+  }
+
+  .prestations {
+    padding: 3rem 0;
+  }
+
+  .prestation-card {
+    border-radius: 16px;
+  }
+
+  .prestation-image-wrapper {
+    height: 180px;
+  }
+
+  .prestation-info {
+    padding: 1.5rem;
+  }
+
+  .prestation-name {
+    font-size: 1.25rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .prestation-price {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .prestation-price-option {
+    font-size: 1rem;
+  }
+
+  .prestation-at-home,
+  .prestation-duration {
+    font-size: 0.875rem;
+  }
+
+  .prestation-btn {
+    padding: 0.875rem 1.5rem;
+    font-size: 0.95rem;
+  }
+
+  .prestation-overlay {
+    padding: 1.5rem;
+  }
+
+  .prestation-description {
+    font-size: 0.9rem;
+    line-height: 1.6;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+  }
+
+  .creations {
+    padding: 3rem 0;
+  }
+
+  .creation-card {
+    border-radius: 16px;
+  }
+
+  .creation-image {
+    height: 180px;
+  }
+
+  .creation-info {
+    padding: 1.5rem;
+  }
+
+  .testimonials {
+    padding: 3rem 0;
+  }
+
   .testimonials-grid {
     grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .testimonial-card {
+    padding: 2rem;
+    border-radius: 16px;
+  }
+
+  .quote-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+  }
+
+  .testimonial-text {
+    font-size: 1rem;
+    line-height: 1.7;
+  }
+
+  .testimonial-author {
+    padding-top: 1.25rem;
+  }
+
+  .author-avatar {
+    width: 50px;
+    height: 50px;
+  }
+
+  .author-name {
+    font-size: 1rem;
+  }
+
+  .author-role {
+    font-size: 0.875rem;
   }
 
   .hero {
@@ -944,6 +1068,51 @@
 
   .section-title {
     font-size: 2rem;
+  }
+
+  .section-header {
+    margin-bottom: 2.5rem;
+  }
+}
+
+// Extra small screens
+@media (max-width: 480px) {
+  .prestations-grid,
+  .creations-grid {
+    gap: 1.25rem;
+  }
+
+  .prestations {
+    padding: 2.5rem 0;
+  }
+
+  .prestation-image-wrapper {
+    height: 160px;
+  }
+
+  .prestation-info {
+    padding: 1.25rem;
+  }
+
+  .prestation-name {
+    font-size: 1.125rem;
+  }
+
+  .prestation-price {
+    font-size: 1.375rem;
+  }
+
+  .prestation-btn {
+    padding: 0.75rem 1.25rem;
+    font-size: 0.9rem;
+  }
+
+  .section-header {
+    margin-bottom: 2rem;
+  }
+
+  .section-title {
+    font-size: 1.75rem;
   }
 }
 

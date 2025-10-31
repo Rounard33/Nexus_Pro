@@ -252,6 +252,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+
   private initHeroAnimations() {
     if (!this.heroTitle || !this.heroDescription || !this.heroActions) return;
 
