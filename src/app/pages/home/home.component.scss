@@ -642,6 +642,20 @@
   flex-shrink: 0;
 }
 
+.info-link {
+  color: var(--primary-700);
+  text-decoration: underline;
+  text-decoration-color: rgba(139, 122, 98, 0.3);
+  text-underline-offset: 3px;
+  transition: all 0.3s ease;
+  font-weight: 400;
+
+  &:hover {
+    color: var(--primary-800);
+    text-decoration-color: var(--primary-700);
+  }
+}
+
 // Section Témoignages
 .testimonials {
   padding: 6rem 0;

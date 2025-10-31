@@ -1,4 +1,4 @@
-# 🚀 NexusPro - Professional Angular Theme
+# 🚀 La couleur de l'Aura
 
 <div align="center">
   <img src="preview-images/01-homepage.jpg" alt="NexusPro Theme Preview" width="800">

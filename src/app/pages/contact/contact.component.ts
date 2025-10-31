@@ -1,15 +1,17 @@
 import {CommonModule} from '@angular/common';
 import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {FormsModule} from '@angular/forms';
+import {ActivatedRoute, NavigationEnd, Router, RouterModule} from '@angular/router';
 import {gsap} from 'gsap';
 import {ScrollTrigger} from 'gsap/ScrollTrigger';
+import {filter} from 'rxjs/operators';
 
 gsap.registerPlugin(ScrollTrigger);
 
 @Component({
   selector: 'app-contact',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './contact.component.html',
   styleUrl: './contact.component.scss'
 })
@@ -19,16 +21,51 @@ export class ContactComponent implements OnInit, AfterViewInit, OnDestroy {
 
   isSubmitting = false;
 
-  constructor(private cdr: ChangeDetectorRef) {}
+  constructor(
+    private cdr: ChangeDetectorRef,
+    private route: ActivatedRoute,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
     window.addEventListener('scroll', this.onWindowScroll.bind(this));
     this.onWindowScroll();
+    
+    // Gérer le scroll vers les fragments d'URL uniquement lors de la navigation
+    this.router.events
+      .pipe(filter(event => event instanceof NavigationEnd))
+      .subscribe(() => {
+        setTimeout(() => this.handleFragment(), 100);
+      });
   }
 
   ngAfterViewInit(): void {
     this.initHeroAnimations();
     this.initScrollAnimations();
+    // Vérifier le fragment au chargement initial (uniquement si présent)
+    setTimeout(() => this.handleFragment(), 300);
+  }
+  
+  private handleFragment(): void {
+    // Récupérer le fragment directement depuis l'URL sans créer d'abonnement
+    const fragment = this.router.url.split('#')[1];
+    
+    // Ne scroller QUE si le fragment est explicitement "horaires"
+    if (fragment === 'horaires') {
+      setTimeout(() => {
+        const element = document.getElementById('horaires');
+        if (element) {
+          const headerHeight = 80;
+          const elementPosition = element.getBoundingClientRect().top + window.pageYOffset;
+          const offsetPosition = elementPosition - headerHeight;
+          
+          window.scrollTo({
+            top: offsetPosition,
+            behavior: 'smooth'
+          });
+        }
+      }, 100);
+    }
   }
 
   ngOnDestroy(): void {

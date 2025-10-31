@@ -178,28 +178,27 @@
     <div class="map-wrapper">
       <div class="map-container" id="map">
         <!-- La carte sera intégrée ici -->
-        <iframe 
-          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d11341.999385515008!2d-0.3684007253709251!3d44.70940928683007!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xd553e182a1a85f5%3A0x3169da5b62ae3c09!2sClos%20du%20Haut%20Barban%2C%2033550%20Langoiran!5e0!3m2!1sen!2sfr!4v1761916049480!5m2!1sen!2sfr" 
-          class="map-iframe"
-          style="border:0;" 
-          allowfullscreen="" 
-          loading="lazy" 
-          referrerpolicy="no-referrer-when-downgrade">
-        </iframe>
+        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d4768.770770331521!2d-0.35903926226946087!3d44.70883326950179!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xd553e22b908ab6f%3A0xe1e9bdb84e6eabc1!2s132%20Rte%20de%20Capian%2C%2033550%20Langoiran!5e0!3m2!1sen!2sfr!4v1761929468759!5m2!1sen!2sfr" 
+        class="map-iframe"
+        style="border:0;" 
+        allowfullscreen="" 
+        loading="lazy" 
+        referrerpolicy="no-referrer-when-downgrade">
+      </iframe>
       </div>
       <div class="map-info">
         <h3>Informations pratiques</h3>
         <div class="info-item">
           <span class="info-icon">📍</span>
-          <span>Adresse: Clos du Haut Barban - 33550 Langoiran</span>
+          <span>Adresse: 132 route de Capian - 33550 Langoiran</span>
         </div>
         <div class="info-item">
           <span class="info-icon">🕒</span>
-          <span>Horaires: Sur rendez-vous</span>
+          <span>Horaires: <a routerLink="/contact" [fragment]="'horaires'" class="info-link">Sur rendez-vous</a></span>
         </div>
         <div class="info-item">
           <span class="info-icon">📞</span>
-          <span>Contact: Via le formulaire de contact</span>
+          <span>Contact: <a routerLink="/contact" class="info-link">Via le formulaire de contact</a></span>
         </div>
       </div>
     </div>
@@ -211,7 +210,7 @@
   <div class="container">
     <div class="section-header">
       <div class="section-badge">Témoignages</div>
-      <h2 class="section-title">Les avis de mes clients</h2>
+      <h2 class="section-title">Leurs témoignages</h2>
       <p class="section-description">
         Découvrez l'expérience de ceux qui m'ont fait confiance
       </p>
