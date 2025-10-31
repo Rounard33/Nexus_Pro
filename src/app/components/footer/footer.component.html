@@ -12,9 +12,7 @@
         </p>
         <div class="social-links">
           <a [href]="link.url" [attr.aria-label]="link.name" class="social-link" *ngFor="let link of socialLinks">
-            <svg class="social-icon" [attr.data-icon]="link.icon">
-              <!-- Icons will be handled by CSS -->
-            </svg>
+            <img [src]="link.icon" [alt]="link.name" class="social-icon">
           </a>
         </div>
       </div>
@@ -25,16 +23,6 @@
         <ul class="footer-links">
           <li *ngFor="let link of quickLinks">
             <a [routerLink]="link.url" class="footer-link">{{ link.name }}</a>
-          </li>
-        </ul>
-      </div>
-
-      <!-- Services -->
-      <div class="footer-section">
-        <h4 class="footer-title">Services</h4>
-        <ul class="footer-links">
-          <li *ngFor="let service of services">
-            <a [routerLink]="service.url" class="footer-link">{{ service.name }}</a>
           </li>
         </ul>
       </div>

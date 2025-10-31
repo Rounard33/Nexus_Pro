@@ -282,8 +282,26 @@
   }
 }
 
+.about-content {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 5rem;
+  align-items: center;
+  position: relative;
+
+  @media (max-width: 1024px) {
+    grid-template-columns: 1fr;
+    gap: 3rem;
+  }
+}
+
 .about-text {
-  max-width: 600px;
+  max-width: none;
+  padding-left: 2rem;
+  
+  @media (max-width: 1024px) {
+    padding-left: 0;
+  }
 }
 
 .about-description {
@@ -292,6 +310,7 @@
   line-height: 1.9;
   margin-bottom: 1.5rem;
   font-weight: 300;
+  text-align: justify;
 }
 
 .about-actions {
@@ -300,17 +319,36 @@
 
 .about-image {
   position: relative;
-  height: 500px;
-  border-radius: 20px;
-  overflow: hidden;
-  background: var(--gray-200);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: -40px;
+    left: -40px;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, var(--primary-700), var(--primary-800));
+    opacity: 0.1;
+    border-radius: 24px;
+    z-index: 1;
+  }
 
-  @media (max-width: 1024px) {
-    height: 400px;
+  img {
+    position: relative;
+    z-index: 2;
+    display: block;
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    border-radius: 24px;
+    clip-path: polygon(0% 0%, 100% 0%, 85% 100%, 0% 100%);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.12);
+    transition: clip-path 0.4s ease, transform 0.4s ease;
+  }
+
+  &:hover img {
+    clip-path: polygon(0% 0%, 100% 0%, 90% 100%, 0% 100%);
+    transform: translateY(-8px);
   }
 }
 
@@ -372,12 +410,13 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(to bottom, transparent 0%, rgba(74, 63, 53, 0.9) 100%);
+  background: linear-gradient(to bottom, rgba(74, 63, 53, 0.3) 0%, rgba(74, 63, 53, 0.95) 100%);
   display: flex;
   align-items: flex-end;
   padding: 2rem;
   opacity: 0;
   transition: opacity 0.4s ease;
+  backdrop-filter: blur(2px);
 }
 
 .prestation-card:hover .prestation-overlay {
@@ -386,9 +425,17 @@
 
 .prestation-description {
   color: white;
-  font-size: 0.95rem;
-  line-height: 1.6;
+  font-size: 1rem;
+  line-height: 1.7;
   margin: 0;
+  font-weight: 300;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .prestation-info {
@@ -406,12 +453,39 @@
   letter-spacing: -0.01em;
 }
 
+.prestation-details {
+  margin-bottom: 1.5rem;
+}
+
 .prestation-price {
   font-size: 1.75rem;
   font-weight: 400;
   color: var(--primary-800);
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.5rem;
   font-family: var(--font-display);
+}
+
+.prestation-price-option {
+  font-size: 1.125rem;
+  font-weight: 400;
+  color: var(--primary-700);
+  margin-bottom: 0.5rem;
+}
+
+.prestation-at-home {
+  font-size: 1rem;
+  font-weight: 300;
+  color: var(--gray-600);
+  margin-bottom: 0.5rem;
+}
+
+.prestation-duration {
+  font-size: 0.95rem;
+  font-weight: 300;
+  color: var(--gray-600);
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(184, 168, 137, 0.1);
 }
 
 .prestation-btn {
@@ -433,7 +507,7 @@
 }
 
 .creation-card {
-  background: var(--gray-100);
+  background: white;
   border-radius: 20px;
   overflow: hidden;
   box-shadow: 0 5px 25px rgba(0, 0, 0, 0.06);
@@ -485,9 +559,10 @@
 .creations-note {
   text-align: center;
   padding: 2rem;
-  background: var(--gray-100);
+  background: var(--gray-900);
   border-radius: 15px;
   margin-top: 3rem;
+  border: 1px solid var(--gray-600);
 
   p {
     color: var(--gray-700);
@@ -574,7 +649,7 @@
 }
 
 .testimonial-card {
-  background: var(--gray-100);
+  background: var(--gray-900);
   border-radius: 20px;
   padding: 2.5rem;
   transition: all 0.3s ease;

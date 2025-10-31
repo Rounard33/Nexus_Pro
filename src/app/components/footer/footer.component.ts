@@ -13,11 +13,8 @@ export class FooterComponent {
   currentYear = new Date().getFullYear();
 
   socialLinks = [
-    { name: 'Facebook', url: '#', icon: 'facebook' },
-    { name: 'Twitter', url: '#', icon: 'twitter' },
-    { name: 'LinkedIn', url: '#', icon: 'linkedin' },
-    { name: 'Instagram', url: '#', icon: 'instagram' },
-    { name: 'GitHub', url: '#', icon: 'github' }
+    { name: 'Facebook', url: '#', icon: 'assets/icons/facebook.png' },
+    { name: 'Instagram', url: '#', icon: 'assets/icons/instagram.png' },
   ];
 
   quickLinks = [
@@ -26,13 +23,5 @@ export class FooterComponent {
     { name: 'Services', url: '/services' },
     { name: 'Portfolio', url: '/portfolio' },
     { name: 'Contact', url: '/contact' }
-  ];
-
-  services = [
-    { name: 'Développement Web', url: '/services/web-development' },
-    { name: 'Design UI/UX', url: '/services/ui-ux-design' },
-    { name: 'Applications Mobile', url: '/services/mobile-apps' },
-    { name: 'Consultation', url: '/services/consultation' },
-    { name: 'Maintenance', url: '/services/maintenance' }
   ];
 }

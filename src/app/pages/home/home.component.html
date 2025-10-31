@@ -17,8 +17,7 @@
         </div>
         
         <h1 class="hero-title" #heroTitle>
-          <span class="title-line">Reiki</span>
-          <span class="title-line">avec Pauline</span>
+          <span class="title-line">La couleur de l'Aura</span>
         </h1>
         
         <p class="hero-description" #heroDescription>
@@ -57,20 +56,38 @@
     <div class="about-content">
       <div class="about-text">
         <p class="about-description">
-          Passionnée par le bien-être et les médecines douces, je pratique le Reiki avec cœur et bienveillance. 
-          Mon approche personnalisée permet à chacun de retrouver équilibre et sérénité.
+          Après 10 ans passés à travailler dans la finance, des bouleversements dans ma vie personnelle et le sentiment que mes valeurs n’étaient plus en phase avec l’exercice de mon métier,
+          j’ai fait un burn out. 
         </p>
         <p class="about-description">
-          Formée et certifiée, j'accompagne mes clients dans leur cheminement vers une meilleure harmonie 
-          physique, émotionnelle et spirituelle. Chaque séance est un moment unique de détente et de reconnexion.
+          Les épreuves de la vie m’ont poussées à me recentrer sur moi, êtres plus à l’écoute de mon corps et de mes émotions et privilégier ce qui est vraiment important. 
+        </p>
+        <p class="about-description">
+          Je me suis alors tournée vers les soins énergétiques. 
+          La découverte du Reïki a été pour moi une révélation et un réel moyen en accord avec mes valeurs pour prendre soin de moi et des autres.  
+        </p>
+        <p class="about-description">
+          Développer mes ressentis, laisser agir des choses qu’on ne voit pas avec nos yeux. 
+          Cela avait quelque chose de magique. 
+          Découvrir qu’avec mes mains j’arrivais à apaiser et soulager, grâce à l’énergie Reïki avait quelque chose de très satisfaisant.  
+        </p>
+        <p class="about-description">
+          J’avais enfin trouvé cette activité qui raisonne en moi et avec laquelle je me sentais alignée. 
+          Il est donc temps pour moi de me réinventer et d’écrire avec vous ce nouveau chapitre de ma vie. 
+          Me servir de mes expériences de vie pour vous accompagner et vous aider à retrouver la sérénité.  
+        </p>
+        <p class="about-description">
+          Et ce n’est que le début de l’aventure… 
         </p>
         <div class="about-actions">
           <a routerLink="/contact" class="btn btn-outline">Me contacter</a>
         </div>
       </div>
         <div class="about-image">
-          <!-- Placeholder pour l'image de Pauline -->
-          <div class="placeholder-image">Image de Pauline</div>
+          <div class="image-wrapper">
+            <img src="assets/img/pauline.jpg" alt="Pauline">
+          </div>
+          <div class="image-accent"></div>
         </div>
     </div>
   </div>
@@ -83,7 +100,7 @@
       <div class="section-badge">Prestations</div>
       <h2 class="section-title">Mes offres de soins</h2>
       <p class="section-description">
-        Découvrez mes différentes pratiques de Reiki adaptées à vos besoins
+        Découvrez mes différentes prestations de bien-être adaptées à vos besoins
       </p>
     </div>
     
@@ -92,13 +109,24 @@
         <div class="prestation-image-wrapper">
           <div class="prestation-image" [style.background-image]="'url(' + prestation.image + ')'">
             <div class="prestation-overlay">
-              <p class="prestation-description">{{ prestation.description }}</p>
+              <p class="prestation-description">{{ prestation.shortDescription || prestation.description }}</p>
             </div>
           </div>
         </div>
         <div class="prestation-info">
           <h3 class="prestation-name">{{ prestation.name }}</h3>
-          <div class="prestation-price">{{ prestation.price }}</div>
+          <div class="prestation-details">
+            <div class="prestation-price">{{ prestation.price }}</div>
+            <div class="prestation-price-option" *ngIf="prestation.priceOption">
+              {{ prestation.priceOption }}
+            </div>
+            <div class="prestation-at-home" *ngIf="prestation.atHome">
+              {{ prestation.atHome }}
+            </div>
+            <div class="prestation-duration" *ngIf="prestation.duration">
+              Durée : {{ prestation.duration }}
+            </div>
+          </div>
           <button class="btn btn-primary prestation-btn" (click)="openBookingModal(prestation)">
             Réserver un créneau
           </button>
@@ -131,7 +159,7 @@
     </div>
     
     <div class="creations-note">
-      <p>Les créations sont disponibles à domicile. Contactez-moi pour plus d'informations.</p>
+      <p>Venez découvrir sur place les bougies et les bracelets énergétiques. Contactez-moi pour plus d'informations.</p>
     </div>
   </div>
 </section>

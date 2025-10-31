@@ -85,14 +85,14 @@
   justify-content: center;
   width: 40px;
   height: 40px;
-  background: var(--gray-200);
+  background: var(--primary-600);
   border-radius: var(--radius-md);
   color: var(--gray-700);
   transition: all var(--transition-fast);
+  overflow: hidden;
 
   &:hover {
     background: var(--primary-800);
-    color: white;
     transform: translateY(-2px);
   }
 }
@@ -100,7 +100,14 @@
 .social-icon {
   width: 20px;
   height: 20px;
-  fill: currentColor;
+  object-fit: contain;
+  transition: transform var(--transition-fast), filter var(--transition-fast);
+  filter: brightness(0.8);
+}
+
+.social-link:hover .social-icon {
+  transform: scale(1.1);
+  filter: brightness(1.2);
 }
 
 .contact-info {

@@ -1,8 +1,10 @@
 import {CommonModule} from '@angular/common';
-import {AfterViewInit, Component, OnInit} from '@angular/core';
+import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {FormsModule} from '@angular/forms';
-import {AnimationService} from '../../services/animation.service';
-import {ParallaxService} from '../../services/parallax.service';
+import {gsap} from 'gsap';
+import {ScrollTrigger} from 'gsap/ScrollTrigger';
+
+gsap.registerPlugin(ScrollTrigger);
 
 @Component({
   selector: 'app-contact',
@@ -11,100 +13,101 @@ import {ParallaxService} from '../../services/parallax.service';
   templateUrl: './contact.component.html',
   styleUrl: './contact.component.scss'
 })
-export class ContactComponent implements OnInit, AfterViewInit {
-  constructor(
-    private animationService: AnimationService,
-    private parallaxService: ParallaxService
-  ) {}
+export class ContactComponent implements OnInit, AfterViewInit, OnDestroy {
+  @ViewChild('heroTitle') heroTitle!: ElementRef;
+  @ViewChild('heroDescription') heroDescription!: ElementRef;
+
+  isSubmitting = false;
+
+  constructor(private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
-    // Initialization logic
+    window.addEventListener('scroll', this.onWindowScroll.bind(this));
+    this.onWindowScroll();
   }
 
   ngAfterViewInit(): void {
-    // Initialize animations after view is ready
-    setTimeout(() => {
-      this.initAnimations();
-    }, 100);
+    this.initHeroAnimations();
+    this.initScrollAnimations();
   }
 
-  private initAnimations(): void {
-    // Initialize scroll animations
-    const scrollElements = document.querySelectorAll('.animate-on-scroll');
-    scrollElements.forEach(el => {
-      this.animationService.observeElement(el);
-    });
+  ngOnDestroy(): void {
+    ScrollTrigger.getAll().forEach(trigger => trigger.kill());
+    window.removeEventListener('scroll', this.onWindowScroll.bind(this));
+  }
 
-    // Initialize stagger animations
-    const staggerElements = document.querySelectorAll('.stagger-item');
-    staggerElements.forEach(el => {
-      this.animationService.observeElement(el);
-    });
+  private onWindowScroll(): void {
+    // Scroll handling if needed
   }
 
   contactInfo = {
-    email: 'contact@nexuspro.com',
-    phone: '+33 1 23 45 67 89',
-    address: '123 Rue de la Tech, 75001 Paris, France'
+    email: 'contact@lacouleurdelaura.com',
+    phone: '+33 6 12 34 56 78',
+    address: 'Adresse à définir, France'
   };
 
   socialLinks = [
-    { name: 'LinkedIn', url: '#', icon: '💼' },
-    { name: 'Twitter', url: '#', icon: '🐦' },
-    { name: 'GitHub', url: '#', icon: '💻' },
-    { name: 'Instagram', url: '#', icon: '📷' }
+    { name: 'Facebook', url: '#', icon: 'assets/icons/facebook.png' },
+    { name: 'Instagram', url: '#', icon: 'assets/icons/instagram.png' }
   ];
 
   contactForm = {
     name: '',
     email: '',
-    company: '',
+    phone: '',
     subject: '',
     message: ''
   };
 
   onSubmit(): void {
-    // Here you can add form submission logic
-    // For demo purposes, we'll show a success message
-    this.showSuccessMessage();
+    if (this.isSubmitting) return;
     
-    // Reset form
-    this.contactForm = {
-      name: '',
-      email: '',
-      company: '',
-      subject: '',
-      message: ''
-    };
+    this.isSubmitting = true;
+    this.cdr.detectChanges();
+    
+    // Simulate form submission
+    setTimeout(() => {
+      this.showSuccessMessage();
+      
+      // Reset form
+      this.contactForm = {
+        name: '',
+        email: '',
+        phone: '',
+        subject: '',
+        message: ''
+      };
+      
+      this.isSubmitting = false;
+      this.cdr.detectChanges();
+    }, 1500);
   }
 
   private showSuccessMessage(): void {
-    // Create a custom success notification instead of alert
     const notification = document.createElement('div');
     notification.style.cssText = `
       position: fixed;
       top: 20px;
       right: 20px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, var(--primary-700), var(--primary-800));
       color: white;
-      padding: 16px 24px;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      padding: 1.5rem 2rem;
+      border-radius: 50px;
+      box-shadow: 0 10px 40px rgba(139, 122, 98, 0.3);
       z-index: 10000;
-      font-family: 'Inter', sans-serif;
-      font-size: 14px;
-      max-width: 300px;
-      animation: slideIn 0.3s ease-out;
+      font-family: inherit;
+      font-size: 1rem;
+      max-width: 350px;
+      animation: slideIn 0.4s ease-out;
     `;
     
     notification.innerHTML = `
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <span style="font-size: 18px;">✅</span>
-        <span>Thank you for your message! We will get back to you soon.</span>
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <span style="font-size: 1.5rem;">✓</span>
+        <span>Merci pour votre message ! Je vous répondrai dans les plus brefs délais.</span>
       </div>
     `;
     
-    // Add animation keyframes
     const style = document.createElement('style');
     style.textContent = `
       @keyframes slideIn {
@@ -116,9 +119,8 @@ export class ContactComponent implements OnInit, AfterViewInit {
     
     document.body.appendChild(notification);
     
-    // Remove notification after 4 seconds
     setTimeout(() => {
-      notification.style.animation = 'slideIn 0.3s ease-out reverse';
+      notification.style.animation = 'slideIn 0.4s ease-out reverse';
       setTimeout(() => {
         if (notification.parentNode) {
           notification.parentNode.removeChild(notification);
@@ -126,7 +128,71 @@ export class ContactComponent implements OnInit, AfterViewInit {
         if (style.parentNode) {
           style.parentNode.removeChild(style);
         }
-      }, 300);
-    }, 4000);
+      }, 400);
+    }, 5000);
+  }
+
+  private initHeroAnimations(): void {
+    if (!this.heroTitle || !this.heroDescription) return;
+
+    const tl = gsap.timeline({ delay: 0.5 });
+    
+    tl.from('.hero-badge', {
+      duration: 0.8,
+      y: -30,
+      opacity: 0,
+      ease: "power2.out"
+    });
+
+    tl.from(this.heroTitle.nativeElement.querySelectorAll('.title-line'), {
+      duration: 1.2,
+      y: 50,
+      opacity: 0,
+      ease: "power3.out",
+      stagger: 0.2
+    }, "-=0.4");
+
+    tl.from(this.heroDescription.nativeElement, {
+      duration: 1,
+      y: 30,
+      opacity: 0,
+      ease: "power2.out"
+    }, "-=0.6");
+  }
+
+  private initScrollAnimations(): void {
+    gsap.utils.toArray('.contact-form-wrapper, .contact-info-card, .hours-card').forEach((element: any) => {
+      gsap.fromTo(element, {
+        y: 50,
+        opacity: 0
+      }, {
+        y: 0,
+        opacity: 1,
+        duration: 0.8,
+        ease: "power2.out",
+        scrollTrigger: {
+          trigger: element,
+          start: "top 85%",
+          toggleActions: "play none none reverse"
+        }
+      });
+    });
+
+    gsap.utils.toArray('.section-title').forEach((element: any) => {
+      gsap.fromTo(element, {
+        x: -50,
+        opacity: 0
+      }, {
+        x: 0,
+        opacity: 1,
+        duration: 1,
+        ease: "power2.out",
+        scrollTrigger: {
+          trigger: element,
+          start: "top 85%",
+          toggleActions: "play none none reverse"
+        }
+      });
+    });
   }
 }
