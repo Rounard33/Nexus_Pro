@@ -108,9 +108,6 @@
       <div class="prestation-card" *ngFor="let prestation of prestations; let i = index">
         <div class="prestation-image-wrapper">
           <div class="prestation-image" [style.background-image]="'url(' + prestation.image + ')'">
-            <div class="prestation-overlay">
-              <p class="prestation-description">{{ prestation.shortDescription || prestation.description }}</p>
-            </div>
           </div>
         </div>
         <div class="prestation-info">
@@ -127,9 +124,14 @@
               Durée : {{ prestation.duration }}
             </div>
           </div>
-          <button class="btn btn-primary prestation-btn" (click)="openBookingModal(prestation)">
-            Réserver un créneau
-          </button>
+          <div class="prestation-buttons">
+            <button class="btn btn-outline prestation-btn-more" (click)="openDetailsModal(prestation)">
+              En savoir plus
+            </button>
+            <button class="btn btn-primary prestation-btn" (click)="openBookingModal(prestation)">
+              Réserver
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -276,6 +278,42 @@
     </div>
   </div>
 </section>
+
+<!-- Modal Détails Prestation -->
+<div class="modal-overlay" *ngIf="selectedPrestation" (click)="closeDetailsModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <button class="modal-close" (click)="closeDetailsModal()" aria-label="Fermer">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M18 6L6 18M6 6l12 12"/>
+      </svg>
+    </button>
+    <div class="modal-header">
+      <h2 class="modal-title">{{ selectedPrestation.name }}</h2>
+    </div>
+    <div class="modal-body">
+      <div class="modal-description">
+        <p>{{ selectedPrestation.description }}</p>
+      </div>
+      <div class="modal-details">
+        <div class="modal-price">{{ selectedPrestation.price }}</div>
+        <div class="modal-price-option" *ngIf="selectedPrestation.priceOption">
+          {{ selectedPrestation.priceOption }}
+        </div>
+        <div class="modal-at-home" *ngIf="selectedPrestation.atHome">
+          {{ selectedPrestation.atHome }}
+        </div>
+        <div class="modal-duration" *ngIf="selectedPrestation.duration">
+          Durée : {{ selectedPrestation.duration }}
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-primary btn-lg" (click)="openBookingModal(selectedPrestation); closeDetailsModal()">
+          Réserver
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- Scroll to Top Button -->
 <button 

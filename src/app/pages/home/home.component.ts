@@ -19,6 +19,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('heroActions') heroActions!: ElementRef;
 
   showScrollTopButton = false;
+  selectedPrestation: any = null;
 
   constructor(private cdr: ChangeDetectorRef) {}
 
@@ -28,6 +29,9 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     window.addEventListener('scroll', this.onWindowScroll.bind(this));
     // Vérifier la position au chargement initial
     this.onWindowScroll();
+    
+    // Écouter la touche Escape pour fermer la modal
+    document.addEventListener('keydown', this.handleEscapeKey.bind(this));
   }
 
   ngAfterViewInit() {
@@ -38,6 +42,13 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnDestroy() {
     ScrollTrigger.getAll().forEach(trigger => trigger.kill());
     window.removeEventListener('scroll', this.onWindowScroll.bind(this));
+    document.removeEventListener('keydown', this.handleEscapeKey.bind(this));
+  }
+  
+  private handleEscapeKey(event: KeyboardEvent): void {
+    if (event.key === 'Escape' && this.selectedPrestation) {
+      this.closeDetailsModal();
+    }
   }
 
   /**
@@ -209,6 +220,20 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       isOpen: false
     }
   ];
+
+  // Méthode pour ouvrir la modal de détails
+  openDetailsModal(prestation: any): void {
+    this.selectedPrestation = prestation;
+    // Empêcher le scroll du body quand la modal est ouverte
+    document.body.style.overflow = 'hidden';
+  }
+
+  // Méthode pour fermer la modal de détails
+  closeDetailsModal(): void {
+    this.selectedPrestation = null;
+    // Réactiver le scroll du body
+    document.body.style.overflow = '';
+  }
 
   // Méthode pour ouvrir la modal de réservation
   openBookingModal(prestation: any): void {
