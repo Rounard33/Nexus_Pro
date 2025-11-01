@@ -91,6 +91,17 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(data));
     }
+    else if (pathname === '/api/opening-hours') {
+      const { data, error } = await supabase
+        .from('opening_hours')
+        .select('*')
+        .eq('is_active', true)
+        .order('display_order', { ascending: true });
+      
+      if (error) throw error;
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(data));
+    }
     else {
       res.writeHead(404, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'Not found' }));
@@ -110,5 +121,6 @@ server.listen(PORT, () => {
   console.log(`   - http://localhost:${PORT}/api/testimonials`);
   console.log(`   - http://localhost:${PORT}/api/faqs`);
   console.log(`   - http://localhost:${PORT}/api/about`);
+  console.log(`   - http://localhost:${PORT}/api/opening-hours`);
 });
 

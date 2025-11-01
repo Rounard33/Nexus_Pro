@@ -21,6 +21,16 @@ export interface Prestation {
   image_url?: string;
 }
 
+export interface OpeningHours {
+  id?: string;
+  day_of_week: number;
+  day_name: string;
+  periods: string;
+  last_appointment?: string;
+  is_active?: boolean;
+  display_order?: number;
+}
+
 export interface Creation {
   id?: string;
   name: string;
@@ -82,6 +92,11 @@ export class ContentService {
   // About
   getAboutContent(): Observable<AboutContent[]> {
     return this.http.get<AboutContent[]>(`${API_URL}/about`);
+  }
+
+  // Horaires d'ouverture
+  getOpeningHours(): Observable<OpeningHours[]> {
+    return this.http.get<OpeningHours[]>(`${API_URL}/opening-hours`);
   }
 }
 

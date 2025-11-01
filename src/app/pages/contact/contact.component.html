@@ -195,36 +195,19 @@
           toute l'attention et le temps nécessaires à votre bien-être.
         </p>
         
-        <div class="hours-list">
-          <div class="hours-item">
-            <span class="hours-day">Lundi</span>
-            <span class="hours-time">9h-13h | 14h-17h</span>
-            <span class="hours-note-small">Dernier rdv 16h</span>
+        <div class="hours-list" *ngIf="!isLoadingHours">
+          <div class="hours-item" *ngFor="let day of openingHours">
+            <span class="hours-day">{{ day.day_name }}</span>
+            <span class="hours-time">{{ day.periods }}</span>
+            <span class="hours-note-small" *ngIf="day.last_appointment">
+              Dernier rdv {{ day.last_appointment }}
+            </span>
           </div>
+        </div>
+        
+        <div class="hours-list" *ngIf="isLoadingHours">
           <div class="hours-item">
-            <span class="hours-day">Mardi</span>
-            <span class="hours-time">9h-13h | 14h-17h</span>
-            <span class="hours-note-small">Dernier rdv 16h</span>
-          </div>
-          <div class="hours-item">
-            <span class="hours-day">Mercredi</span>
-            <span class="hours-time">9h-13h | 14h-19h30</span>
-            <span class="hours-note-small">Dernier rdv 18h30</span>
-          </div>
-          <div class="hours-item">
-            <span class="hours-day">Jeudi</span>
-            <span class="hours-time">9h-13h | 14h-17h</span>
-            <span class="hours-note-small">Dernier rdv 16h</span>
-          </div>
-          <div class="hours-item">
-            <span class="hours-day">Vendredi</span>
-            <span class="hours-time">9h-13h | 14h-19h30</span>
-            <span class="hours-note-small">Dernier rdv 18h30</span>
-          </div>
-          <div class="hours-item">
-            <span class="hours-day">Samedi</span>
-            <span class="hours-time">9h-13h</span>
-            <span class="hours-note-small">Dernier rdv 12h</span>
+            <span class="hours-day">Chargement...</span>
           </div>
         </div>
         

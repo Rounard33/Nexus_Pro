@@ -5,6 +5,7 @@ import {ActivatedRoute, NavigationEnd, Router, RouterModule} from '@angular/rout
 import {gsap} from 'gsap';
 import {ScrollTrigger} from 'gsap/ScrollTrigger';
 import {filter} from 'rxjs/operators';
+import {ContentService, OpeningHours} from '../../services/content.service';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -20,16 +21,33 @@ export class ContactComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('description') description!: ElementRef;
 
   isSubmitting = false;
+  openingHours: OpeningHours[] = [];
+  isLoadingHours = true;
 
   constructor(
     private cdr: ChangeDetectorRef,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private contentService: ContentService
   ) {}
 
   ngOnInit(): void {
     window.addEventListener('scroll', this.onWindowScroll.bind(this));
     this.onWindowScroll();
+
+     this.contentService.getOpeningHours().subscribe({
+      next: (data) => {
+        this.openingHours = data;
+        this.isLoadingHours = false;
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        console.error('Erreur lors du chargement des horaires:', error);
+        this.openingHours = [];
+        this.isLoadingHours = false;
+        this.cdr.detectChanges();
+      }
+    });
     
     // Gérer le scroll vers les fragments d'URL uniquement lors de la navigation
     this.router.events
