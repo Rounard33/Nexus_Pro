@@ -17,10 +17,10 @@
           <h3 class="prestation-name">{{ prestation.name }}</h3>
           <div class="prestation-details">
             <div class="prestation-price">{{ prestation.price }}</div>
-            <div class="prestation-price-option" *ngIf="prestation.priceOption">
+            <div class="prestation-price" *ngIf="prestation.priceOption">
               {{ prestation.priceOption }}
             </div>
-            <div class="prestation-at-home" *ngIf="prestation.atHome">
+            <div class="prestation-price" *ngIf="prestation.atHome">
               {{ prestation.atHome }}
             </div>
             <div class="prestation-duration" *ngIf="prestation.duration">

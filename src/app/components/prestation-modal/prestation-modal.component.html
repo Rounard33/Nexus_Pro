@@ -14,10 +14,10 @@
       </div>
       <div class="modal-details">
         <div class="modal-price">{{ prestation.price }}</div>
-        <div class="modal-price-option" *ngIf="prestation.priceOption">
+        <div class="modal-price" *ngIf="prestation.priceOption">
           {{ prestation.priceOption }}
         </div>
-        <div class="modal-at-home" *ngIf="prestation.atHome">
+        <div class="modal-price" *ngIf="prestation.atHome">
           {{ prestation.atHome }}
         </div>
         <div class="modal-duration" *ngIf="prestation.duration">
