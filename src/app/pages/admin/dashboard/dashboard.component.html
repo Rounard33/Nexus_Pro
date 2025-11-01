@@ -1,0 +1,109 @@
+<div class="dashboard">
+  <h1 class="dashboard-title">Tableau de bord</h1>
+
+  <!-- Statistiques -->
+  <div class="stats-grid" *ngIf="!isLoading">
+    <div class="stat-card">
+      <div class="stat-icon stat-icon-primary">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M12 6v6l4 2"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <h3 class="stat-value">{{ stats.totalThisMonth }}</h3>
+        <p class="stat-label">Rendez-vous ce mois</p>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon stat-icon-warning">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <h3 class="stat-value">{{ stats.pending }}</h3>
+        <p class="stat-label">En attente</p>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon stat-icon-success">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+          <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <h3 class="stat-value">{{ stats.acceptedThisMonth }}</h3>
+        <p class="stat-label">Acceptés ce mois</p>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon stat-icon-danger">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="15" y1="9" x2="9" y2="15"/>
+          <line x1="9" y1="9" x2="15" y2="15"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <h3 class="stat-value">{{ stats.rejectedThisMonth }}</h3>
+        <p class="stat-label">Refusés ce mois</p>
+      </div>
+    </div>
+
+    <div class="stat-card stat-card-large">
+      <div class="stat-icon stat-icon-info">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 3v18h18"/>
+          <path d="M18 7l-5 5-4-4-3 3"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <h3 class="stat-value">{{ getAcceptanceRate() }}%</h3>
+        <p class="stat-label">Taux d'acceptation</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rendez-vous récents -->
+  <div class="recent-section" *ngIf="!isLoading">
+    <div class="section-header">
+      <h2 class="section-title">Prochains rendez-vous</h2>
+      <a routerLink="/admin/appointments" class="view-all-link">Voir tout →</a>
+    </div>
+
+    <div class="recent-list" *ngIf="recentAppointments.length > 0">
+      <div class="recent-item" *ngFor="let appointment of recentAppointments">
+        <div class="recent-info">
+          <h4 class="recent-name">{{ appointment.client_name }}</h4>
+          <p class="recent-details">
+            {{ appointment.prestations?.name || 'Prestation' }} • 
+            {{ appointment.appointment_date }} à {{ appointment.appointment_time }}
+          </p>
+        </div>
+        <div class="recent-status">
+          <span class="status-badge" [class.status-pending]="appointment.status === 'pending'"
+                [class.status-accepted]="appointment.status === 'accepted'"
+                [class.status-rejected]="appointment.status === 'rejected'">
+            {{ appointment.status === 'pending' ? 'En attente' : appointment.status === 'accepted' ? 'Accepté' : 'Refusé' }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="empty-state" *ngIf="recentAppointments.length === 0">
+      <p>Aucun rendez-vous à venir</p>
+    </div>
+  </div>
+
+  <div class="loading-state" *ngIf="isLoading">
+    <p>Chargement...</p>
+  </div>
+</div>
+

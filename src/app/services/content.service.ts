@@ -1,6 +1,8 @@
-import {HttpClient} from '@angular/common/http';
-import {Injectable} from '@angular/core';
-import {Observable} from 'rxjs';
+import {HttpClient, HttpHeaders} from '@angular/common/http';
+import {inject, Injectable} from '@angular/core';
+import {from, Observable} from 'rxjs';
+import {switchMap} from 'rxjs/operators';
+import {AuthService} from './auth.service';
 
 // URL de base de votre API
 // En local avec Vercel CLI : http://localhost:3000/api
@@ -82,7 +84,7 @@ export interface Appointment {
   client_name: string;
   client_email: string;
   client_phone?: string;
-  prestation_id: string;
+  prestation_id: string | null; // Peut être null si non renseigné
   appointment_date: string;
   appointment_time: string;
   status: 'pending' | 'accepted' | 'rejected' | 'cancelled';
@@ -91,13 +93,15 @@ export interface Appointment {
   updated_at?: string;
   prestations?: {
     name: string;
-  };
+  } | null; // Peut être null si la relation n'est pas chargée ou si la prestation n'existe plus
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class ContentService {
+  private authService = inject(AuthService);
+
   constructor(private http: HttpClient) {}
 
   // Prestations
@@ -158,9 +162,28 @@ export class ContentService {
     return this.http.post<Appointment>(`${API_URL}/appointments`, appointment);
   }
 
-  // Mettre à jour un rendez-vous
+  // Mettre à jour un rendez-vous (requiert authentification)
   updateAppointment(id: string, updates: Partial<Appointment>): Observable<Appointment> {
-    return this.http.patch<Appointment>(`${API_URL}/appointments?id=${id}`, updates);
+    return from(this.authService.getSessionToken()).pipe(
+      switchMap(token => {
+        const headers = new HttpHeaders({
+          'Authorization': `Bearer ${token}`
+        });
+        return this.http.patch<Appointment>(`${API_URL}/appointments?id=${id}`, updates, {headers});
+      })
+    );
+  }
+
+  // Mettre à jour les horaires d'ouverture (requiert authentification)
+  updateOpeningHours(id: string, updates: Partial<OpeningHours>): Observable<OpeningHours> {
+    return from(this.authService.getSessionToken()).pipe(
+      switchMap(token => {
+        const headers = new HttpHeaders({
+          'Authorization': `Bearer ${token}`
+        });
+        return this.http.patch<OpeningHours>(`${API_URL}/opening-hours?id=${id}`, updates, {headers});
+      })
+    );
   }
 }
 

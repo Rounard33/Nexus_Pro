@@ -69,7 +69,9 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     this.contentService.getPrestations().subscribe({
       next: (data) => {
         // Transformer les données de la DB vers le format attendu
+        // IMPORTANT : Conserver l'id pour la réservation
         this.prestations = data.map(p => ({
+          id: p.id, // Conserver l'ID pour la réservation
           name: p.name,
           price: p.price || '',
           atHome: p.at_home,

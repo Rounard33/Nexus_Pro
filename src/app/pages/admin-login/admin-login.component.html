@@ -1,0 +1,61 @@
+<div class="login-container">
+  <div class="login-card">
+    <div class="login-header">
+      <h1 class="login-title">Administration</h1>
+      <p class="login-subtitle">Connectez-vous pour gérer les rendez-vous</p>
+    </div>
+
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+      <!-- Message d'erreur -->
+      <div class="error-message" *ngIf="errorMessage">
+        <span>⚠️</span>
+        <p>{{ errorMessage }}</p>
+      </div>
+
+      <!-- Email -->
+      <div class="form-group">
+        <label for="email" class="form-label">Email</label>
+        <input
+          type="email"
+          id="email"
+          formControlName="email"
+          class="form-input"
+          placeholder="admin@example.com"
+          [class.is-invalid]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
+          autocomplete="email">
+        <div class="invalid-feedback" *ngIf="emailError">
+          {{ emailError }}
+        </div>
+      </div>
+
+      <!-- Password -->
+      <div class="form-group">
+        <label for="password" class="form-label">Mot de passe</label>
+        <input
+          type="password"
+          id="password"
+          formControlName="password"
+          class="form-input"
+          placeholder="••••••••"
+          [class.is-invalid]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
+          autocomplete="current-password">
+        <div class="invalid-feedback" *ngIf="passwordError">
+          {{ passwordError }}
+        </div>
+      </div>
+
+      <!-- Submit -->
+      <button
+        type="submit"
+        class="btn btn-primary btn-block"
+        [disabled]="isLoading">
+        {{ isLoading ? 'Connexion...' : 'Se connecter' }}
+      </button>
+    </form>
+
+    <div class="login-footer">
+      <a routerLink="/home" class="back-link">← Retour au site</a>
+    </div>
+  </div>
+</div>
+

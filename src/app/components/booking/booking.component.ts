@@ -323,6 +323,13 @@ export class BookingComponent implements OnInit, OnChanges {
       return;
     }
 
+    // Vérifier que la prestation a un ID
+    if (!this.prestation.id) {
+      console.error('Erreur: La prestation n\'a pas d\'ID', this.prestation);
+      this.errorMessage = 'Erreur: Prestation invalide. Veuillez réessayer.';
+      return;
+    }
+
     // Validation supplémentaire de sécurité
     if (!this.validateFormData()) {
       return;
@@ -338,7 +345,7 @@ export class BookingComponent implements OnInit, OnChanges {
       client_name: formValue.client_name.trim(),
       client_email: formValue.client_email.trim().toLowerCase(),
       client_phone: formValue.client_phone ? formValue.client_phone.trim() : undefined,
-      prestation_id: this.prestation.id!,
+      prestation_id: this.prestation.id, // ID vérifié ci-dessus
       appointment_date: this.selectedDate.toISOString().split('T')[0],
       appointment_time: this.selectedTime,
       status: 'pending',
@@ -427,12 +434,20 @@ export class BookingComponent implements OnInit, OnChanges {
       animation: slideIn 0.4s ease-out;
     `;
     
-    notification.innerHTML = `
-      <div style="display: flex; align-items: center; gap: 0.75rem;">
-        <span style="font-size: 1.5rem;">✓</span>
-        <span>Votre demande de réservation a été envoyée avec succès ! Je vous confirmerai rapidement.</span>
-      </div>
-    `;
+    // Créer le contenu de manière sûre (sans innerHTML pour éviter XSS)
+    const contentDiv = document.createElement('div');
+    contentDiv.style.cssText = 'display: flex; align-items: center; gap: 0.75rem;';
+    
+    const iconSpan = document.createElement('span');
+    iconSpan.style.cssText = 'font-size: 1.5rem;';
+    iconSpan.textContent = '✓';
+    
+    const messageSpan = document.createElement('span');
+    messageSpan.textContent = 'Votre demande de réservation a été envoyée avec succès ! Je vous confirmerai rapidement.';
+    
+    contentDiv.appendChild(iconSpan);
+    contentDiv.appendChild(messageSpan);
+    notification.appendChild(contentDiv);
     
     // Vérifier si le style existe déjà (pour éviter les doublons)
     let style = document.getElementById('booking-notification-style');

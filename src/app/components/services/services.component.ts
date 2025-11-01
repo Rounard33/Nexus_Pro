@@ -3,6 +3,7 @@ import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {SectionHeaderComponent} from '../section-header/section-header.component';
 
 export interface Prestation {
+  id?: string; // ID nécessaire pour la réservation
   name: string;
   price: string;
   atHome?: string;

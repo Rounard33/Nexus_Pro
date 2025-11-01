@@ -1,0 +1,68 @@
+<div class="statistics">
+  <div class="page-header">
+    <h1 class="page-title">Statistiques</h1>
+  </div>
+
+  <div class="loading-state" *ngIf="isLoading">
+    <p>Chargement des statistiques...</p>
+  </div>
+
+  <div *ngIf="!isLoading">
+    <!-- Cartes statistiques -->
+    <div class="stats-grid">
+      <div class="stat-card" *ngFor="let stat of stats" [ngClass]="'stat-' + stat.color">
+        <div class="stat-icon">
+          <svg *ngIf="stat.icon === 'calendar'" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          <svg *ngIf="stat.icon === 'clock'" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 6v6l4 2"/>
+          </svg>
+          <svg *ngIf="stat.icon === 'check'" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+          <svg *ngIf="stat.icon === 'x'" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="15" y1="9" x2="9" y2="15"/>
+            <line x1="9" y1="9" x2="15" y2="15"/>
+          </svg>
+          <svg *ngIf="stat.icon === 'chart'" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 3v18h18"/>
+            <path d="M18 7l-5 5-4-4-3 3"/>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <h3 class="stat-value">{{ stat.value }}</h3>
+          <p class="stat-title">{{ stat.title }}</p>
+          <p class="stat-label">{{ stat.label }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top prestations -->
+    <div class="top-prestations-card">
+      <h2 class="section-title">Prestations les plus réservées</h2>
+      <div class="prestations-list" *ngIf="topPrestations.length > 0">
+        <div class="prestation-item" *ngFor="let item of topPrestations; let i = index">
+          <div class="prestation-rank">#{{ i + 1 }}</div>
+          <div class="prestation-info">
+            <h4 class="prestation-name">{{ item.prestation }}</h4>
+            <div class="prestation-bar">
+              <div class="prestation-fill" [style.width.%]="(item.count / topPrestations[0].count) * 100"></div>
+            </div>
+          </div>
+          <div class="prestation-count">{{ item.count }}</div>
+        </div>
+      </div>
+      <div class="empty-state" *ngIf="topPrestations.length === 0">
+        <p>Aucune prestation réservée ce mois</p>
+      </div>
+    </div>
+  </div>
+</div>
+

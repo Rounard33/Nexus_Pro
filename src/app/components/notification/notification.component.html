@@ -1,0 +1,16 @@
+<div class="notification" [ngClass]="'notification-' + notification.type" role="alert" [attr.aria-live]="notification.type === 'error' ? 'assertive' : 'polite'">
+  <div class="notification-content">
+    <span class="notification-icon">{{ getIcon() }}</span>
+    <span class="notification-message">{{ notification.message }}</span>
+  </div>
+  <button 
+    class="notification-close" 
+    (click)="close()" 
+    aria-label="Fermer la notification"
+    type="button">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M18 6L6 18M6 6l12 12"/>
+    </svg>
+  </button>
+</div>
+

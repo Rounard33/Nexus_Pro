@@ -156,12 +156,20 @@ export class ContactComponent implements OnInit, AfterViewInit, OnDestroy {
       animation: slideIn 0.4s ease-out;
     `;
     
-    notification.innerHTML = `
-      <div style="display: flex; align-items: center; gap: 0.75rem;">
-        <span style="font-size: 1.5rem;">✓</span>
-        <span>Merci pour votre message ! Je vous répondrai dans les plus brefs délais.</span>
-      </div>
-    `;
+    // Créer le contenu de manière sûre (sans innerHTML pour éviter XSS)
+    const contentDiv = document.createElement('div');
+    contentDiv.style.cssText = 'display: flex; align-items: center; gap: 0.75rem;';
+    
+    const iconSpan = document.createElement('span');
+    iconSpan.style.cssText = 'font-size: 1.5rem;';
+    iconSpan.textContent = '✓';
+    
+    const messageSpan = document.createElement('span');
+    messageSpan.textContent = 'Merci pour votre message ! Je vous répondrai dans les plus brefs délais.';
+    
+    contentDiv.appendChild(iconSpan);
+    contentDiv.appendChild(messageSpan);
+    notification.appendChild(contentDiv);
     
     const style = document.createElement('style');
     style.textContent = `
