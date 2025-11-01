@@ -1,0 +1,42 @@
+<!-- Section Prestations -->
+<section class="prestations" id="prestations">
+  <div class="container">
+    <app-section-header 
+      badge="Prestations" 
+      title="Mes offres de soins"
+      description="Découvrez mes différentes prestations de bien-être adaptées à vos besoins">
+    </app-section-header>
+    
+    <div class="prestations-grid">
+      <div class="prestation-card" *ngFor="let prestation of prestations; let i = index">
+        <div class="prestation-image-wrapper">
+          <div class="prestation-image" [style.background-image]="'url(' + prestation.image + ')'">
+          </div>
+        </div>
+        <div class="prestation-info">
+          <h3 class="prestation-name">{{ prestation.name }}</h3>
+          <div class="prestation-details">
+            <div class="prestation-price">{{ prestation.price }}</div>
+            <div class="prestation-price-option" *ngIf="prestation.priceOption">
+              {{ prestation.priceOption }}
+            </div>
+            <div class="prestation-at-home" *ngIf="prestation.atHome">
+              {{ prestation.atHome }}
+            </div>
+            <div class="prestation-duration" *ngIf="prestation.duration">
+              Durée : {{ prestation.duration }}
+            </div>
+          </div>
+          <div class="prestation-buttons">
+            <button class="btn btn-outline prestation-btn-more" (click)="openDetails.emit(prestation)">
+              En savoir plus
+            </button>
+            <button class="btn btn-primary prestation-btn" (click)="openBooking.emit(prestation)">
+              Réserver
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

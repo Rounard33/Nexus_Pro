@@ -1,48 +1,64 @@
 import {CommonModule} from '@angular/common';
-import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnDestroy, OnInit, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, OnDestroy, OnInit} from '@angular/core';
 import {RouterModule} from '@angular/router';
 import {gsap} from 'gsap';
 import {ScrollTrigger} from 'gsap/ScrollTrigger';
+import {AboutComponent} from '../../components/about/about.component';
+import {CtaComponent} from '../../components/cta/cta.component';
+import {FaqComponent, FaqItem} from '../../components/faq/faq.component';
+import {LocationComponent} from '../../components/location/location.component';
+import {PrestationModalComponent} from '../../components/prestation-modal/prestation-modal.component';
+import {Creation, ProductsComponent} from '../../components/products/products.component';
+import {ScrollToTopComponent} from '../../components/scroll-to-top/scroll-to-top.component';
+import {Prestation, ServicesComponent} from '../../components/services/services.component';
+import {Testimonial, TestimonialsComponent} from '../../components/testimonials/testimonials.component';
+import {WelcomeComponent} from '../../components/welcome/welcome.component';
 
 gsap.registerPlugin(ScrollTrigger);
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [
+    CommonModule, 
+    RouterModule,
+    WelcomeComponent,
+    AboutComponent,
+    ServicesComponent,
+    PrestationModalComponent,
+    ProductsComponent,
+    LocationComponent,
+    TestimonialsComponent,
+    FaqComponent,
+    CtaComponent,
+    ScrollToTopComponent
+  ],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss'
 })
 export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
-  @ViewChild('title') title!: ElementRef;
-  @ViewChild('description') description!: ElementRef;
-  @ViewChild('actions') actions!: ElementRef;
+  selectedPrestation: Prestation | null = null;
 
-  showScrollTopButton = false;
-  selectedPrestation: any = null;
-
-  constructor(private cdr: ChangeDetectorRef) {}
+  constructor() {}
 
   ngOnInit() {
-    // Initialisation des animations au chargement
-    // Écoute du scroll pour afficher/masquer le bouton
-    window.addEventListener('scroll', this.onWindowScroll.bind(this));
-    // Vérifier la position au chargement initial
-    this.onWindowScroll();
-    
     // Écouter la touche Escape pour fermer la modal
     document.addEventListener('keydown', this.handleEscapeKey.bind(this));
   }
 
   ngAfterViewInit() {
-    this.initHeroAnimations();
     this.initScrollAnimations();
+    
+    // Empêcher le scroll du body quand la modal est ouverte
+    if (this.selectedPrestation) {
+      document.body.style.overflow = 'hidden';
+    }
   }
 
   ngOnDestroy() {
     ScrollTrigger.getAll().forEach(trigger => trigger.kill());
-    window.removeEventListener('scroll', this.onWindowScroll.bind(this));
     document.removeEventListener('keydown', this.handleEscapeKey.bind(this));
+    document.body.style.overflow = '';
   }
   
   private handleEscapeKey(event: KeyboardEvent): void {
@@ -51,30 +67,8 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  /**
-   * Gère l'affichage du bouton scroll to top selon la position du scroll
-   */
-  private onWindowScroll(): void {
-    const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
-    const shouldShow = scrollPosition > 300;
-    if (this.showScrollTopButton !== shouldShow) {
-      this.showScrollTopButton = shouldShow;
-      this.cdr.detectChanges(); // Force la détection de changement pour les événements hors zone Angular
-    }
-  }
-
-  /**
-   * Remonte en haut de la page avec un scroll smooth
-   */
-  scrollToTop(): void {
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    });
-  }
-
   // Données pour les prestations
-  prestations = [
+  prestations: Prestation[] = [
     {
       name: 'Reiki Usui',
       price: '50€',
@@ -144,7 +138,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   ];
 
   // Données pour les créations
-  creations = [
+  creations: Creation[] = [
     {
       name: 'Petites bougies - Les Roses',
       price: '8€',
@@ -166,7 +160,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   ];
 
   // Données pour les témoignages
-  testimonials = [
+  testimonials: Testimonial[] = [
     {
       name: 'Marie D.',
       role: 'Cliente',
@@ -188,7 +182,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   ];
 
   // Données pour la FAQ
-  faqs = [
+  faqs: FaqItem[] = [
     {
       question: 'Qu\'est-ce que le Reiki ?',
       answer: 'Le Reiki est une méthode de guérison énergétique d\'origine japonaise qui vise à harmoniser le corps et l\'esprit par l\'apposition des mains. Il favorise la détente et aide à libérer les blocages énergétiques.',
@@ -222,50 +216,29 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   ];
 
   // Méthode pour ouvrir la modal de détails
-  openDetailsModal(prestation: any): void {
+  openDetailsModal(prestation: Prestation): void {
     this.selectedPrestation = prestation;
-    // Empêcher le scroll du body quand la modal est ouverte
     document.body.style.overflow = 'hidden';
   }
 
   // Méthode pour fermer la modal de détails
   closeDetailsModal(): void {
     this.selectedPrestation = null;
-    // Réactiver le scroll du body
     document.body.style.overflow = '';
   }
 
   // Méthode pour ouvrir la modal de réservation
-  openBookingModal(prestation: any): void {
-    // TODO: Implémenter l'ouverture de la modal avec le calendrier
+  openBookingModal(prestation: Prestation): void {
     console.log('Ouverture modal de réservation pour:', prestation.name);
-    // Cette fonctionnalité sera implémentée avec FullCalendar plus tard
     alert(`Réservation pour "${prestation.name}" - Fonctionnalité à venir avec le calendrier`);
-  }
-
-  // Méthode pour toggle FAQ
-  toggleFaq(index: number): void {
-    this.faqs[index].isOpen = !this.faqs[index].isOpen;
-  }
-
-  // Méthode pour gérer les erreurs d'image
-  onImageError(event: any, name: string): void {
-    event.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=f5f1e8&color=6f5f4e&size=150`;
   }
 
   /**
    * Effectue un scroll smooth vers une section de la page
-   * @param sectionId L'ID de la section vers laquelle scroll
-   * @param event L'événement de clic (optionnel)
    */
-  scrollToSection(sectionId: string, event?: Event): void {
-    if (event) {
-      event.preventDefault();
-    }
-
+  scrollToSection(sectionId: string): void {
     const element = document.getElementById(sectionId);
     if (element) {
-      // Calcule la position de l'élément en tenant compte du header fixe
       const headerHeight = 80;
       const elementPosition = element.getBoundingClientRect().top + window.pageYOffset;
       const offsetPosition = elementPosition - headerHeight;
@@ -275,46 +248,6 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
         behavior: 'smooth'
       });
     }
-  }
-
-
-  private initHeroAnimations() {
-    if (!this.title || !this.description || !this.actions) return;
-
-    const tl = gsap.timeline({ delay: 0.5 });
-    
-    // Animation du badge
-    tl.from('.badge', {
-      duration: 0.8,
-      y: -30,
-      opacity: 0,
-      ease: "power2.out"
-    });
-
-    // Animation du titre
-    tl.from(this.title.nativeElement.querySelectorAll('.title-line'), {
-      duration: 1.2,
-      y: 50,
-      opacity: 0,
-      ease: "power3.out",
-      stagger: 0.2
-    }, "-=0.4");
-
-    // Animation de la description
-    tl.from(this.description.nativeElement, {
-      duration: 1,
-      y: 30,
-      opacity: 0,
-      ease: "power2.out"
-    }, "-=0.6");
-
-    // Animation des boutons
-    tl.from(this.actions.nativeElement, {
-      duration: 0.8,
-      y: 30,
-      opacity: 0,
-      ease: "power2.out"
-    }, "-=0.4");
   }
 
   private initScrollAnimations() {

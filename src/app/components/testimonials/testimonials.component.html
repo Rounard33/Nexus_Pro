@@ -1,0 +1,28 @@
+<!-- Section Témoignages -->
+<section class="testimonials" id="testimonials">
+  <div class="container">
+    <app-section-header 
+      badge="Témoignages" 
+      title="Leurs témoignages"
+      description="Découvrez l'expérience de ceux qui m'ont fait confiance">
+    </app-section-header>
+    
+    <div class="testimonials-grid">
+      <div class="testimonial-card" *ngFor="let testimonial of testimonials; let i = index">
+        <div class="testimonial-content">
+          <div class="quote-icon">"</div>
+          <p class="testimonial-text">{{ testimonial.text }}</p>
+        </div>
+        <div class="testimonial-author">
+          <div class="author-avatar">
+            <img [src]="testimonial.avatar" [alt]="testimonial.name" (error)="onImageError($event, testimonial.name)">
+          </div>
+          <div class="author-info">
+            <div class="author-name">{{ testimonial.name }}</div>
+            <div class="author-role">{{ testimonial.role }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

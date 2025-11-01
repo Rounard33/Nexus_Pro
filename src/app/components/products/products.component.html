@@ -1,0 +1,25 @@
+<!-- Section Créations -->
+<section class="creations" id="creations">
+  <div class="container">
+    <app-section-header 
+      badge="Créations" 
+      title="Mes créations à domicile"
+      description="Découvrez mes créations artisanales inspirées du bien-être">
+    </app-section-header>
+    
+    <div class="creations-grid">
+      <div class="creation-card" *ngFor="let creation of creations; let i = index">
+        <div class="creation-image" [style.background-image]="'url(' + creation.image + ')'"></div>
+        <div class="creation-info">
+          <h3 class="creation-name">{{ creation.name }}</h3>
+          <p class="creation-description">{{ creation.description }}</p>
+          <div class="creation-price">{{ creation.price }}</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="creations-note">
+      <p>Venez découvrir sur place les bougies et les bracelets énergétiques. Contactez-moi pour plus d'informations.</p>
+    </div>
+  </div>
+</section>

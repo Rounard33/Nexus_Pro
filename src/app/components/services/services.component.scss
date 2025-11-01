@@ -1,0 +1,235 @@
+.prestations {
+  padding: 6rem 0;
+  background: var(--primary-200);
+}
+
+.prestations-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2.5rem;
+  
+  @media (max-width: 1024px) {
+    gap: 2rem;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  }
+  
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+  }
+}
+
+.prestation-card {
+  background: white;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 5px 25px rgba(0, 0, 0, 0.06);
+  transition: all 0.4s ease;
+  display: flex;
+  flex-direction: column;
+
+  &:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.prestation-image-wrapper {
+  position: relative;
+  width: 100%;
+  height: 250px;
+  overflow: hidden;
+}
+
+.prestation-image {
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  transition: transform 0.4s ease;
+}
+
+.prestation-card:hover .prestation-image {
+  transform: scale(1.1);
+}
+
+.prestation-info {
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.prestation-name {
+  font-size: 1.5rem;
+  font-weight: 400;
+  color: var(--primary-900);
+  margin-bottom: 1rem;
+  letter-spacing: -0.01em;
+}
+
+.prestation-details {
+  margin-bottom: 1.5rem;
+}
+
+.prestation-price {
+  font-size: 1.75rem;
+  font-weight: 400;
+  color: var(--primary-800);
+  margin-bottom: 0.5rem;
+  font-family: var(--font-display);
+}
+
+.prestation-price-option {
+  font-size: 1.125rem;
+  font-weight: 400;
+  color: var(--primary-700);
+  margin-bottom: 0.5rem;
+}
+
+.prestation-at-home {
+  font-size: 1rem;
+  font-weight: 300;
+  color: var(--gray-600);
+  margin-bottom: 0.5rem;
+}
+
+.prestation-duration {
+  font-size: 0.95rem;
+  font-weight: 300;
+  color: var(--gray-600);
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(184, 168, 137, 0.1);
+}
+
+.prestation-buttons {
+  margin-top: auto;
+  display: flex;
+  gap: 0.75rem;
+  
+  @media (max-width: 1024px) {
+    gap: 0.5rem;
+  }
+  
+  @media (max-width: 480px) {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+}
+
+.prestation-btn-more,
+.prestation-btn {
+  flex: 1;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.9rem;
+  border-radius: 40px;
+  
+  @media (max-width: 1024px) {
+    padding: 0.625rem 1rem;
+    font-size: 0.85rem;
+    white-space: nowrap;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.875rem 1.5rem;
+    font-size: 0.95rem;
+  }
+}
+
+.btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 40px;
+  font-size: 0.9rem;
+  font-weight: 400;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  display: inline-block;
+}
+
+.btn-primary {
+  background-color: var(--primary-700);
+  color: white;
+  box-shadow: 0 4px 15px rgba(139, 122, 98, 0.2);
+
+  &:hover {
+    background-color: var(--primary-800);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(139, 122, 98, 0.3);
+  }
+}
+
+.btn-outline {
+  background-color: transparent;
+  color: var(--primary-700);
+  border: 2px solid var(--primary-700);
+
+  &:hover {
+    background-color: var(--primary-700);
+    color: white;
+    transform: translateY(-2px);
+  }
+}
+
+@media (max-width: 768px) {
+  .prestations {
+    padding: 3rem 0;
+  }
+
+  .prestation-card {
+    border-radius: 16px;
+  }
+
+  .prestation-image-wrapper {
+    height: 180px;
+  }
+
+  .prestation-info {
+    padding: 1.5rem;
+  }
+
+  .prestation-name {
+    font-size: 1.25rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .prestation-price {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .prestation-price-option {
+    font-size: 1rem;
+  }
+
+  .prestation-at-home,
+  .prestation-duration {
+    font-size: 0.875rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .prestations {
+    padding: 2.5rem 0;
+  }
+
+  .prestation-image-wrapper {
+    height: 160px;
+  }
+
+  .prestation-info {
+    padding: 1.25rem;
+  }
+
+  .prestation-name {
+    font-size: 1.125rem;
+  }
+
+  .prestation-price {
+    font-size: 1.375rem;
+  }
+}
+

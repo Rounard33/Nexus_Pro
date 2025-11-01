@@ -1,0 +1,46 @@
+<!-- Welcome Section - Accueil Bienveillant -->
+<section class="main" id="home">
+  <div class="background">
+    <img src="assets/img/reiki.jpg" alt="Reiki" />
+    <div class="gradient"></div>
+    <div class="shapes">
+      <div class="shape shape-1"></div>
+      <div class="shape shape-2"></div>
+    </div>
+  </div>
+  
+  <div class="container">
+    <div class="content">
+      <div class="text">
+        <div class="badge">
+          <span class="badge-text">Bienvenue</span>
+        </div>
+        
+        <h1 class="title" #title>
+          <span class="title-line">La couleur de l'Aura</span>
+        </h1>
+        
+        <p class="description" #description>
+          Retrouvez l'harmonie et la sérénité grâce à la pratique du Reiki. 
+          Une approche douce et bienveillante pour votre bien-être.
+        </p>
+        
+        <div class="actions" #actions>
+          <a href="#prestations" class="btn btn-primary btn-lg" (click)="scrollToSection('prestations', $event)">
+            <span class="btn-text">Découvrir les prestations</span>
+          </a>
+          <a href="#about" class="btn btn-outline btn-lg" (click)="scrollToSection('about', $event)">
+            <span class="btn-text">En savoir plus</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="scroll">
+    <div class="scroll-indicator">
+      <div class="scroll-line"></div>
+      <div class="scroll-text">Découvrir</div>
+    </div>
+  </div>
+</section>

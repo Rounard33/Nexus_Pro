@@ -40,7 +40,7 @@ export class ContactComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit(): void {
-    this.initHeroAnimations();
+    this.initWelcomeAnimations();
     this.initScrollAnimations();
     // Vérifier le fragment au chargement initial (uniquement si présent)
     setTimeout(() => this.handleFragment(), 300);
@@ -169,7 +169,7 @@ export class ContactComponent implements OnInit, AfterViewInit, OnDestroy {
     }, 5000);
   }
 
-  private initHeroAnimations(): void {
+  private initWelcomeAnimations(): void {
     if (!this.title || !this.description) return;
 
     const tl = gsap.timeline({ delay: 0.5 });

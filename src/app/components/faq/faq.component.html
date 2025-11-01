@@ -1,0 +1,22 @@
+<!-- Section FAQ -->
+<section class="faq" id="faq">
+  <div class="container">
+    <app-section-header 
+      badge="Questions fréquentes" 
+      title="FAQ"
+      description="Trouvez les réponses aux questions les plus courantes">
+    </app-section-header>
+    
+    <div class="faq-list">
+      <div class="faq-item" *ngFor="let faq of faqs; let i = index">
+        <button class="faq-question" (click)="toggleFaq(i)" [class.active]="faq.isOpen">
+          <span>{{ faq.question }}</span>
+          <span class="faq-icon">{{ faq.isOpen ? '−' : '+' }}</span>
+        </button>
+        <div class="faq-answer" [class.open]="faq.isOpen">
+          <p>{{ faq.answer }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
