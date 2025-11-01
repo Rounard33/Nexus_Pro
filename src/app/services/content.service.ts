@@ -63,6 +63,37 @@ export interface AboutContent {
   display_order?: number;
 }
 
+export interface AvailableSlot {
+  id?: string;
+  day_of_week: number;
+  start_time: string;
+  end_time: string;
+  is_active?: boolean;
+}
+
+export interface BlockedDate {
+  id?: string;
+  blocked_date: string;
+  reason?: string;
+}
+
+export interface Appointment {
+  id?: string;
+  client_name: string;
+  client_email: string;
+  client_phone?: string;
+  prestation_id: string;
+  appointment_date: string;
+  appointment_time: string;
+  status: 'pending' | 'accepted' | 'rejected' | 'cancelled';
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
+  prestations?: {
+    name: string;
+  };
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -97,6 +128,39 @@ export class ContentService {
   // Horaires d'ouverture
   getOpeningHours(): Observable<OpeningHours[]> {
     return this.http.get<OpeningHours[]>(`${API_URL}/opening-hours`);
+  }
+
+  // Créneaux disponibles
+  getAvailableSlots(dayOfWeek?: number): Observable<AvailableSlot[]> {
+    const params: any = {};
+    if (dayOfWeek !== undefined) {
+      params.day_of_week = dayOfWeek.toString();
+    }
+    return this.http.get<AvailableSlot[]>(`${API_URL}/available-slots`, { params });
+  }
+
+  // Dates bloquées
+  getBlockedDates(): Observable<BlockedDate[]> {
+    return this.http.get<BlockedDate[]>(`${API_URL}/blocked-dates`);
+  }
+
+  // Rendez-vous
+  getAppointments(status?: string, startDate?: string, endDate?: string): Observable<Appointment[]> {
+    const params: any = {};
+    if (status) params.status = status;
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+    return this.http.get<Appointment[]>(`${API_URL}/appointments`, { params });
+  }
+
+  // Créer un rendez-vous
+  createAppointment(appointment: Partial<Appointment>): Observable<Appointment> {
+    return this.http.post<Appointment>(`${API_URL}/appointments`, appointment);
+  }
+
+  // Mettre à jour un rendez-vous
+  updateAppointment(id: string, updates: Partial<Appointment>): Observable<Appointment> {
+    return this.http.patch<Appointment>(`${API_URL}/appointments?id=${id}`, updates);
   }
 }
 

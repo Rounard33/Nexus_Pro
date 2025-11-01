@@ -1,0 +1,195 @@
+<div class="modal-overlay" *ngIf="prestation" (click)="onOverlayClick($event)">
+  <div class="modal-content booking-modal" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+    <button class="modal-close" (click)="closeModal()" aria-label="Fermer">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M18 6L6 18M6 6l12 12"/>
+      </svg>
+    </button>
+      <h2 class="modal-title">Réservation : {{ prestation.name }}</h2>
+      <p class="modal-subtitle" *ngIf="prestation.price">Tarif : {{ prestation.price }}</p>
+    </div>
+
+    <div class="modal-body booking-body">
+      <!-- Message de chargement -->
+      <div class="loading-message" *ngIf="isLoading">
+        <p>Chargement des créneaux disponibles...</p>
+      </div>
+
+      <!-- Message d'erreur -->
+      <div class="error-message" *ngIf="errorMessage">
+        <span>⚠️</span>
+        <p>{{ errorMessage }}</p>
+      </div>
+
+      <!-- Formulaire de réservation -->
+      <form [formGroup]="bookingForm" (ngSubmit)="onSubmit()" *ngIf="!isLoading">
+        
+        <!-- Section Calendrier -->
+        <div class="booking-section">
+          <h3 class="section-title">1. Choisissez une date</h3>
+          
+          <div class="calendar-container">
+            <!-- Navigation du calendrier -->
+            <div class="calendar-header">
+              <button type="button" class="calendar-nav-btn" (click)="previousMonth()" aria-label="Mois précédent">
+                ‹
+              </button>
+              <h4 class="calendar-month">
+                {{ months[currentMonth.getMonth()] }} {{ currentMonth.getFullYear() }}
+              </h4>
+              <button type="button" class="calendar-nav-btn" (click)="nextMonth()" aria-label="Mois suivant">
+                ›
+              </button>
+            </div>
+
+            <!-- Grille du calendrier -->
+            <div class="calendar-grid">
+              <!-- En-têtes des jours -->
+              <div class="calendar-weekday" *ngFor="let day of weekDays">
+                {{ day }}
+              </div>
+
+              <!-- Jours du calendrier -->
+              <button
+                type="button"
+                *ngFor="let date of getDaysInMonth()"
+                class="calendar-day"
+                [class.available]="isDateAvailable(date)"
+                [class.selected]="isDateSelected(date)"
+                [class.other-month]="!isCurrentMonth(date)"
+                [disabled]="!isDateAvailable(date)"
+                (click)="selectDate(date)">
+                {{ date.getDate() }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Date sélectionnée -->
+          <div class="selected-date" *ngIf="selectedDate">
+            <strong>Date sélectionnée :</strong>
+            {{ selectedDate.toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) }}
+          </div>
+        </div>
+
+        <!-- Section Heures -->
+        <div class="booking-section" *ngIf="selectedDate">
+          <h3 class="section-title">2. Choisissez une heure</h3>
+          
+          <div class="time-slots" *ngIf="availableTimes.length > 0">
+            <button
+              type="button"
+              *ngFor="let time of availableTimes"
+              class="time-slot"
+              [class.selected]="selectedTime === time"
+              (click)="selectTime(time)">
+              {{ time }}
+            </button>
+          </div>
+
+          <div class="no-times" *ngIf="availableTimes.length === 0">
+            <p>Aucun créneau disponible pour cette date.</p>
+          </div>
+
+          <!-- Heure sélectionnée -->
+          <div class="selected-time" *ngIf="selectedTime">
+            <strong>Heure sélectionnée :</strong> {{ selectedTime }}
+          </div>
+        </div>
+
+        <!-- Section Informations -->
+        <div class="booking-section" *ngIf="selectedDate && selectedTime">
+          <h3 class="section-title">3. Vos informations</h3>
+
+          <!-- Nom -->
+          <div class="form-group">
+            <label for="client_name" class="form-label">
+              Nom complet <span class="required">*</span>
+            </label>
+            <input
+              type="text"
+              id="client_name"
+              formControlName="client_name"
+              class="form-input"
+              [class.error]="bookingForm.get('client_name')?.invalid && bookingForm.get('client_name')?.touched"
+              placeholder="Votre nom"
+              maxlength="100"
+              autocomplete="name">
+            <span class="error-text" *ngIf="clientNameError">{{ clientNameError }}</span>
+          </div>
+
+          <!-- Email -->
+          <div class="form-group">
+            <label for="client_email" class="form-label">
+              Email <span class="required">*</span>
+            </label>
+            <input
+              type="email"
+              id="client_email"
+              formControlName="client_email"
+              class="form-input"
+              [class.error]="bookingForm.get('client_email')?.invalid && bookingForm.get('client_email')?.touched"
+              placeholder="votre@email.com"
+              maxlength="255"
+              autocomplete="email">
+            <span class="error-text" *ngIf="clientEmailError">{{ clientEmailError }}</span>
+          </div>
+
+          <!-- Téléphone -->
+          <div class="form-group">
+            <label for="client_phone" class="form-label">
+              Téléphone (optionnel)
+            </label>
+            <input
+              type="tel"
+              id="client_phone"
+              formControlName="client_phone"
+              class="form-input"
+              [class.error]="bookingForm.get('client_phone')?.invalid && bookingForm.get('client_phone')?.touched"
+              placeholder="06 12 34 56 78"
+              maxlength="20"
+              autocomplete="tel">
+            <span class="error-text" *ngIf="clientPhoneError">{{ clientPhoneError }}</span>
+          </div>
+
+          <!-- Notes -->
+          <div class="form-group">
+            <label for="notes" class="form-label">
+              Notes (optionnel)
+            </label>
+            <textarea
+              id="notes"
+              formControlName="notes"
+              class="form-textarea"
+              placeholder="Informations complémentaires..."
+              maxlength="500"
+              rows="3"></textarea>
+            <span class="char-count">
+              {{ bookingForm.get('notes')?.value?.length || 0 }} / 500
+            </span>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="modal-actions" *ngIf="selectedDate && selectedTime">
+          <button
+            type="button"
+            class="btn btn-outline"
+            (click)="closeModal()"
+            [disabled]="isSubmitting">
+            Annuler
+          </button>
+          <button
+            type="submit"
+            class="btn btn-primary btn-lg"
+            [disabled]="bookingForm.invalid || isSubmitting">
+            <span *ngIf="!isSubmitting">Confirmer la réservation</span>
+            <span *ngIf="isSubmitting">Envoi en cours...</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+

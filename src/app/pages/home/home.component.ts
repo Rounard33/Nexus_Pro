@@ -4,6 +4,7 @@ import {RouterModule} from '@angular/router';
 import {gsap} from 'gsap';
 import {ScrollTrigger} from 'gsap/ScrollTrigger';
 import {AboutComponent} from '../../components/about/about.component';
+import {BookingComponent} from '../../components/booking/booking.component';
 import {CtaComponent} from '../../components/cta/cta.component';
 import {FaqComponent, FaqItem} from '../../components/faq/faq.component';
 import {LocationComponent} from '../../components/location/location.component';
@@ -13,7 +14,7 @@ import {ScrollToTopComponent} from '../../components/scroll-to-top/scroll-to-top
 import {Prestation, ServicesComponent} from '../../components/services/services.component';
 import {Testimonial, TestimonialsComponent} from '../../components/testimonials/testimonials.component';
 import {WelcomeComponent} from '../../components/welcome/welcome.component';
-import {ContentService} from '../../services/content.service';
+import {Appointment, ContentService} from '../../services/content.service';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -32,13 +33,15 @@ gsap.registerPlugin(ScrollTrigger);
     TestimonialsComponent,
     FaqComponent,
     CtaComponent,
-    ScrollToTopComponent
+    ScrollToTopComponent,
+    BookingComponent
   ],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss'
 })
 export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   selectedPrestation: Prestation | null = null;
+  selectedPrestationForBooking: Prestation | null = null;
   
   // Données chargées depuis l'API
   prestations: Prestation[] = [];
@@ -172,8 +175,25 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // Méthode pour ouvrir la modal de réservation
   openBookingModal(prestation: Prestation): void {
-    console.log('Ouverture modal de réservation pour:', prestation.name);
-    alert(`Réservation pour "${prestation.name}" - Fonctionnalité à venir avec le calendrier`);
+    // Fermer la modal de détails si elle est ouverte
+    if (this.selectedPrestation) {
+      this.closeDetailsModal();
+    }
+    this.selectedPrestationForBooking = prestation;
+    document.body.style.overflow = 'hidden';
+  }
+
+  // Fermer la modal de réservation
+  closeBookingModal(): void {
+    this.selectedPrestationForBooking = null;
+    document.body.style.overflow = '';
+  }
+
+  // Gérer le succès de la réservation
+  onBookingSuccess(appointment: Appointment): void {
+    console.log('Réservation créée avec succès:', appointment);
+    // Vous pouvez ajouter ici une notification de succès
+    this.closeBookingModal();
   }
 
   /**

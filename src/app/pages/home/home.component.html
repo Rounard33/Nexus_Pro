@@ -24,4 +24,10 @@
   (book)="openBookingModal($event)">
 </app-prestation-modal>
 
+<app-booking 
+  [prestation]="selectedPrestationForBooking"
+  (close)="closeBookingModal()"
+  (success)="onBookingSuccess($event)">
+</app-booking>
+
 <app-scroll-to-top></app-scroll-to-top>
