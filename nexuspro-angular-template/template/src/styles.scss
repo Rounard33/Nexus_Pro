@@ -389,15 +389,15 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 // Dark theme for sections
-.dark .hero {
+.dark  {
   background: var(--gray-50);
 }
 
-.dark .hero-title {
+.dark .title {
   color: var(--gray-900);
 }
 
-.dark .hero-description {
+.dark .description {
   color: var(--gray-700);
 }
 

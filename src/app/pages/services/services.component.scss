@@ -1,17 +1,17 @@
 // Services Hero
-.services-hero {
+.services {
   padding: var(--spacing-3xl) 0;
   background: linear-gradient(135deg, var(--primary-50), var(--secondary-50));
   text-align: center;
   
-  .hero-title {
+  .title {
     font-size: var(--font-size-4xl);
     font-weight: var(--font-weight-bold);
     color: var(--text-primary);
     margin-bottom: var(--spacing-lg);
   }
   
-  .hero-description {
+  .description {
     font-size: var(--font-size-lg);
     color: var(--text-secondary);
     max-width: 600px;
@@ -232,7 +232,7 @@
 
 // Dark theme
 .dark {
-  .services-hero {
+  .services {
     background: linear-gradient(135deg, var(--gray-800), var(--gray-900));
   }
   

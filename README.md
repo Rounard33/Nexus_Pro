@@ -104,7 +104,7 @@ features = [
 ### Images
 Replace images in `src/assets/images/`:
 - `logo.png` - Your logo
-- `hero-bg.jpg` - Hero background image
+- `bg.jpg` - Hero background image
 - `about-image.jpg` - About section image
 
 ## 📱 Responsive Design

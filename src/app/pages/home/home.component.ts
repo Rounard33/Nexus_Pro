@@ -14,9 +14,9 @@ gsap.registerPlugin(ScrollTrigger);
   styleUrl: './home.component.scss'
 })
 export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
-  @ViewChild('heroTitle') heroTitle!: ElementRef;
-  @ViewChild('heroDescription') heroDescription!: ElementRef;
-  @ViewChild('heroActions') heroActions!: ElementRef;
+  @ViewChild('title') title!: ElementRef;
+  @ViewChild('description') description!: ElementRef;
+  @ViewChild('actions') actions!: ElementRef;
 
   showScrollTopButton = false;
   selectedPrestation: any = null;
@@ -170,7 +170,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     {
       name: 'Marie D.',
       role: 'Cliente',
-      text: 'Je recommande vivement les séances de Reiki avec Pauline. Une personne bienveillante et à l\'écoute. J\'ai ressenti un réel apaisement dès la première séance.',
+      text: 'Je recommande vivement les séances de la couleur de l\'Aura. Une personne bienveillante et à l\'écoute. J\'ai ressenti un réel apaisement dès la première séance.',
       avatar: 'https://ui-avatars.com/api/?name=Marie+D&background=f5f1e8&color=6f5f4e&size=150'
     },
     {
@@ -279,12 +279,12 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
 
   private initHeroAnimations() {
-    if (!this.heroTitle || !this.heroDescription || !this.heroActions) return;
+    if (!this.title || !this.description || !this.actions) return;
 
     const tl = gsap.timeline({ delay: 0.5 });
     
     // Animation du badge
-    tl.from('.hero-badge', {
+    tl.from('.badge', {
       duration: 0.8,
       y: -30,
       opacity: 0,
@@ -292,7 +292,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     });
 
     // Animation du titre
-    tl.from(this.heroTitle.nativeElement.querySelectorAll('.title-line'), {
+    tl.from(this.title.nativeElement.querySelectorAll('.title-line'), {
       duration: 1.2,
       y: 50,
       opacity: 0,
@@ -301,7 +301,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     }, "-=0.4");
 
     // Animation de la description
-    tl.from(this.heroDescription.nativeElement, {
+    tl.from(this.description.nativeElement, {
       duration: 1,
       y: 30,
       opacity: 0,
@@ -309,7 +309,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     }, "-=0.6");
 
     // Animation des boutons
-    tl.from(this.heroActions.nativeElement, {
+    tl.from(this.actions.nativeElement, {
       duration: 0.8,
       y: 30,
       opacity: 0,

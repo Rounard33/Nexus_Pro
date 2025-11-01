@@ -113,7 +113,7 @@ contactInfo = {
 #### 3. Images and Assets
 Replace images in `src/assets/images/`:
 - `logo.png` - Your logo (recommended: 200x60px)
-- `hero-bg.jpg` - Hero background image (recommended: 1920x1080px)
+- `bg.jpg` - Hero background image (recommended: 1920x1080px)
 - `about-image.jpg` - About section image (recommended: 600x400px)
 
 ## 🚀 First Launch

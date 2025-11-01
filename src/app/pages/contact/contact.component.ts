@@ -16,8 +16,8 @@ gsap.registerPlugin(ScrollTrigger);
   styleUrl: './contact.component.scss'
 })
 export class ContactComponent implements OnInit, AfterViewInit, OnDestroy {
-  @ViewChild('heroTitle') heroTitle!: ElementRef;
-  @ViewChild('heroDescription') heroDescription!: ElementRef;
+  @ViewChild('title') title!: ElementRef;
+  @ViewChild('description') description!: ElementRef;
 
   isSubmitting = false;
 
@@ -170,18 +170,18 @@ export class ContactComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private initHeroAnimations(): void {
-    if (!this.heroTitle || !this.heroDescription) return;
+    if (!this.title || !this.description) return;
 
     const tl = gsap.timeline({ delay: 0.5 });
     
-    tl.from('.hero-badge', {
+    tl.from('.badge', {
       duration: 0.8,
       y: -30,
       opacity: 0,
       ease: "power2.out"
     });
 
-    tl.from(this.heroTitle.nativeElement.querySelectorAll('.title-line'), {
+    tl.from(this.title.nativeElement.querySelectorAll('.title-line'), {
       duration: 1.2,
       y: 50,
       opacity: 0,
@@ -189,7 +189,7 @@ export class ContactComponent implements OnInit, AfterViewInit, OnDestroy {
       stagger: 0.2
     }, "-=0.4");
 
-    tl.from(this.heroDescription.nativeElement, {
+    tl.from(this.description.nativeElement, {
       duration: 1,
       y: 30,
       opacity: 0,

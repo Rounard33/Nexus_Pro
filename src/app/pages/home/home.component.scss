@@ -3,8 +3,8 @@
 // Design épuré, élégant et reposant
 // ========================================
 
-// Hero Section
-.hero {
+// main Section
+.main {
   position: relative;
   min-height: 90vh;
   display: flex;
@@ -14,7 +14,7 @@
   padding-top: 80px;
 }
 
-.hero-background {
+.background {
   position: absolute;
   top: 0;
   left: 0;
@@ -32,7 +32,7 @@
   }
 }
 
-.hero-gradient {
+.gradient {
   position: absolute;
   top: 0;
   left: 0;
@@ -43,7 +43,7 @@
     radial-gradient(circle at 80% 70%, rgba(175, 150, 122, 0.06) 0%, transparent 50%);
 }
 
-.hero-shapes {
+.shapes {
   position: absolute;
   top: 0;
   left: 0;
@@ -86,7 +86,7 @@
   }
 }
 
-.hero-content {
+.content {
   position: relative;
   z-index: 10;
   text-align: center;
@@ -95,11 +95,11 @@
   margin: 0 auto;
 }
 
-.hero-text {
+.text {
   max-width: 100%;
 }
 
-.hero-badge {
+.badge {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -118,7 +118,7 @@
   font-size: 1.2rem;
 }
 
-.hero-title {
+.title {
   font-size: 4.5rem;
   font-weight: 300;
   line-height: 1.1;
@@ -135,7 +135,7 @@
   display: block;
 }
 
-.hero-description {
+.description {
   font-size: 1.25rem;
   color: var(--primary-900);
   line-height: 1.8;
@@ -147,7 +147,7 @@
   }
 }
 
-.hero-actions {
+.actions {
   display: flex;
   gap: 1rem;
   justify-content: center;
@@ -195,7 +195,7 @@
   font-size: 1.125rem;
 }
 
-.hero-scroll {
+.scroll {
   position: absolute;
   bottom: 2rem;
   left: 50%;
@@ -1094,12 +1094,12 @@
     font-size: 0.875rem;
   }
 
-  .hero {
+  .main {
     min-height: 80vh;
     padding-top: 100px;
   }
 
-  .hero-title {
+  .title {
     font-size: 2.5rem;
   }
 

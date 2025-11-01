@@ -265,7 +265,7 @@ Place your images in `src/assets/images/`:
 ```
 src/assets/images/
 ├── logo.png              # Logo (200x60px)
-├── hero-bg.jpg           # Hero image (1920x1080px)
+├── bg.jpg           # Hero image (1920x1080px)
 ├── about-image.jpg       # About image (600x400px)
 ├── portfolio/            # Portfolio images
 │   ├── project1.jpg

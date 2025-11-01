@@ -1,5 +1,5 @@
 // Hero Section
-.hero {
+ {
   position: relative;
   min-height: 100vh;
   display: flex;
@@ -9,25 +9,25 @@
 }
 
 // Dark theme for hero section
-.dark .hero {
+.dark  {
   background: linear-gradient(135deg, var(--gray-50) 0%, var(--gray-100) 100%);
 }
 
-.dark .hero .card {
+.dark  .card {
   background: var(--gray-100);
   border-color: var(--gray-200);
   color: var(--gray-800);
 }
 
-.dark .hero .card h4 {
+.dark  .card h4 {
   color: var(--gray-900);
 }
 
-.dark .hero .card p {
+.dark  .card p {
   color: var(--gray-700);
 }
 
-.hero-background {
+.background {
   position: absolute;
   top: 0;
   left: 0;
@@ -36,7 +36,7 @@
   z-index: 1;
 }
 
-.hero-shapes {
+.shapes {
   position: absolute;
   top: 0;
   left: 0;
@@ -82,7 +82,7 @@
   50% { transform: translateY(-20px) rotate(180deg); }
 }
 
-.hero-content {
+.content {
   position: relative;
   z-index: 2;
   display: grid;
@@ -98,11 +98,11 @@
   }
 }
 
-.hero-text {
+.text {
   max-width: 600px;
 }
 
-.hero-title {
+.title {
   font-size: 3.5rem;
   font-weight: 700;
   line-height: 1.1;
@@ -121,7 +121,7 @@
   background-clip: text;
 }
 
-.hero-description {
+.description {
   font-size: 1.25rem;
   color: var(--gray-600);
   line-height: 1.6;
@@ -132,7 +132,7 @@
   }
 }
 
-.hero-actions {
+.actions {
   display: flex;
   gap: var(--spacing-lg);
   margin-bottom: var(--spacing-2xl);
@@ -143,7 +143,7 @@
   }
 }
 
-.hero-stats {
+.stats {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: var(--spacing-lg);
@@ -171,7 +171,7 @@
   font-weight: 500;
 }
 
-.hero-visual {
+.visual {
   position: relative;
   height: 500px;
   display: flex;
@@ -183,7 +183,7 @@
   }
 }
 
-.hero-image {
+.image {
   position: relative;
   width: 100%;
   height: 100%;

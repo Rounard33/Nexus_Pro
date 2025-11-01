@@ -1,7 +1,7 @@
 <!-- Hero Section -->
 <section class="hero">
-  <div class="hero-background">
-    <div class="hero-shapes">
+  <div class="background">
+    <div class="shapes">
       <div class="shape shape-1 parallax-element parallax-slow" data-parallax-speed="0.3"></div>
       <div class="shape shape-2 parallax-element parallax-fast" data-parallax-speed="0.5"></div>
       <div class="shape shape-3 parallax-element parallax-reverse" data-parallax-speed="0.2"></div>
@@ -10,21 +10,21 @@
   </div>
   
   <div class="container">
-    <div class="hero-content">
-      <div class="hero-text">
-        <h1 class="hero-title animate-fade-in-up">
+    <div class="content">
+      <div class="text">
+        <h1 class="title animate-fade-in-up">
           Créez des expériences digitales
           <span class="text-gradient">exceptionnelles</span>
         </h1>
-        <p class="hero-description animate-fade-in-up">
+        <p class="description animate-fade-in-up">
           NexusPro est un thème Angular professionnel et moderne, parfaitement adapté 
           pour créer des sites web d'entreprise, portfolios et applications commerciales.
         </p>
-        <div class="hero-actions animate-fade-in-up">
+        <div class="actions animate-fade-in-up">
           <a href="#" class="btn btn-primary btn-lg">Commencer maintenant</a>
           <a href="#features" class="btn btn-outline btn-lg">Découvrir</a>
         </div>
-        <div class="hero-stats animate-fade-in-up">
+        <div class="stats animate-fade-in-up">
           <div class="stat-item" *ngFor="let stat of stats">
             <app-animated-counter 
               [targetValue]="stat.number.replace('+', '').replace('%', '')" 
@@ -35,8 +35,8 @@
           </div>
         </div>
       </div>
-      <div class="hero-visual animate-fade-in-right">
-        <div class="hero-image">
+      <div class="visual animate-fade-in-right">
+        <div class="image">
           <div class="floating-card card-1">
             <div class="card-content">
               <div class="card-icon">🎨</div>
