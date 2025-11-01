@@ -17,8 +17,13 @@
   }
 
   @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-    gap: var(--spacing-lg);
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-md);
+    
+    // La première section (Company Info) prend toute la largeur
+    .footer-section:first-child {
+      grid-column: 1 / -1;
+    }
   }
 }
 
