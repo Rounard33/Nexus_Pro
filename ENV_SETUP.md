@@ -64,3 +64,25 @@ Vous devriez voir :
 - ❌ Ne partagez JAMAIS la clé `service_role`
 - ✅ Utilisez-la uniquement sur votre machine locale ou sur le serveur
 
+## 🔄 Régénérer les clés Supabase (si exposées)
+
+Si vos clés ont été exposées (ex: commitées dans Git), régénérez-les :
+
+### Étapes :
+
+1. **Supabase Dashboard** → Votre projet → **Settings > API**
+2. **Section "Project API keys"** :
+   - Pour **anon public** : Cliquez sur **"Reset"** ou **"Regenerate"**
+   - Pour **service_role secret** : Cliquez sur **"Reset"** ou **"Regenerate"**
+3. **⚠️ Attention** : Les anciennes clés seront **immédiatement invalidées**
+4. **Copiez les nouvelles clés** et mettez à jour :
+   - Votre fichier `.env.local`
+   - Vos variables d'environnement en production (Vercel, etc.)
+5. **Redémarrez vos services** après mise à jour
+
+### Important :
+
+- ⚠️ Régénérer une clé invalide l'ancienne **immédiatement**
+- ⚠️ Toutes vos apps devront être mises à jour **en même temps**
+- ⚠️ Si vous avez des apps en production, planifiez la mise à jour avant de régénérer
+

@@ -135,6 +135,128 @@ function readBody(req) {
   });
 }
 
+// Fonction utilitaire pour vérifier l'authentification
+async function verifyAuth(req, supabaseAuth) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    console.log('❌ No auth header');
+    return { authenticated: false, error: 'Unauthorized', message: 'Missing or invalid authorization header' };
+  }
+
+  const token = authHeader.substring(7);
+  if (!token || token.length === 0) {
+    console.log('❌ Empty token');
+    return { authenticated: false, error: 'Empty token', message: 'Token is empty' };
+  }
+
+  console.log('🔐 Verifying token, length:', token.length);
+
+  try {
+    const result = await supabaseAuth.auth.getUser(token);
+    if (result.error || !result.data?.user) {
+      console.error('❌ Auth failed:', result.error?.message || 'No user');
+      return { authenticated: false, error: 'Invalid token', message: result.error?.message || 'Authentication failed' };
+    }
+    return { authenticated: true, user: result.data.user };
+  } catch (err) {
+    console.error('❌ Error verifying token:', err);
+    return { authenticated: false, error: 'Invalid token', message: err.message || 'Authentication failed' };
+  }
+}
+
+// Fonction utilitaire pour vérifier si un utilisateur est admin
+async function verifyAdmin(user, supabase) {
+  console.log(`🔍 Vérification admin pour: ${user.email} (${user.id})`);
+  
+  try {
+    const { data: adminUser, error: adminError } = await supabase
+      .from('admin')
+      .select('id')
+      .eq('id', user.id)
+      .single();
+
+    console.log('📊 Résultat vérification admin:', {
+      found: !!adminUser,
+      errorCode: adminError?.code,
+      errorMessage: adminError?.message
+    });
+
+    // Si l'utilisateur est dans la table admin, il est admin
+    if (adminUser && !adminError) {
+      console.log('✅ Utilisateur est admin (trouvé dans la table)');
+      return { isAdmin: true };
+    }
+
+    // Si la table admin n'existe pas (erreur de table), considérer l'utilisateur comme admin
+    if (adminError && adminError.message?.includes('does not exist')) {
+      console.warn('⚠️ Table admin n\'existe pas, utilisateur authentifié considéré comme admin');
+      return { isAdmin: true };
+    }
+
+    // Si l'utilisateur n'est pas dans la table (PGRST116 = no rows returned)
+    if (adminError && adminError.code === 'PGRST116') {
+      console.log('🔍 Utilisateur non trouvé dans admin, vérification si table est vide...');
+      
+      // Vérifier si la table admin est vide (aucun admin existant)
+      const { count, error: countError } = await supabase
+        .from('admin')
+        .select('*', { count: 'exact', head: true });
+
+      console.log('📊 Nombre d\'admins dans la table:', count, 'Erreur:', countError?.message);
+
+      // Si la table est vide ou inaccessible, créer automatiquement cet utilisateur comme admin
+      if (countError || count === 0 || count === null) {
+        console.log('✨ Table admin vide, ajout automatique de l\'utilisateur comme admin...');
+        try {
+          // Insérer l'utilisateur dans la table admin
+          const { error: insertError } = await supabase
+            .from('admin')
+            .insert([{ id: user.id, email: user.email || '' }]);
+
+          if (!insertError) {
+            console.log(`✅ Utilisateur ${user.email} ajouté automatiquement comme admin (premier utilisateur)`);
+            return { isAdmin: true };
+          } else {
+            console.warn('⚠️ Impossible d\'ajouter l\'utilisateur comme admin:', insertError.message);
+            console.warn('   Code erreur:', insertError.code);
+            // Si l'insertion échoue mais que la table est vide, autoriser quand même (fallback)
+            if (count === 0) {
+              console.warn('⚠️ Table admin vide, autorisation de l\'utilisateur (fallback)');
+              return { isAdmin: true };
+            }
+          }
+        } catch (insertErr) {
+          console.warn('⚠️ Erreur lors de l\'ajout automatique comme admin:', insertErr.message);
+          // Si l'insertion échoue mais que la table est vide, autoriser quand même (fallback)
+          if (count === 0) {
+            console.warn('⚠️ Table admin vide, autorisation de l\'utilisateur (fallback)');
+            return { isAdmin: true };
+          }
+        }
+      } else {
+        console.log(`ℹ️  Table admin contient ${count} admin(s), utilisateur non autorisé automatiquement`);
+      }
+    } else {
+      console.warn('⚠️ Erreur inattendue lors de la vérification admin:', adminError);
+    }
+
+    return { isAdmin: false };
+  } catch (adminCheckError) {
+    // Erreur lors de la vérification admin
+    console.error('❌ Erreur vérification admin:', adminCheckError);
+    console.error('   Message:', adminCheckError.message);
+    console.error('   Stack:', adminCheckError.stack);
+    
+    // Si c'est une erreur de table inexistante, autoriser l'utilisateur
+    if (adminCheckError.message?.includes('does not exist')) {
+      console.warn('⚠️ Table admin inaccessible, utilisateur authentifié considéré comme admin (fallback)');
+      return { isAdmin: true };
+    }
+    
+    return { isAdmin: false, error: adminCheckError.message };
+  }
+}
+
 const server = http.createServer(async (req, res) => {
   // Rate limiting global : 100 requêtes par minute par défaut
   // Limites spécifiques par route seront appliquées dans chaque handler
@@ -235,76 +357,34 @@ const server = http.createServer(async (req, res) => {
         }
 
         // Vérifier l'authentification
-        const authHeader = req.headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        const auth = await verifyAuth(req, supabaseAuth);
+        if (!auth.authenticated) {
+          const isDevelopment = !process.env.NODE_ENV || process.env.NODE_ENV === 'development';
           res.writeHead(401, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: 'Unauthorized' }));
+          res.end(JSON.stringify({ 
+            error: auth.error,
+            ...(isDevelopment && { details: auth.message })
+          }));
           return;
         }
 
-        const token = authHeader.substring(7);
-        let user, authError;
-        try {
-          const result = await supabaseAuth.auth.getUser(token);
-          user = result.data?.user;
-          authError = result.error;
-        } catch (err) {
-          authError = err;
-        }
-        
-        if (authError || !user) {
-          res.writeHead(401, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: 'Invalid token' }));
-          return;
-        }
-
-        // Vérifier si l'utilisateur est admin (même logique que pour appointments)
-        let isAdmin = false;
-        try {
-          const { data: adminUser, error: adminError } = await supabase
-            .from('admin')
-            .select('id')
-            .eq('id', user.id)
-            .single();
-
-          if (adminUser && !adminError) {
-            isAdmin = true;
-          } else if (adminError && adminError.message?.includes('does not exist')) {
-            isAdmin = true;
-          } else if (adminError && adminError.code === 'PGRST116') {
-            const { count, error: countError } = await supabase
-              .from('admin')
-              .select('*', { count: 'exact', head: true });
-
-            if (countError || count === 0 || count === null) {
-              try {
-                const { error: insertError } = await supabase
-                  .from('admin')
-                  .insert([{ id: user.id, email: user.email || '' }]);
-
-                if (!insertError) {
-                  isAdmin = true;
-                } else if (count === 0) {
-                  isAdmin = true;
-                }
-              } catch (insertErr) {
-                if (count === 0) {
-                  isAdmin = true;
-                }
-              }
-            }
-          }
-        } catch (adminCheckError) {
-          if (adminCheckError.message?.includes('does not exist')) {
-            isAdmin = true;
-          }
-        }
-
-        if (!isAdmin) {
+        // Vérifier les droits admin
+        const adminCheck = await verifyAdmin(auth.user, supabase);
+        if (!adminCheck.isAdmin) {
+          console.error(`❌ Accès refusé: ${auth.user.email} (${auth.user.id}) n'est pas admin`);
+          console.error('   💡 Solution: Ajoutez cet utilisateur dans la table admin avec:');
+          console.error(`      INSERT INTO admin (id, email) VALUES ('${auth.user.id}', '${auth.user.email}');`);
           res.writeHead(403, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: 'Forbidden: Admin access required' }));
+          res.end(JSON.stringify({ 
+            error: 'Forbidden: Admin access required',
+            message: 'User is not an admin. Please contact an administrator to grant you access.',
+            userId: auth.user.id,
+            userEmail: auth.user.email
+          }));
           return;
         }
+
+        console.log(`✅ Utilisateur ${auth.user.email} autorisé comme admin`);
 
         const body = await readBody(req);
 
@@ -538,155 +618,40 @@ const server = http.createServer(async (req, res) => {
         console.log('📝 PATCH request for appointment:', id);
 
         // Vérifier l'authentification
-        const authHeader = req.headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-          console.log('❌ No auth header');
-          res.writeHead(401, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: 'Unauthorized' }));
-          return;
-        }
-
-        const token = authHeader.substring(7);
-        
-        if (!token || token.length === 0) {
-          console.log('❌ Empty token');
-          res.writeHead(401, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: 'Empty token' }));
-          return;
-        }
-        
-        console.log('🔐 Verifying token, length:', token.length);
-        
-        let user, authError;
-        try {
-          const result = await supabaseAuth.auth.getUser(token);
-          user = result.data?.user;
-          authError = result.error;
-        } catch (err) {
-          console.error('❌ Error verifying token:', err);
-          authError = err;
-        }
-        
-        if (authError || !user) {
-          console.error('❌ Auth failed:', authError?.message || 'No user');
-          res.writeHead(401, { 'Content-Type': 'application/json' });
+        const auth = await verifyAuth(req, supabaseAuth);
+        if (!auth.authenticated) {
           const isDevelopment = !process.env.NODE_ENV || process.env.NODE_ENV === 'development';
+          res.writeHead(401, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ 
-            error: 'Invalid token',
-            ...(isDevelopment && { details: authError?.message || 'Authentication failed' })
+            error: auth.error,
+            ...(isDevelopment && { details: auth.message })
           }));
           return;
         }
-        
-        // Vérifier si l'utilisateur est admin
-        let isAdmin = false;
-        console.log(`🔍 Vérification admin pour: ${user.email} (${user.id})`);
-        
-        try {
-          const { data: adminUser, error: adminError } = await supabase
-            .from('admin')
-            .select('id')
-            .eq('id', user.id)
-            .single();
 
-          console.log('📊 Résultat vérification admin:', {
-            found: !!adminUser,
-            errorCode: adminError?.code,
-            errorMessage: adminError?.message
-          });
+        // Vérifier les droits admin
+        const adminCheck = await verifyAdmin(auth.user, supabase);
+        console.log(`🎯 Résultat final - isAdmin: ${adminCheck.isAdmin}`);
 
-          // Si l'utilisateur est dans la table admin, il est admin
-          if (adminUser && !adminError) {
-            isAdmin = true;
-            console.log('✅ Utilisateur est admin (trouvé dans la table)');
-          }
-          // Si la table admin n'existe pas (erreur de table), considérer l'utilisateur comme admin
-          else if (adminError && adminError.message?.includes('does not exist')) {
-            console.warn('⚠️ Table admin n\'existe pas, utilisateur authentifié considéré comme admin');
-            isAdmin = true;
-          }
-          // Si l'utilisateur n'est pas dans la table (PGRST116 = no rows returned)
-          else if (adminError && adminError.code === 'PGRST116') {
-            console.log('🔍 Utilisateur non trouvé dans admin, vérification si table est vide...');
-            
-            // Vérifier si la table admin est vide (aucun admin existant)
-            const { count, error: countError } = await supabase
-              .from('admin')
-              .select('*', { count: 'exact', head: true });
-
-            console.log('📊 Nombre d\'admins dans la table:', count, 'Erreur:', countError?.message);
-
-            // Si la table est vide ou inaccessible, créer automatiquement cet utilisateur comme admin
-            if (countError || count === 0 || count === null) {
-              console.log('✨ Table admin vide, ajout automatique de l\'utilisateur comme admin...');
-              try {
-                // Insérer l'utilisateur dans la table admin
-                const { error: insertError } = await supabase
-                  .from('admin')
-                  .insert([{ id: user.id, email: user.email || '' }]);
-
-                if (!insertError) {
-                  console.log(`✅ Utilisateur ${user.email} ajouté automatiquement comme admin (premier utilisateur)`);
-                  isAdmin = true;
-                } else {
-                  console.warn('⚠️ Impossible d\'ajouter l\'utilisateur comme admin:', insertError.message);
-                  console.warn('   Code erreur:', insertError.code);
-                  // Si l'insertion échoue mais que la table est vide, autoriser quand même (fallback)
-                  if (count === 0) {
-                    console.warn('⚠️ Table admin vide, autorisation de l\'utilisateur (fallback)');
-                    isAdmin = true;
-                  }
-                }
-              } catch (insertErr) {
-                console.warn('⚠️ Erreur lors de l\'ajout automatique comme admin:', insertErr.message);
-                // Si l'insertion échoue mais que la table est vide, autoriser quand même (fallback)
-                if (count === 0) {
-                  console.warn('⚠️ Table admin vide, autorisation de l\'utilisateur (fallback)');
-                  isAdmin = true;
-                }
-              }
-            } else {
-              console.log(`ℹ️  Table admin contient ${count} admin(s), utilisateur non autorisé automatiquement`);
-            }
-          } else {
-            console.warn('⚠️ Erreur inattendue lors de la vérification admin:', adminError);
-          }
-        } catch (adminCheckError) {
-          // Erreur lors de la vérification admin
-          console.error('❌ Erreur vérification admin:', adminCheckError);
-          console.error('   Message:', adminCheckError.message);
-          console.error('   Stack:', adminCheckError.stack);
-          
-          // Si c'est une erreur de table inexistante, autoriser l'utilisateur
-          if (adminCheckError.message?.includes('does not exist')) {
-            console.warn('⚠️ Table admin inaccessible, utilisateur authentifié considéré comme admin (fallback)');
-            isAdmin = true;
-          } else {
-            isAdmin = false;
-          }
-        }
-
-        console.log(`🎯 Résultat final - isAdmin: ${isAdmin}`);
-
-        if (!isAdmin) {
-          console.error(`❌ Accès refusé: ${user.email} (${user.id}) n'est pas admin`);
+        if (!adminCheck.isAdmin) {
+          console.error(`❌ Accès refusé: ${auth.user.email} (${auth.user.id}) n'est pas admin`);
           console.error('   💡 Solution: Ajoutez cet utilisateur dans la table admin avec:');
-          console.error(`      INSERT INTO admin (id, email) VALUES ('${user.id}', '${user.email}');`);
+          console.error(`      INSERT INTO admin (id, email) VALUES ('${auth.user.id}', '${auth.user.email}');`);
           res.writeHead(403, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ 
             error: 'Forbidden: Admin access required',
             message: 'User is not an admin. Please contact an administrator to grant you access.',
-            userId: user.id,
-            userEmail: user.email
+            userId: auth.user.id,
+            userEmail: auth.user.email
           }));
           return;
         }
-        
-        console.log(`✅ Utilisateur ${user.email} autorisé comme admin`);
+
+        console.log(`✅ Utilisateur ${auth.user.email} autorisé comme admin`);
         
         const isDevelopment = !process.env.NODE_ENV || process.env.NODE_ENV === 'development';
         if (isDevelopment) {
-          console.log('✅ Auth successful for user:', user.email);
+          console.log('✅ Auth successful for user:', auth.user.email);
         }
 
         const body = await readBody(req);
