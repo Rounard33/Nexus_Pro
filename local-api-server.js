@@ -1,13 +1,86 @@
 // Serveur API local simple pour tester sans Vercel CLI
 // Usage: npm run api:dev
 
-// Pour charger dotenv si installé
+const fs = require('fs');
+const path = require('path');
+
+// Charger dotenv si installé
 let dotenv;
+let envFileLoaded = false;
 try {
   dotenv = require('dotenv');
-  dotenv.config({ path: '.env.local' });
+  // Essayer de charger .env.local d'abord, puis .env
+  const envLocalPath = path.join(__dirname, '.env.local');
+  const envPath = path.join(__dirname, '.env');
+  
+  if (fs.existsSync(envLocalPath)) {
+    const result = dotenv.config({ path: envLocalPath });
+    if (!result.error) {
+      envFileLoaded = true;
+      console.log('✅ Variables chargées depuis .env.local');
+      // Debug: afficher les clés trouvées (sans les valeurs)
+      if (result.parsed) {
+        const keys = Object.keys(result.parsed);
+        console.log(`   ${keys.length} variable(s) chargée(s): ${keys.join(', ')}`);
+      }
+    } else {
+      console.error('❌ Erreur lors du chargement de .env.local:', result.error.message);
+    }
+  } else if (fs.existsSync(envPath)) {
+    const result = dotenv.config({ path: envPath });
+    if (!result.error) {
+      envFileLoaded = true;
+      console.log('✅ Variables chargées depuis .env');
+    } else {
+      console.error('❌ Erreur lors du chargement de .env:', result.error.message);
+    }
+  } else {
+    console.log('ℹ️  Aucun fichier .env ou .env.local trouvé');
+    console.log('   💡 Créez un fichier .env.local (voir .env.example pour le format)');
+  }
 } catch (e) {
-  console.log('dotenv non installé, utilisation des variables d\'environnement système');
+  console.log('⚠️  dotenv non installé, utilisation des variables d\'environnement système');
+}
+
+// Vérifier que les variables requises sont définies
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+
+// Debug: afficher quelles variables sont chargées (sans afficher les valeurs complètes)
+console.log('\n🔍 Vérification des variables d\'environnement:');
+console.log('  SUPABASE_URL:', SUPABASE_URL ? `✅ (${SUPABASE_URL.substring(0, 30)}...)` : '❌ MANQUANT');
+console.log('  SUPABASE_ANON_KEY:', SUPABASE_ANON_KEY ? `✅ (présent, ${SUPABASE_ANON_KEY.length} caractères)` : '❌ MANQUANT');
+console.log('  SUPABASE_SERVICE_ROLE_KEY:', SUPABASE_SERVICE_ROLE_KEY ? `✅ (présent, ${SUPABASE_SERVICE_ROLE_KEY.length} caractères)` : '❌ MANQUANT');
+
+if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+  console.error('\n❌ ERREUR: Variables d\'environnement Supabase manquantes!\n');
+  
+  if (!SUPABASE_URL) {
+    console.error('❌ SUPABASE_URL est manquant');
+  }
+  if (!SUPABASE_SERVICE_ROLE_KEY) {
+    console.error('❌ SUPABASE_SERVICE_ROLE_KEY est manquant');
+    console.error('   ⚠️  Cette clé est DIFFÉRENTE de SUPABASE_ANON_KEY !');
+    console.error('   ⚠️  C\'est la clé "service_role" (secrète) nécessaire pour l\'API serveur.\n');
+  }
+  
+  console.error('\n📝 Le serveur API local nécessite les variables suivantes dans .env.local :\n');
+  console.error('   SUPABASE_URL=https://votre-projet.supabase.co');
+  console.error('   SUPABASE_ANON_KEY=eyJhbGci... (votre anon key existante)');
+  console.error('   SUPABASE_SERVICE_ROLE_KEY=eyJhbGci... (⚠️ DIFFÉRENTE de l\'anon key !)\n');
+  console.error('📖 Instructions détaillées :');
+  console.error('   1. Ouvrez votre fichier .env.local');
+  console.error('   2. Ajoutez la ligne suivante (si elle n\'existe pas) :');
+  console.error('      SUPABASE_SERVICE_ROLE_KEY=votre_service_role_key_ici\n');
+  console.error('🔑 Pour récupérer SUPABASE_SERVICE_ROLE_KEY :');
+  console.error('   1. https://supabase.com/dashboard > Votre projet');
+  console.error('   2. Settings > API');
+  console.error('   3. Section "Project API keys"');
+  console.error('   4. Cliquez sur "Reveal" pour "service_role" (pas "anon" !)');
+  console.error('   5. Copiez la clé complète (très longue)\n');
+  console.error('💡 Voir ENV_SETUP.md pour plus de détails\n');
+  process.exit(1);
 }
 
 const { createClient } = require('@supabase/supabase-js');
@@ -15,28 +88,31 @@ const http = require('http');
 const url = require('url');
 const { setSecurityHeaders } = require('./local-api-server-utils');
 const { validateAppointment, sanitizeAppointment } = require('./local-api-server-validation');
+const { applyRateLimit } = require('./local-api-server-rate-limiter');
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+let supabase;
+try {
+  supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+  console.log('✅ Client Supabase créé avec succès');
+} catch (error) {
+  console.error('❌ Erreur lors de la création du client Supabase:', error.message);
+  process.exit(1);
+}
 
 // Client Supabase pour vérifier l'authentification utilisateur (avec anon key si disponible)
 let supabaseAuth;
 try {
-  if (process.env.SUPABASE_ANON_KEY) {
-    supabaseAuth = createClient(
-      process.env.SUPABASE_URL,
-      process.env.SUPABASE_ANON_KEY
-    );
+  if (SUPABASE_ANON_KEY) {
+    supabaseAuth = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    console.log('✅ Client Supabase Auth créé avec ANON_KEY');
   } else {
     // Si pas d'anon key, utiliser le service role (moins sécurisé mais fonctionne)
     supabaseAuth = supabase;
-    console.warn('⚠️ SUPABASE_ANON_KEY non défini, utilisation de SERVICE_ROLE_KEY pour l\'auth (non recommandé)');
+    console.warn('⚠️  SUPABASE_ANON_KEY non défini, utilisation de SERVICE_ROLE_KEY pour l\'auth (non recommandé)');
   }
 } catch (e) {
   supabaseAuth = supabase;
-  console.warn('⚠️ Erreur lors de la création du client auth, utilisation du client service role');
+  console.warn('⚠️  Erreur lors de la création du client auth, utilisation du client service role');
 }
 
 const PORT = 3000;
@@ -60,6 +136,12 @@ function readBody(req) {
 }
 
 const server = http.createServer(async (req, res) => {
+  // Rate limiting global : 100 requêtes par minute par défaut
+  // Limites spécifiques par route seront appliquées dans chaque handler
+  if (!applyRateLimit(req, res, 100, 60000)) {
+    return; // Rate limit dépassé, réponse déjà envoyée
+  }
+
   // Headers de sécurité (CORS, XSS, etc.)
   const origin = req.headers.origin;
   setSecurityHeaders(res, origin);
@@ -161,11 +243,66 @@ const server = http.createServer(async (req, res) => {
         }
 
         const token = authHeader.substring(7);
-        const { data: { user }, error: authError } = await supabaseAuth.auth.getUser(token);
+        let user, authError;
+        try {
+          const result = await supabaseAuth.auth.getUser(token);
+          user = result.data?.user;
+          authError = result.error;
+        } catch (err) {
+          authError = err;
+        }
         
         if (authError || !user) {
           res.writeHead(401, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'Invalid token' }));
+          return;
+        }
+
+        // Vérifier si l'utilisateur est admin (même logique que pour appointments)
+        let isAdmin = false;
+        try {
+          const { data: adminUser, error: adminError } = await supabase
+            .from('admin')
+            .select('id')
+            .eq('id', user.id)
+            .single();
+
+          if (adminUser && !adminError) {
+            isAdmin = true;
+          } else if (adminError && adminError.message?.includes('does not exist')) {
+            isAdmin = true;
+          } else if (adminError && adminError.code === 'PGRST116') {
+            const { count, error: countError } = await supabase
+              .from('admin')
+              .select('*', { count: 'exact', head: true });
+
+            if (countError || count === 0 || count === null) {
+              try {
+                const { error: insertError } = await supabase
+                  .from('admin')
+                  .insert([{ id: user.id, email: user.email || '' }]);
+
+                if (!insertError) {
+                  isAdmin = true;
+                } else if (count === 0) {
+                  isAdmin = true;
+                }
+              } catch (insertErr) {
+                if (count === 0) {
+                  isAdmin = true;
+                }
+              }
+            }
+          }
+        } catch (adminCheckError) {
+          if (adminCheckError.message?.includes('does not exist')) {
+            isAdmin = true;
+          }
+        }
+
+        if (!isAdmin) {
+          res.writeHead(403, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Forbidden: Admin access required' }));
           return;
         }
 
@@ -312,6 +449,11 @@ const server = http.createServer(async (req, res) => {
       }
       // POST : Créer un rendez-vous
       else if (req.method === 'POST') {
+        // Rate limiting spécifique pour création : 20 par minute
+        if (!applyRateLimit(req, res, 20, 60000)) {
+          return;
+        }
+        
         const body = await readBody(req);
 
         // Valider les données d'entrée
@@ -380,6 +522,11 @@ const server = http.createServer(async (req, res) => {
       }
       // PATCH : Mettre à jour un rendez-vous (accepter/refuser) - PROTÉGÉ
       else if (req.method === 'PATCH') {
+        // Rate limiting spécifique pour mise à jour : 30 par minute
+        if (!applyRateLimit(req, res, 30, 60000)) {
+          return;
+        }
+        
         const { id } = parsedUrl.query;
         
         if (!id) {
@@ -433,6 +580,8 @@ const server = http.createServer(async (req, res) => {
         
         // Vérifier si l'utilisateur est admin
         let isAdmin = false;
+        console.log(`🔍 Vérification admin pour: ${user.email} (${user.id})`);
+        
         try {
           const { data: adminUser, error: adminError } = await supabase
             .from('admin')
@@ -440,24 +589,100 @@ const server = http.createServer(async (req, res) => {
             .eq('id', user.id)
             .single();
 
-          // Si la table admin n'existe pas, considérer l'utilisateur authentifié comme admin (fallback)
-          if (adminError && (adminError.code === 'PGRST116' || adminError.message?.includes('does not exist'))) {
+          console.log('📊 Résultat vérification admin:', {
+            found: !!adminUser,
+            errorCode: adminError?.code,
+            errorMessage: adminError?.message
+          });
+
+          // Si l'utilisateur est dans la table admin, il est admin
+          if (adminUser && !adminError) {
+            isAdmin = true;
+            console.log('✅ Utilisateur est admin (trouvé dans la table)');
+          }
+          // Si la table admin n'existe pas (erreur de table), considérer l'utilisateur comme admin
+          else if (adminError && adminError.message?.includes('does not exist')) {
             console.warn('⚠️ Table admin n\'existe pas, utilisateur authentifié considéré comme admin');
             isAdmin = true;
+          }
+          // Si l'utilisateur n'est pas dans la table (PGRST116 = no rows returned)
+          else if (adminError && adminError.code === 'PGRST116') {
+            console.log('🔍 Utilisateur non trouvé dans admin, vérification si table est vide...');
+            
+            // Vérifier si la table admin est vide (aucun admin existant)
+            const { count, error: countError } = await supabase
+              .from('admin')
+              .select('*', { count: 'exact', head: true });
+
+            console.log('📊 Nombre d\'admins dans la table:', count, 'Erreur:', countError?.message);
+
+            // Si la table est vide ou inaccessible, créer automatiquement cet utilisateur comme admin
+            if (countError || count === 0 || count === null) {
+              console.log('✨ Table admin vide, ajout automatique de l\'utilisateur comme admin...');
+              try {
+                // Insérer l'utilisateur dans la table admin
+                const { error: insertError } = await supabase
+                  .from('admin')
+                  .insert([{ id: user.id, email: user.email || '' }]);
+
+                if (!insertError) {
+                  console.log(`✅ Utilisateur ${user.email} ajouté automatiquement comme admin (premier utilisateur)`);
+                  isAdmin = true;
+                } else {
+                  console.warn('⚠️ Impossible d\'ajouter l\'utilisateur comme admin:', insertError.message);
+                  console.warn('   Code erreur:', insertError.code);
+                  // Si l'insertion échoue mais que la table est vide, autoriser quand même (fallback)
+                  if (count === 0) {
+                    console.warn('⚠️ Table admin vide, autorisation de l\'utilisateur (fallback)');
+                    isAdmin = true;
+                  }
+                }
+              } catch (insertErr) {
+                console.warn('⚠️ Erreur lors de l\'ajout automatique comme admin:', insertErr.message);
+                // Si l'insertion échoue mais que la table est vide, autoriser quand même (fallback)
+                if (count === 0) {
+                  console.warn('⚠️ Table admin vide, autorisation de l\'utilisateur (fallback)');
+                  isAdmin = true;
+                }
+              }
+            } else {
+              console.log(`ℹ️  Table admin contient ${count} admin(s), utilisateur non autorisé automatiquement`);
+            }
           } else {
-            isAdmin = !!adminUser && !adminError;
+            console.warn('⚠️ Erreur inattendue lors de la vérification admin:', adminError);
           }
         } catch (adminCheckError) {
-          // Erreur lors de la vérification admin - refuser l'accès par sécurité
+          // Erreur lors de la vérification admin
           console.error('❌ Erreur vérification admin:', adminCheckError);
-          isAdmin = false;
+          console.error('   Message:', adminCheckError.message);
+          console.error('   Stack:', adminCheckError.stack);
+          
+          // Si c'est une erreur de table inexistante, autoriser l'utilisateur
+          if (adminCheckError.message?.includes('does not exist')) {
+            console.warn('⚠️ Table admin inaccessible, utilisateur authentifié considéré comme admin (fallback)');
+            isAdmin = true;
+          } else {
+            isAdmin = false;
+          }
         }
 
+        console.log(`🎯 Résultat final - isAdmin: ${isAdmin}`);
+
         if (!isAdmin) {
+          console.error(`❌ Accès refusé: ${user.email} (${user.id}) n'est pas admin`);
+          console.error('   💡 Solution: Ajoutez cet utilisateur dans la table admin avec:');
+          console.error(`      INSERT INTO admin (id, email) VALUES ('${user.id}', '${user.email}');`);
           res.writeHead(403, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: 'Forbidden: Admin access required' }));
+          res.end(JSON.stringify({ 
+            error: 'Forbidden: Admin access required',
+            message: 'User is not an admin. Please contact an administrator to grant you access.',
+            userId: user.id,
+            userEmail: user.email
+          }));
           return;
         }
+        
+        console.log(`✅ Utilisateur ${user.email} autorisé comme admin`);
         
         const isDevelopment = !process.env.NODE_ENV || process.env.NODE_ENV === 'development';
         if (isDevelopment) {

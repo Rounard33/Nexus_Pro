@@ -4,6 +4,15 @@ import {createClient, SupabaseClient, User} from '@supabase/supabase-js';
 import {BehaviorSubject, Observable} from 'rxjs';
 import {environment} from '../../environments/environment';
 
+/**
+ * Vérifie si Supabase est correctement configuré
+ */
+export function isSupabaseConfigured(): boolean {
+  const url = environment.supabaseUrl?.trim() || '';
+  const key = environment.supabaseAnonKey?.trim() || '';
+  return !!(url && key);
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -61,7 +70,12 @@ export class AuthService {
 
   async login(email: string, password: string): Promise<{success: boolean; error?: string}> {
     if (!this.supabase || !this.isConfigured) {
-      return {success: false, error: 'Configuration Supabase manquante. Veuillez configurer les variables dans environment.ts'};
+      const isDev = !environment.production;
+      const configFile = isDev ? 'src/environments/environment.ts' : 'environment variables';
+      return {
+        success: false, 
+        error: `Configuration Supabase manquante. Veuillez configurer supabaseUrl et supabaseAnonKey dans ${configFile}. Voir SECURITY_SETUP.md pour les instructions.`
+      };
     }
     
     try {

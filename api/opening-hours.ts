@@ -1,5 +1,6 @@
 import {createClient} from '@supabase/supabase-js';
 import type {VercelRequest, VercelResponse} from '@vercel/node';
+import {rateLimitMiddleware} from './utils/rate-limiter';
 
 const supabaseAdmin = createClient(
   process.env['SUPABASE_URL']!,
@@ -32,22 +33,71 @@ async function verifyAuth(req: VercelRequest): Promise<{authenticated: boolean; 
         .eq('id', user.id)
         .single();
 
-      // Si la table admin n'existe pas, considérer l'utilisateur authentifié comme admin (fallback)
-      if (adminError && (adminError.code === 'PGRST116' || adminError.message?.includes('does not exist'))) {
+      // Si l'utilisateur est dans la table admin, il est admin
+      if (adminUser && !adminError) {
+        return {
+          authenticated: true,
+          isAdmin: true,
+          user
+        };
+      }
+
+      // Si la table admin n'existe pas (erreur de table), considérer l'utilisateur comme admin
+      if (adminError && adminError.message?.includes('does not exist')) {
         console.warn('⚠️ Table admin n\'existe pas, utilisateur authentifié considéré comme admin');
         return {authenticated: true, isAdmin: true, user};
       }
 
-      const isAdmin = !!adminUser && !adminError;
+      // Si l'utilisateur n'est pas dans la table (PGRST116 = no rows returned)
+      if (adminError && adminError.code === 'PGRST116') {
+        // Vérifier si la table admin est vide (aucun admin existant)
+        const { count, error: countError } = await supabaseAdmin
+          .from('admin')
+          .select('*', { count: 'exact', head: true });
 
+        // Si la table est vide ou inaccessible, créer automatiquement cet utilisateur comme admin
+        if (countError || count === 0 || count === null) {
+          try {
+            // Insérer l'utilisateur dans la table admin
+            const { error: insertError } = await supabaseAdmin
+              .from('admin')
+              .insert([{ id: user.id, email: user.email || '' }]);
+
+            if (!insertError) {
+              console.log(`✅ Utilisateur ${user.email} ajouté automatiquement comme admin (premier utilisateur)`);
+              return {authenticated: true, isAdmin: true, user};
+            } else {
+              console.warn('⚠️ Impossible d\'ajouter l\'utilisateur comme admin:', insertError.message);
+            }
+          } catch (insertErr: any) {
+            console.warn('⚠️ Erreur lors de l\'ajout automatique comme admin:', insertErr.message);
+            // Si l'insertion échoue mais que la table est vide, autoriser quand même (fallback)
+            if (count === 0) {
+              console.warn('⚠️ Table admin vide, autorisation de l\'utilisateur (fallback)');
+              return {authenticated: true, isAdmin: true, user};
+            }
+          }
+        }
+      }
+
+      // Si l'utilisateur n'est pas admin et la table contient d'autres admins, refuser l'accès
       return {
         authenticated: true,
-        isAdmin,
+        isAdmin: false,
         user,
-        ...(!isAdmin && { error: 'User is not an admin' })
+        error: 'User is not an admin. Please contact an administrator to grant you access.'
       };
     } catch (adminCheckError: any) {
-      // Erreur lors de la vérification admin - refuser l'accès par sécurité
+      // Erreur lors de la vérification admin
+      console.error('Erreur lors de la vérification admin:', adminCheckError);
+      
+      // Si c'est une erreur de table inexistante, autoriser l'utilisateur
+      if (adminCheckError.message?.includes('does not exist')) {
+        console.warn('⚠️ Table admin inaccessible, utilisateur authentifié considéré comme admin (fallback)');
+        return {authenticated: true, isAdmin: true, user};
+      }
+      
+      // Sinon, refuser l'accès par sécurité
       return {authenticated: true, isAdmin: false, user, error: 'Unable to verify admin status'};
     }
   } catch (error: any) {
@@ -68,10 +118,26 @@ function getAllowedOrigins(): string[] {
 }
 
 function setSecurityHeaders(res: VercelResponse, origin?: string): void {
-  // Headers de sécurité
+  // Headers de sécurité de base
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  
+  // Content Security Policy
+  const csp = [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: https:",
+    "font-src 'self' data:",
+    "connect-src 'self' https://*.supabase.co",
+    "frame-ancestors 'none'",
+    "base-uri 'self'",
+    "form-action 'self'"
+  ].join('; ');
+  
+  res.setHeader('Content-Security-Policy', csp);
   
   // CORS sécurisé
   const allowedOrigins = getAllowedOrigins();
@@ -91,6 +157,29 @@ export default async function handler(
   res: VercelResponse
 ) {
   const origin = req.headers.origin as string;
+  
+  // Rate limiting
+  const maxRequests = req.method === 'PATCH' ? 30 : 100; // 30 updates/min, 100 reads/min
+  const rateLimit = rateLimitMiddleware(req, maxRequests, 60000);
+  
+  // Ajouter les headers de rate limiting
+  Object.entries(rateLimit.headers).forEach(([key, value]) => {
+    res.setHeader(key, value);
+  });
+  
+  // Vérifier si la requête est autorisée
+  if (!rateLimit.allowed) {
+    const resetTimeStr = rateLimit.headers['X-RateLimit-Reset'];
+    const resetTime = new Date(resetTimeStr).getTime();
+    const retryAfter = Math.ceil((resetTime - Date.now()) / 1000);
+    res.setHeader('Retry-After', Math.max(1, retryAfter).toString());
+    return res.status(429).json({
+      error: 'Trop de requêtes',
+      message: `Limite de ${maxRequests} requêtes par minute dépassée`,
+      retryAfter: Math.max(1, retryAfter)
+    });
+  }
+  
   setSecurityHeaders(res, origin);
 
   if (req.method === 'OPTIONS') {

@@ -1,14 +1,12 @@
-import {createClient} from '@supabase/supabase-js';
-import type {VercelRequest, VercelResponse} from '@vercel/node';
-import {rateLimitMiddleware} from './utils/rate-limiter';
+/**
+ * Utilitaires de sécurité communs pour toutes les routes API
+ */
 
-const supabaseAdmin = createClient(
-  process.env['SUPABASE_URL']!,
-  process.env['SUPABASE_SERVICE_ROLE_KEY']!
-);
+import type {VercelResponse} from '@vercel/node';
+import {rateLimitMiddleware} from './rate-limiter';
 
-// Domaines autorisés pour CORS (identique aux autres routes)
-function getAllowedOrigins(): string[] {
+// Domaines autorisés pour CORS
+export function getAllowedOrigins(): string[] {
   const origins = process.env['ALLOWED_ORIGINS']?.split(',') || [];
   const isDevelopment = process.env['NODE_ENV'] === 'development' || !process.env['NODE_ENV'];
   
@@ -19,7 +17,7 @@ function getAllowedOrigins(): string[] {
   return origins.filter(origin => origin.trim().length > 0);
 }
 
-function setSecurityHeaders(res: VercelResponse, origin?: string): void {
+export function setSecurityHeaders(res: VercelResponse, origin?: string): void {
   // Headers de sécurité de base
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
@@ -33,7 +31,7 @@ function setSecurityHeaders(res: VercelResponse, origin?: string): void {
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: https:",
     "font-src 'self' data:",
-    "connect-src 'self' https://*.supabase.co",
+    "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'"
@@ -54,14 +52,8 @@ function setSecurityHeaders(res: VercelResponse, origin?: string): void {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
 }
 
-export default async function handler(
-  req: VercelRequest,
-  res: VercelResponse
-) {
-  const origin = req.headers.origin as string;
-  
-  // Rate limiting : 100 requêtes GET par minute
-  const rateLimit = rateLimitMiddleware(req, 100, 60000);
+export function applyRateLimit(req: any, res: VercelResponse, maxRequests: number = 100): boolean {
+  const rateLimit = rateLimitMiddleware(req, maxRequests, 60000);
   
   // Ajouter les headers de rate limiting
   Object.entries(rateLimit.headers).forEach(([key, value]) => {
@@ -70,50 +62,19 @@ export default async function handler(
   
   // Vérifier si la requête est autorisée
   if (!rateLimit.allowed) {
+    // Le header X-RateLimit-Reset contient une date ISO string
     const resetTimeStr = rateLimit.headers['X-RateLimit-Reset'];
     const resetTime = new Date(resetTimeStr).getTime();
     const retryAfter = Math.ceil((resetTime - Date.now()) / 1000);
     res.setHeader('Retry-After', Math.max(1, retryAfter).toString());
-    return res.status(429).json({
+    res.status(429).json({
       error: 'Trop de requêtes',
-      message: 'Limite de 100 requêtes par minute dépassée',
+      message: `Limite de ${maxRequests} requêtes par minute dépassée`,
       retryAfter: Math.max(1, retryAfter)
     });
+    return false;
   }
   
-  setSecurityHeaders(res, origin);
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
-  if (req.method === 'GET') {
-    try {
-      const { data, error } = await supabaseAdmin
-        .from('blocked_dates')
-        .select('*')
-        .gte('blocked_date', new Date().toISOString().split('T')[0])
-        .order('blocked_date', { ascending: true });
-
-      if (error) {
-        console.error('Supabase error:', error);
-        const isDevelopment = process.env['NODE_ENV'] === 'development';
-        return res.status(500).json({ 
-          error: 'Erreur lors de la récupération des dates bloquées',
-          ...(isDevelopment && { details: error.message })
-        });
-      }
-
-      return res.status(200).json(data);
-    } catch (error: any) {
-      console.error('Server error:', error);
-      const isDevelopment = process.env['NODE_ENV'] === 'development';
-      return res.status(500).json({ 
-        error: 'Erreur interne du serveur',
-        ...(isDevelopment && { details: error.message })
-      });
-    }
-  }
-
-  return res.status(405).json({ error: 'Method not allowed' });
+  return true;
 }
+
