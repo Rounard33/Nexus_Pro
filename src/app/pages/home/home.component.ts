@@ -13,6 +13,7 @@ import {ScrollToTopComponent} from '../../components/scroll-to-top/scroll-to-top
 import {Prestation, ServicesComponent} from '../../components/services/services.component';
 import {Testimonial, TestimonialsComponent} from '../../components/testimonials/testimonials.component';
 import {WelcomeComponent} from '../../components/welcome/welcome.component';
+import {ContentService} from '../../services/content.service';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -38,16 +39,105 @@ gsap.registerPlugin(ScrollTrigger);
 })
 export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   selectedPrestation: Prestation | null = null;
+  
+  // Données chargées depuis l'API
+  prestations: Prestation[] = [];
+  creations: Creation[] = [];
+  testimonials: Testimonial[] = [];
+  faqs: FaqItem[] = [];
+  
+  isLoading = true;
 
-  constructor() {}
+  constructor(private contentService: ContentService) {}
 
   ngOnInit() {
     // Écouter la touche Escape pour fermer la modal
     document.addEventListener('keydown', this.handleEscapeKey.bind(this));
+    
+    // Charger les données depuis l'API
+    this.loadContent();
+  }
+
+  // Charger tout le contenu depuis l'API
+  private loadContent() {
+    this.isLoading = true;
+    
+    // Charger les prestations
+    this.contentService.getPrestations().subscribe({
+      next: (data) => {
+        // Transformer les données de la DB vers le format attendu
+        this.prestations = data.map(p => ({
+          name: p.name,
+          price: p.price || '',
+          atHome: p.at_home,
+          priceOption: p.price_option,
+          duration: p.duration,
+          shortDescription: p.short_description,
+          description: p.description,
+          image: p.image_url || ''
+        }));
+      },
+      error: (error) => {
+        console.error('Erreur lors du chargement des prestations:', error);
+        this.prestations = [];
+      }
+    });
+
+    // Charger les créations
+    this.contentService.getCreations().subscribe({
+      next: (data) => {
+        this.creations = data.map(c => ({
+          name: c.name,
+          price: c.price,
+          description: c.description,
+          image: c.image_url || ''
+        }));
+      },
+      error: (error) => {
+        console.error('Erreur lors du chargement des créations:', error);
+        this.creations = [];
+      }
+    });
+
+    // Charger les témoignages
+    this.contentService.getTestimonials().subscribe({
+      next: (data) => {
+        this.testimonials = data.map(t => ({
+          name: t.name,
+          role: t.role || '',
+          text: t.text,
+          avatar: t.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(t.name)}&background=f5f1e8&color=6f5f4e&size=150`
+        }));
+      },
+      error: (error) => {
+        console.error('Erreur lors du chargement des témoignages:', error);
+        this.testimonials = [];
+      }
+    });
+
+    // Charger les FAQ
+    this.contentService.getFaqs().subscribe({
+      next: (data) => {
+        this.faqs = data.map(f => ({
+          question: f.question,
+          answer: f.answer,
+          isOpen: false
+        }));
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('Erreur lors du chargement des FAQ:', error);
+        this.faqs = [];
+        this.isLoading = false;
+      }
+    });
   }
 
   ngAfterViewInit() {
-    this.initScrollAnimations();
+    // Attendre que les données soient chargées avant d'initialiser les animations
+    setTimeout(() => {
+      this.initScrollAnimations();
+    }, 500);
     
     // Empêcher le scroll du body quand la modal est ouverte
     if (this.selectedPrestation) {
@@ -67,153 +157,6 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  // Données pour les prestations
-  prestations: Prestation[] = [
-    {
-      name: 'Reiki Usui',
-      price: '50€',
-      atHome: '60€ à domicile',
-      duration: 'Environ 1h15',
-      shortDescription: 'Méthode de soin par apposition des mains permettant de faire circuler l\'énergie. Agit sur 3 niveaux : physique, psychologique et inconscient.',
-      description: 'Autorisez-vous une pause et venez retrouver votre sérénité intérieure. Parfois nos émotions se font trop pesantes et notre corps manque de vitalité. Je vous accompagne avec l\'énergie Reiki afin de vous aider à retrouver harmonie et équilibre. Le Reiki est une méthode de soin par apposition des mains sur différentes parties du corps, permettant de faire circuler l\'énergie. L\'énergie Reiki nettoie (élimine les toxines), booste et comble les vides. Elle agit sur 3 niveaux : les maux physiques (douleurs, anciennes blessures...), psychologiques (agit sur le stress, la fatigue, la colère...) et inconscients. La séance de Reiki permet un bien-être total, une harmonisation du corps et de l\'esprit. Déroulement : scanner corporel pour connaître les trous d\'énergie dans l\'aura de la personne puis les 19 positions allant de la tête jusqu\'aux pieds.',
-      image: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&h=600&fit=crop'
-    },
-    {
-      name: 'Reiki à distance',
-      price: '30€ (4 jours)',
-      priceOption: '45€ (7 jours)',
-      shortDescription: 'Envoi de Reiki à distance pour vous accompagner lors de moments importants ou lorsque vous êtes loin.',
-      description: 'Pour vous accompagner dans des moments de vie particuliers ou lorsque vous êtes loin, il est possible d\'envoyer du Reiki à distance. Après une séance pour compléter un soin, ou à une personne qui est loin, ou à un moment important à venir (entretien d\'embauche, opération, passage d\'examen, etc.), l\'énergie Reiki peut vous accompagner même à distance.',
-      image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800&h=600&fit=crop'
-    },
-    {
-      name: 'Reiki sur les animaux',
-      price: '60€',
-      duration: '20 à 40 min (selon l\'animal et le besoin)',
-      shortDescription: 'Soin énergétique adapté aux animaux pour réduire leur stress et soulager leurs douleurs physiques et psychologiques.',
-      description: 'Nous pouvons aussi en faire profiter nos compagnons à 4 pattes. Le Reiki pourra les aider dans la gestion de leurs maux physiques et psychologiques. Les aider à réduire leur stress, se sentir mieux dans leurs pattes et soulager leurs douleurs. Animaux concernés : chiens, chats, chevaux, lapins.',
-      image: 'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=800&h=600&fit=crop'
-    },
-    {
-      name: 'Alignement des chakras',
-      price: '30€',
-      atHome: '40€ à domicile',
-      duration: '15 à 20 min',
-      shortDescription: 'Harmonisation des centres énergétiques pour retrouver l\'équilibre et recharger vos batteries.',
-      description: 'Venez recharger vos batteries et retrouver l\'harmonie dans votre corps et votre esprit. Les chakras sont les centres énergétiques de notre corps. Ils sont comme de petites roues qui tournent dans un sens et à une vitesse qui nous est propre. Parfois ils se dérèglent et cela entraîne une désharmonie dans notre corps et notre mental. L\'harmonisation des chakras permet de retrouver le bien-être, de recharger les batteries.',
-      image: 'https://images.unsplash.com/photo-1586339949916-3e9457bef6d3?w=800&h=600&fit=crop'
-    },
-    {
-      name: 'Massage crânien énergétique',
-      price: '65€',
-      duration: '1h30',
-      shortDescription: 'Libération des tensions mentales pour retrouver l\'apaisement, le sommeil et une meilleure concentration.',
-      description: 'Une invitation au lâcher-prise. Le massage crânien énergétique permet de libérer les tensions de votre mental. Il est souvent difficile de déconnecter, de réellement lâcher prise, d\'évacuer nos pensées et notre stress de la vie quotidienne. Le massage crânien énergétique est votre meilleur allié pour ça. Il permet également d\'obtenir un apaisement global, du corps et de l\'esprit, de retrouver le sommeil et d\'être plus efficace au travail en retrouvant une bonne capacité de concentration.',
-      image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=600&fit=crop'
-    },
-    {
-      name: 'Harmonisation des lieux de vie',
-      price: '80€',
-      shortDescription: 'Purification et harmonisation énergétique de votre espace de vie pour créer un environnement bienveillant.',
-      description: 'Quoi de plus important que de se sentir bien chez soi ? Je propose de purifier votre lieu de vie en le nettoyant des mauvaises énergies, en augmentant son taux vibratoire (niveau d\'énergie dégagé) afin de ressentir du bien-être et enfin de le protéger des mauvaises énergies. Nettoyage au Palo Santo (le Palo Santo purifie l\'air et évacue les mauvaises énergies), nettoyage et protection de l\'espace avec l\'énergie Reiki SHK, augmentation du taux vibratoire du lieu avec le CKR.',
-      image: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&h=600&fit=crop'
-    },
-    {
-      name: 'PNL (Programmation NeuroLinguistique)',
-      price: '50€ (1h)',
-      priceOption: '60€ (1h30)',
-      duration: '1h ou 1h30',
-      shortDescription: 'Technique de développement personnel pour activer vos ressources et mieux gérer vos situations de vie.',
-      description: 'Vous avez en vous des ressources insoupçonnées pour faire face à des situations de vie qui vous semblent difficiles. La PNL vous donne les techniques et vous aide à trouver en vous les ressources nécessaires que ce soit pour guérir d\'une situation passée ou changer ses comportements afin de mieux appréhender une situation future. Une approche de développement personnel qui s\'appuie sur la communication verbale et non verbale afin d\'aider une personne à s\'épanouir dans son environnement personnel et professionnel. Améliorer la communication, prendre de la distance avec des situations passées, améliorer la confiance en soi, activer de nouvelles ressources.',
-      image: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&h=600&fit=crop'
-    },
-    {
-      name: 'Tirage de cartes',
-      price: '40€',
-      duration: 'Environ 1h',
-      shortDescription: 'Tirage d\'oracle pour éclairer votre chemin de vie et vous aider dans vos prises de décisions importantes.',
-      description: 'Les cartes ont quelque chose de magique qui attirent ou qui rendent curieux, même les plus sceptiques. Elles nous ouvrent les yeux sur ce qu\'on savait déjà, nous réconfortent, nous alertent et peuvent parfois nous aider dans nos prises de décisions. Tirage du chemin de vie avec l\'oracle : événements passés, présents ou futurs qui ont ou vont marquer votre vie et la personne que vous êtes. La personne peut également poser des questions précises (travail, vie sentimentale, vie spirituelle). Tirage avec un deuxième jeu pour comparer (autre oracle ou tarot de Marseille). Possibilité de préciser les réponses au pendule. Tarif pour 3 tirages (3 questions ou 3 jeux différents).',
-      image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&h=600&fit=crop'
-    }
-  ];
-
-  // Données pour les créations
-  creations: Creation[] = [
-    {
-      name: 'Petites bougies - Les Roses',
-      price: '8€',
-      description: 'Parfumées à la fleur de coton avec pierre de quartz rose.',
-      image: 'assets/img/bougie_2.jpg'
-    },
-    {
-      name: 'Grandes bougies',
-      price: '14€',
-      description: 'Pot fait main, parfumée avec pierres énergétiques.',
-      image: 'assets/img/bougie_1.jpg'
-    },
-    {
-      name: 'Bracelets énergétiques',
-      price: '8€',
-      description: 'Bracelets avec les pierres utilisées dans les soins énergétiques.',
-      image: 'https://images.unsplash.com/photo-1611652022419-a9419f74343d?w=600&h=600&fit=crop'
-    }
-  ];
-
-  // Données pour les témoignages
-  testimonials: Testimonial[] = [
-    {
-      name: 'Marie D.',
-      role: 'Cliente',
-      text: 'Je recommande vivement les séances de la couleur de l\'Aura. Une personne bienveillante et à l\'écoute. J\'ai ressenti un réel apaisement dès la première séance.',
-      avatar: 'https://ui-avatars.com/api/?name=Marie+D&background=f5f1e8&color=6f5f4e&size=150'
-    },
-    {
-      name: 'Sophie L.',
-      role: 'Cliente',
-      text: 'Excellente praticienne ! Les séances m\'ont permis de mieux gérer mon stress et de retrouver un équilibre au quotidien. L\'environnement est vraiment apaisant.',
-      avatar: 'https://ui-avatars.com/api/?name=Sophie+L&background=f5f1e8&color=6f5f4e&size=150'
-    },
-    {
-      name: 'Claire M.',
-      role: 'Cliente',
-      text: 'Ma fille de 8 ans a beaucoup apprécié sa séance de Reiki. Pauline a su s\'adapter avec douceur. Merci pour cette approche bienveillante envers les enfants.',
-      avatar: 'https://ui-avatars.com/api/?name=Claire+M&background=f5f1e8&color=6f5f4e&size=150'
-    }
-  ];
-
-  // Données pour la FAQ
-  faqs: FaqItem[] = [
-    {
-      question: 'Qu\'est-ce que le Reiki ?',
-      answer: 'Le Reiki est une méthode de guérison énergétique d\'origine japonaise qui vise à harmoniser le corps et l\'esprit par l\'apposition des mains. Il favorise la détente et aide à libérer les blocages énergétiques.',
-      isOpen: false
-    },
-    {
-      question: 'Comment se déroule une séance ?',
-      answer: 'Une séance de Reiki dure généralement entre 60 et 90 minutes. Vous restez habillé et allongé sur une table de massage. Le praticien pose délicatement ses mains sur différentes parties du corps pour transmettre l\'énergie Reiki.',
-      isOpen: false
-    },
-    {
-      question: 'Le Reiki est-il douloureux ?',
-      answer: 'Non, le Reiki est une pratique douce et non invasive. Il n\'y a pas de manipulation, juste un toucher léger qui transmet l\'énergie. La plupart des personnes ressentent une profonde détente.',
-      isOpen: false
-    },
-    {
-      question: 'Combien de séances sont nécessaires ?',
-      answer: 'Cela dépend de vos besoins et de vos objectifs. Certaines personnes ressentent un bienfait dès la première séance, d\'autres préfèrent un suivi régulier. Nous pouvons discuter ensemble de ce qui vous convient le mieux.',
-      isOpen: false
-    },
-    {
-      question: 'Le Reiki peut-il remplacer la médecine traditionnelle ?',
-      answer: 'Le Reiki est une pratique complémentaire qui ne remplace pas la médecine conventionnelle. Il peut être utilisé en complément pour favoriser le bien-être et la détente.',
-      isOpen: false
-    },
-    {
-      question: 'Comment réserver une séance ?',
-      answer: 'Vous pouvez réserver directement en ligne en cliquant sur "Réserver un créneau" sur la prestation qui vous intéresse. Je vous confirmerai ensuite la réservation par email.',
-      isOpen: false
-    }
-  ];
 
   // Méthode pour ouvrir la modal de détails
   openDetailsModal(prestation: Prestation): void {

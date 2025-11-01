@@ -1,3 +1,4 @@
+import {provideHttpClient} from '@angular/common/http';
 import {ApplicationConfig} from '@angular/core';
 import {provideRouter} from '@angular/router';
 
@@ -10,6 +11,7 @@ import {ThemeService} from './services/theme.service';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes),
+    provideHttpClient(),
     ThemeService,
     AnimationService,
     ParallaxService,

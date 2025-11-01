@@ -7,41 +7,23 @@
     </app-section-header>
     
     <div class="about-content">
-      <div class="about-text">
-        <p class="about-description">
-          Après 10 ans passés à travailler dans la finance, des bouleversements dans ma vie personnelle et le sentiment que mes valeurs n'étaient plus en phase avec l'exercice de mon métier,
-          j'ai fait un burn out. 
-        </p>
-        <p class="about-description">
-          Les épreuves de la vie m'ont poussées à me recentrer sur moi, être plus à l'écoute de mon corps et de mes émotions et privilégier ce qui est vraiment important. 
-        </p>
-        <p class="about-description">
-          Je me suis alors tournée vers les soins énergétiques. 
-          La découverte du Reïki a été pour moi une révélation et un réel moyen en accord avec mes valeurs pour prendre soin de moi et des autres.  
-        </p>
-        <p class="about-description">
-          Développer mes ressentis, laisser agir des choses qu'on ne voit pas avec nos yeux. 
-          Cela avait quelque chose de magique. 
-          Découvrir qu'avec mes mains j'arrivais à apaiser et soulager, grâce à l'énergie Reïki avait quelque chose de très satisfaisant.  
-        </p>
-        <p class="about-description">
-          J'avais enfin trouvé cette activité qui raisonne en moi et avec laquelle je me sentais alignée. 
-          Il est donc temps pour moi de me réinventer et d'écrire avec vous ce nouveau chapitre de ma vie. 
-          Me servir de mes expériences de vie pour vous accompagner et vous aider à retrouver la sérénité.  
-        </p>
-        <p class="about-description">
-          Et ce n'est que le début de l'aventure… 
+      <div class="about-text" *ngIf="!isLoading">
+        <p class="about-description" *ngFor="let paragraph of aboutContent">
+          {{ paragraph.content }}
         </p>
         <div class="about-actions">
           <a routerLink="/contact" class="btn btn-outline">Me contacter</a>
         </div>
       </div>
-        <div class="about-image">
-          <div class="image-wrapper">
-            <img src="assets/img/pauline.jpg" alt="Pauline">
-          </div>
-          <div class="image-accent"></div>
+      <div class="about-text" *ngIf="isLoading">
+        <p class="about-description">Chargement...</p>
+      </div>
+      <div class="about-image">
+        <div class="image-wrapper">
+          <img [src]="getAboutImage()" alt="Pauline">
         </div>
+        <div class="image-accent"></div>
+      </div>
     </div>
   </div>
 </section>
