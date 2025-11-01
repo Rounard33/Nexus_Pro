@@ -1,24 +1,126 @@
 .creations {
   padding: 6rem 0;
   background: white;
+  overflow: hidden; // Important pour cacher le débordement
 }
 
-.creations-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 2.5rem;
+.creations-carousel-wrapper {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
   margin-bottom: 3rem;
+  padding: 1rem 0;
+
+  // Effet de fade sur les côtés gauche et droit
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 80px; // Largeur du fade
+    z-index: 10;
+    pointer-events: none; // Permet de cliquer à travers
+    transition: opacity 0.3s ease;
+  }
+
+  &::before {
+    left: 0;
+    background: linear-gradient(to right, 
+      rgba(255, 255, 255, 1) 0%,
+      rgba(255, 255, 255, 0.8) 30%,
+      rgba(255, 255, 255, 0) 100%
+    );
+  }
+
+  &::after {
+    right: 0;
+    background: linear-gradient(to left, 
+      rgba(255, 255, 255, 1) 0%,
+      rgba(255, 255, 255, 0.9) 20%,
+      rgba(255, 255, 255, 0.6) 50%,
+      rgba(255, 255, 255, 0.2) 80%,
+      rgba(255, 255, 255, 0) 100%
+    );
+  }
+
+  // Ajustement pour les résolutions intermédiaires (tablettes)
+  @media (min-width: 769px) and (max-width: 1024px) {
+    &::before,
+    &::after {
+      width: 60px; // Réduire la largeur du fade sur tablette
+    }
+    
+    &::before {
+      background: linear-gradient(to right, 
+        rgba(255, 255, 255, 1) 0%,
+        rgba(255, 255, 255, 0.8) 30%,
+        rgba(255, 255, 255, 0.4) 60%,
+        rgba(255, 255, 255, 0) 100%
+      );
+    }
+    
+    &::after {
+      background: linear-gradient(to left, 
+        rgba(255, 255, 255, 1) 0%,
+        rgba(255, 255, 255, 0.8) 30%,
+        rgba(255, 255, 255, 0.4) 60%,
+        rgba(255, 255, 255, 0) 100%
+      );
+    }
+  }
+
+  @media (max-width: 768px) {
+    overflow-x: auto; // Permet le scroll horizontal natif sur mobile
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch; // Smooth scroll sur iOS
+    scroll-snap-type: x mandatory; // Snap sur chaque carte
+    scroll-behavior: smooth;
+    
+    // Masquer la scrollbar
+    scrollbar-width: none; // Firefox
+    -ms-overflow-style: none; // IE/Edge
+    
+    &::-webkit-scrollbar {
+      display: none; // Chrome/Safari
+    }
+
+    // Sur mobile, masquer complètement les fades pour éviter les problèmes de rendu
+    // Le scroll natif fonctionne mieux sans overlay de gradient
+    &::before,
+    &::after {
+      display: none;
+    }
+  }
+}
+
+.creations-track {
+  display: flex;
+  gap: 2rem;
+  width: fit-content;
+  will-change: transform;
+
+  @media (max-width: 768px) {
+    // Sur mobile, permettre le scroll natif sans animation GSAP
+    transform: none !important; // Override GSAP transform sur mobile
+  }
 }
 
 .creation-card {
+  flex: 0 0 280px; // Largeur fixe pour chaque carte
   background: white;
   border-radius: 20px;
   overflow: hidden;
   box-shadow: 0 5px 25px rgba(0, 0, 0, 0.06);
   transition: all 0.4s ease;
 
+  @media (max-width: 768px) {
+    flex: 0 0 260px; // Plus petit sur mobile
+    scroll-snap-align: start; // Snap sur chaque carte
+  }
+
   &:hover {
-    transform: translateY(-5px);
+    transform: translateY(-5px) scale(1.02);
     box-shadow: 0 10px 35px rgba(0, 0, 0, 0.1);
   }
 }
@@ -82,6 +184,7 @@
 
   .creation-card {
     border-radius: 16px;
+    // flex et scroll-snap-align déjà définis plus haut
   }
 
   .creation-image {
@@ -92,4 +195,3 @@
     padding: 1.5rem;
   }
 }
-

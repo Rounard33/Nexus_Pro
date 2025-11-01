@@ -7,13 +7,20 @@
       description="Découvrez mes créations artisanales inspirées du bien-être">
     </app-section-header>
     
-    <div class="creations-grid">
-      <div class="creation-card" *ngFor="let creation of creations; let i = index">
-        <div class="creation-image" [style.background-image]="'url(' + creation.image + ')'"></div>
-        <div class="creation-info">
-          <h3 class="creation-name">{{ creation.name }}</h3>
-          <p class="creation-description">{{ creation.description }}</p>
-          <div class="creation-price">{{ creation.price }}</div>
+    <div class="creations-carousel-wrapper"
+         (mouseenter)="!isMobile && pauseCarousel()"
+         (mouseleave)="!isMobile && resumeCarousel()">
+      <div class="creations-track" #track>
+        <div class="creation-card" 
+             *ngFor="let creation of duplicatedCreations; let i = index">
+          <div class="creation-image" 
+               [style.background-image]="'url(' + creation.image + ')'">
+          </div>
+          <div class="creation-info">
+            <h3 class="creation-name">{{ creation.name }}</h3>
+            <p class="creation-description">{{ creation.description }}</p>
+            <div class="creation-price">{{ creation.price }}</div>
+          </div>
         </div>
       </div>
     </div>
