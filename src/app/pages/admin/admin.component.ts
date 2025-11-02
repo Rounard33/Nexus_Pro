@@ -13,6 +13,7 @@ import {AuthService} from '../../services/auth.service';
 export class AdminComponent implements OnInit {
   currentUser: any = null;
   activeTab: string = 'dashboard';
+  sidebarOpen: boolean = false;
 
   constructor(private authService: AuthService) {}
 
@@ -28,6 +29,18 @@ export class AdminComponent implements OnInit {
 
   setActiveTab(tab: string): void {
     this.activeTab = tab;
+    // Fermer la sidebar sur mobile après sélection
+    if (window.innerWidth <= 768) {
+      this.sidebarOpen = false;
+    }
+  }
+
+  toggleSidebar(): void {
+    this.sidebarOpen = !this.sidebarOpen;
+  }
+
+  closeSidebar(): void {
+    this.sidebarOpen = false;
   }
 }
 

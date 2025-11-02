@@ -1,11 +1,12 @@
 import {CommonModule} from '@angular/common';
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {FormsModule} from '@angular/forms';
+import {ActivatedRoute, Router} from '@angular/router';
 import {Subject, debounceTime, distinctUntilChanged, takeUntil} from 'rxjs';
 import {
-    APPOINTMENT_STATUS_CLASSES,
-    APPOINTMENT_STATUS_LABELS,
-    AppointmentStatus
+  APPOINTMENT_STATUS_CLASSES,
+  APPOINTMENT_STATUS_LABELS,
+  AppointmentStatus
 } from '../../../models/appointment-status.enum';
 import {Appointment, ContentService} from '../../../services/content.service';
 import {NotificationService} from '../../../services/notification.service';
@@ -43,12 +44,26 @@ export class AppointmentsComponent implements OnInit, OnDestroy {
 
   constructor(
     private contentService: ContentService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private route: ActivatedRoute,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
     this.setupSearchDebounce();
-    this.loadAppointments();
+    
+    // Lire les query params pour appliquer les filtres depuis le dashboard
+    this.route.queryParams.subscribe(params => {
+      if (params['statusFilter']) {
+        this.statusFilter = params['statusFilter'];
+      }
+      if (params['dateFilter']) {
+        this.dateFilter = params['dateFilter'];
+      }
+      
+      // Charger les rendez-vous après avoir appliqué les filtres
+      this.loadAppointments();
+    });
   }
 
   ngOnDestroy(): void {

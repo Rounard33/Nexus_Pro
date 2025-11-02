@@ -3,7 +3,7 @@
 
   <!-- Statistiques -->
   <div class="stats-grid" *ngIf="!isLoading">
-    <div class="stat-card">
+    <div class="stat-card" (click)="openDetails('total')" role="button" tabindex="0" (keydown.enter)="openDetails('total')" (keydown.space)="openDetails('total')">
       <div class="stat-icon stat-icon-primary">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="10"/>
@@ -16,7 +16,7 @@
       </div>
     </div>
 
-    <div class="stat-card">
+    <div class="stat-card" (click)="openDetails('pending')" role="button" tabindex="0" (keydown.enter)="openDetails('pending')" (keydown.space)="openDetails('pending')">
       <div class="stat-icon stat-icon-warning">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="10"/>
@@ -30,7 +30,7 @@
       </div>
     </div>
 
-    <div class="stat-card">
+    <div class="stat-card" (click)="openDetails('accepted')" role="button" tabindex="0" (keydown.enter)="openDetails('accepted')" (keydown.space)="openDetails('accepted')">
       <div class="stat-icon stat-icon-success">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
@@ -43,7 +43,7 @@
       </div>
     </div>
 
-    <div class="stat-card">
+    <div class="stat-card" (click)="openDetails('rejected')" role="button" tabindex="0" (keydown.enter)="openDetails('rejected')" (keydown.space)="openDetails('rejected')">
       <div class="stat-icon stat-icon-danger">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="10"/>

@@ -2,6 +2,55 @@
   display: flex;
   min-height: 100vh;
   background: #f5f5f5;
+  position: relative;
+}
+
+.mobile-menu-toggle {
+  display: none; // Caché par défaut (desktop)
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 10000;
+  background: white !important;
+  border: 2px solid #8b7a62 !important;
+  border-radius: 8px;
+  padding: 0.75rem;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+  transition: all 0.2s ease;
+  min-width: 48px;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    background: #f5f5f5 !important;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  svg {
+    display: block;
+    width: 24px;
+    height: 24px;
+    stroke: #333 !important;
+    stroke-width: 2.5;
+  }
+}
+
+.mobile-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 99;
+  backdrop-filter: blur(2px);
 }
 
 .admin-sidebar {
@@ -15,11 +64,11 @@
   left: 0;
   top: 0;
   z-index: 100;
+  transition: transform 0.3s ease;
 }
 
 .sidebar-header {
-  padding: 2rem 1.5rem;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  display: none; // Masquer le header de la sidebar partout
 }
 
 .sidebar-title {
@@ -40,6 +89,8 @@
   flex: 1;
   padding: 1rem 0;
   overflow-y: auto;
+  top: 100px;
+  position: absolute;
 }
 
 .nav-item {
@@ -103,6 +154,7 @@
   flex: 1;
   margin-left: 280px;
   min-height: 100vh;
+  padding-top: 80px; // Espace pour le header fixe
 }
 
 .admin-content {
@@ -123,30 +175,62 @@
 }
 
 @media (max-width: 768px) {
-  .admin-sidebar {
-    width: 100%;
-    height: auto;
-    position: relative;
-    border-right: none;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  .mobile-menu-toggle {
+    display: flex !important; // Forcer l'affichage sur mobile
+    position: fixed !important;
+    top: calc(70px + 0.5rem) !important; // Positionné juste sous le header (70px min-height + petit espace)
+    left: 1rem !important;
+    z-index: 99999 !important; // Extrêmement élevé pour être au-dessus de tout (header, etc.)
+    background: white !important;
+    border: 2px solid #8b7a62 !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    min-width: 48px !important;
+    min-height: 48px !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
   }
 
+  .mobile-overlay {
+    display: block; // Afficher l'overlay quand le menu est ouvert
+    z-index: 99;
+  }
+
+  .admin-sidebar {
+    width: 280px;
+    max-width: 85vw; // Max 85% de la largeur de l'écran
+    height: 100vh;
+    position: fixed;
+    transform: translateX(-100%); // Masqué par défaut
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.15);
+    z-index: 100;
+    transition: transform 0.3s ease;
+
+    &.sidebar-open {
+      transform: translateX(0); // Visible quand ouvert
+    }
+  }
+
+
   .sidebar-nav {
-    display: flex;
-    overflow-x: auto;
-    padding: 0.5rem;
-    gap: 0.5rem;
+    padding: 0.75rem 0;
+    overflow-y: auto;
+        top: 150px;
+    position: absolute;
   }
 
   .nav-item {
-    flex-shrink: 0;
     padding: 0.75rem 1rem;
-    border-left: none;
-    border-bottom: 3px solid transparent;
+    font-size: 0.9rem;
+    border-left: 3px solid transparent;
+
+    svg {
+      width: 18px;
+      height: 18px;
+    }
 
     &.active {
-      border-left: none;
-      border-bottom-color: var(--primary-600);
+      border-left-color: var(--primary-600);
     }
 
     span {
@@ -154,12 +238,30 @@
     }
   }
 
+  .sidebar-footer {
+    padding: 1rem;
+  }
+
+  .logout-btn {
+    padding: 0.75rem;
+    font-size: 0.9rem;
+
+    svg {
+      width: 18px;
+      height: 18px;
+    }
+  }
+
   .admin-main {
-    margin-left: 0;
+    margin-left: 0; // Pas de marge, le contenu prend toute la largeur
+    width: 100%;
+    min-width: 0;
   }
 
   .admin-content {
     padding: 1rem;
+    width: 100%;
+    max-width: 100%;
   }
 }
 

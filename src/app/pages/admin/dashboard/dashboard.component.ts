@@ -1,6 +1,6 @@
 import {CommonModule} from '@angular/common';
 import {Component, OnInit} from '@angular/core';
-import {RouterModule} from '@angular/router';
+import {Router, RouterModule} from '@angular/router';
 import {Appointment, ContentService} from '../../../services/content.service';
 
 @Component({
@@ -20,7 +20,10 @@ export class DashboardComponent implements OnInit {
   recentAppointments: Appointment[] = [];
   isLoading = true;
 
-  constructor(private contentService: ContentService) {}
+  constructor(
+    private contentService: ContentService,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
     this.loadStats();
@@ -88,6 +91,45 @@ export class DashboardComponent implements OnInit {
     const total = this.stats.acceptedThisMonth + this.stats.rejectedThisMonth;
     if (total === 0) return 0;
     return Math.round((this.stats.acceptedThisMonth / total) * 100);
+  }
+
+  openDetails(type: string): void {
+    const today = new Date();
+    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    const startDate = firstDayOfMonth.toISOString().split('T')[0];
+    const endDate = lastDayOfMonth.toISOString().split('T')[0];
+
+    switch (type) {
+      case 'total':
+        // Tous les rendez-vous du mois
+        this.router.navigate(['/admin/appointments'], {
+          queryParams: { dateFilter: 'month' }
+        });
+        break;
+      case 'pending':
+        // Rendez-vous en attente
+        this.router.navigate(['/admin/appointments'], {
+          queryParams: { statusFilter: 'pending' }
+        });
+        break;
+      case 'accepted':
+        // Rendez-vous acceptés ce mois
+        this.router.navigate(['/admin/appointments'], {
+          queryParams: { statusFilter: 'accepted', dateFilter: 'month' }
+        });
+        break;
+      case 'rejected':
+        // Rendez-vous refusés ce mois
+        this.router.navigate(['/admin/appointments'], {
+          queryParams: { statusFilter: 'rejected', dateFilter: 'month' }
+        });
+        break;
+      case 'rate':
+        // Aller vers les statistiques
+        this.router.navigate(['/admin/statistics']);
+        break;
+    }
   }
 }
 

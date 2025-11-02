@@ -1,6 +1,18 @@
 <div class="admin-container">
+  <!-- Mobile Menu Toggle -->
+  <button class="mobile-menu-toggle" (click)="toggleSidebar()" aria-label="Toggle menu">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <line x1="3" y1="6" x2="21" y2="6"/>
+      <line x1="3" y1="12" x2="21" y2="12"/>
+      <line x1="3" y1="18" x2="21" y2="18"/>
+    </svg>
+  </button>
+
+  <!-- Mobile Overlay -->
+  <div class="mobile-overlay" *ngIf="sidebarOpen" (click)="closeSidebar()"></div>
+
   <!-- Sidebar -->
-  <aside class="admin-sidebar">
+  <aside class="admin-sidebar" [class.sidebar-open]="sidebarOpen">
     <div class="sidebar-header">
       <h2 class="sidebar-title">Administration</h2>
       <p class="sidebar-subtitle" *ngIf="currentUser">{{ currentUser.email }}</p>
