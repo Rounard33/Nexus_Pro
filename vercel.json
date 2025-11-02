@@ -3,10 +3,17 @@
   "buildCommand": "npm run generate:env && npm run build:prod",
   "outputDirectory": "dist/template/browser",
   "installCommand": "npm install",
-  "rewrites": [
+  "routes": [
     {
-      "source": "/((?!api).*)",
-      "destination": "/index.html"
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
     }
   ]
 }
