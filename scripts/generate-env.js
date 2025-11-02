@@ -3,8 +3,13 @@
  * Usage: node scripts/generate-env.js
  */
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
+import {fileURLToPath} from 'url';
+
+// Pour ES modules, on doit utiliser __dirname différemment
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Chemins des fichiers
 const envPath = path.join(__dirname, '..', '.env');

@@ -35,14 +35,27 @@ No 'Access-Control-Allow-Origin' header is present on the requested resource.
 
 ## ✅ Solutions : Deux étapes nécessaires
 
-### ✅ CORRECTION APPLIQUÉE : Ajout de `"type": "module"` dans package.json
+### ✅ CORRECTIONS APPLIQUÉES
 
-Le problème principal a été corrigé : `"type": "module"` a été ajouté à `package.json`. Cela permettra à Node.js de reconnaître vos fichiers API comme modules ES6.
+**1. Ajout de `"type": "module"` dans package.json**
+- Permet à Node.js de reconnaître les fichiers API comme modules ES6
+- Nécessaire pour que Vercel puisse exécuter les fonctions TypeScript compilées
+
+**2. Conversion de `scripts/generate-env.js` en ES modules**
+- Converti de CommonJS (`require`) vers ES modules (`import`)
+- Nécessaire car le script s'exécute pendant le build Vercel
+- Ajout de la gestion de `__dirname` pour ES modules
 
 **Prochaines étapes :**
-1. Commitez et poussez les changements vers votre repository
+1. Commitez et poussez les changements vers votre repository :
+   ```bash
+   git add package.json scripts/generate-env.js api/utils/security-helpers.ts CORS_FIX.md
+   git commit -m "Fix: Convert to ES modules for Vercel compatibility"
+   git push origin main
+   ```
 2. Vercel redéploiera automatiquement
 3. Vérifiez que l'erreur 500 est résolue dans les logs Vercel
+4. Les erreurs `SyntaxError: Cannot use import statement outside a module` ne devraient plus apparaître
 
 ### 🔴 ÉTAPE 1 : Résoudre l'erreur 500 (PRIORITÉ)
 
