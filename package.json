@@ -18,6 +18,7 @@
     "type": "git",
     "url": "https://github.com/nexuspro/theme.git"
   },
+  "type": "module",
   "scripts": {
     "ng": "ng",
     "generate:env": "node scripts/generate-env.js",

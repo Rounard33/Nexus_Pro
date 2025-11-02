@@ -35,6 +35,15 @@ No 'Access-Control-Allow-Origin' header is present on the requested resource.
 
 ## ✅ Solutions : Deux étapes nécessaires
 
+### ✅ CORRECTION APPLIQUÉE : Ajout de `"type": "module"` dans package.json
+
+Le problème principal a été corrigé : `"type": "module"` a été ajouté à `package.json`. Cela permettra à Node.js de reconnaître vos fichiers API comme modules ES6.
+
+**Prochaines étapes :**
+1. Commitez et poussez les changements vers votre repository
+2. Vercel redéploiera automatiquement
+3. Vérifiez que l'erreur 500 est résolue dans les logs Vercel
+
 ### 🔴 ÉTAPE 1 : Résoudre l'erreur 500 (PRIORITÉ)
 
 L'erreur 500 signifie que votre fonction Vercel plante. Il faut d'abord résoudre cela.
@@ -48,7 +57,21 @@ L'erreur 500 signifie que votre fonction Vercel plante. Il faut d'abord résoudr
    - `[CREATIONS]`, `[FAQS]`, `[PRESTATIONS]`, etc.
    - Messages d'erreur comme "Missing env vars", erreurs Supabase, etc.
 
-#### 1.2 Causes fréquentes de l'erreur 500
+#### 1.2 Cause identifiée : Erreur de module ES6 ⚠️
+
+**Le problème réel** : Erreur dans les logs Vercel :
+```
+SyntaxError: Cannot use import statement outside a module
+Failed to load the ES module: /var/task/api/prestations.js
+```
+
+**Explication** :
+- Vos fichiers API utilisent des `import` ES6 (normal pour TypeScript)
+- Vercel compile le TypeScript en JavaScript
+- Node.js ne reconnaît pas les fichiers comme modules ES sans `"type": "module"` dans `package.json`
+- **Solution** : Ajouter `"type": "module"` dans `package.json` (déjà fait ✅)
+
+**Autres causes possibles (à vérifier si l'erreur persiste) :**
 
 **A. Variables d'environnement manquantes**
 - Vérifiez que `SUPABASE_URL` est défini dans Vercel
@@ -59,7 +82,7 @@ L'erreur 500 signifie que votre fonction Vercel plante. Il faut d'abord résoudr
 - Les clés Supabase sont peut-être invalides
 - Le projet Supabase est peut-être suspendu ou supprimé
 
-**C. Erreur dans le code**
+**C. Autres erreurs dans le code**
 - Une exception non gérée dans les requêtes Supabase
 - Un problème avec le rate limiting
 
