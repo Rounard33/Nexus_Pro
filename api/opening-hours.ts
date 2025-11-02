@@ -1,6 +1,7 @@
 import {createClient, SupabaseClient} from '@supabase/supabase-js';
 import type {VercelRequest, VercelResponse} from '@vercel/node';
 import {rateLimitMiddleware} from './utils/rate-limiter';
+import {setCORSHeaders} from './utils/security-helpers';
 
 // Fonction pour vérifier l'authentification et les droits admin
 async function verifyAuth(req: VercelRequest, supabaseAdmin: SupabaseClient): Promise<{authenticated: boolean; isAdmin?: boolean; user?: any; error?: string}> {
@@ -151,6 +152,16 @@ export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ) {
+  const origin = req.headers.origin as string;
+  
+  // ⚠️ IMPORTANT : Définir les headers CORS EN PREMIER, avant toute vérification
+  setCORSHeaders(res, origin, 'GET, PATCH, OPTIONS', 'Content-Type, Authorization');
+  
+  // Gérer les requêtes OPTIONS (preflight) immédiatement
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
   // Vérifier et créer le client Supabase dans le handler
   const supabaseUrl = process.env['SUPABASE_URL'];
   const supabaseKey = process.env['SUPABASE_SERVICE_ROLE_KEY'];
@@ -161,6 +172,7 @@ export default async function handler(
       hasKey: !!supabaseKey,
       nodeEnv: process.env['NODE_ENV']
     });
+    // Les headers CORS sont déjà définis, donc l'erreur sera visible
     return res.status(500).json({ 
       error: 'Configuration serveur incomplète',
       message: 'Variables d\'environnement Supabase manquantes'
@@ -169,8 +181,6 @@ export default async function handler(
 
   // Créer le client maintenant que nous savons que les variables existent
   const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
-  
-  const origin = req.headers.origin as string;
   
   // Rate limiting
   const maxRequests = req.method === 'PATCH' ? 30 : 100; // 30 updates/min, 100 reads/min
@@ -195,10 +205,6 @@ export default async function handler(
   }
   
   setSecurityHeaders(res, origin);
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
 
   if (req.method === 'GET') {
     try {

@@ -17,6 +17,22 @@ export function getAllowedOrigins(): string[] {
   return origins.filter(origin => origin.trim().length > 0);
 }
 
+// Fonction pour définir UNIQUEMENT les headers CORS (appelée en premier)
+export function setCORSHeaders(res: VercelResponse, origin?: string, methods: string = 'GET, POST, PATCH, OPTIONS', headers: string = 'Content-Type, Authorization'): void {
+  const allowedOrigins = getAllowedOrigins();
+  const requestOrigin = origin || '';
+  
+  // Vérifier si l'origine est autorisée
+  if (allowedOrigins.length === 0 || allowedOrigins.includes(requestOrigin) || process.env['NODE_ENV'] === 'development') {
+    res.setHeader('Access-Control-Allow-Origin', requestOrigin || '*');
+  }
+  
+  res.setHeader('Access-Control-Allow-Methods', methods);
+  res.setHeader('Access-Control-Allow-Headers', headers);
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Max-Age', '86400'); // 24 heures
+}
+
 export function setSecurityHeaders(res: VercelResponse, origin?: string): void {
   // Headers de sécurité de base
   res.setHeader('X-Content-Type-Options', 'nosniff');
