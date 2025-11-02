@@ -88,7 +88,7 @@ function generateEnvironmentFile(env, isProduction = false) {
   production: ${isProduction},
   supabaseUrl: '${supabaseUrl}',
   supabaseAnonKey: '${supabaseAnonKey}',
-  apiUrl: '${apiUrl}'
+  apiUrl: '${apiUrl}',
 };
 `;
 }
