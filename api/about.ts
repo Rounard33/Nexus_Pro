@@ -2,15 +2,29 @@ import {createClient} from '@supabase/supabase-js';
 import type {VercelRequest, VercelResponse} from '@vercel/node';
 import {applyRateLimit, setSecurityHeaders} from './utils/security-helpers';
 
-const supabase = createClient(
-  process.env['SUPABASE_URL']!,
-  process.env['SUPABASE_SERVICE_ROLE_KEY']!
-);
-
 export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ) {
+  // Vérifier et créer le client Supabase dans le handler
+  const supabaseUrl = process.env['SUPABASE_URL'];
+  const supabaseKey = process.env['SUPABASE_SERVICE_ROLE_KEY'];
+  
+  if (!supabaseUrl || !supabaseKey) {
+    console.error('[ABOUT] Missing env vars:', {
+      hasUrl: !!supabaseUrl,
+      hasKey: !!supabaseKey,
+      nodeEnv: process.env['NODE_ENV']
+    });
+    return res.status(500).json({ 
+      error: 'Configuration serveur incomplète',
+      message: 'Variables d\'environnement Supabase manquantes'
+    });
+  }
+
+  // Créer le client maintenant que nous savons que les variables existent
+  const supabase = createClient(supabaseUrl, supabaseKey);
+  
   const origin = req.headers.origin as string;
   
   // Rate limiting : 100 requêtes GET par minute
@@ -32,19 +46,20 @@ export default async function handler(
         .order('display_order', { ascending: true });
       
       if (error) {
-        const isDevelopment = process.env['NODE_ENV'] === 'development';
+        console.error('[ABOUT] Supabase error:', error);
         return res.status(500).json({ 
           error: 'Erreur lors de la récupération du contenu',
-          ...(isDevelopment && { details: error.message })
+          details: error.message,
+          code: error.code
         });
       }
       
       return res.json(data);
     } catch (error: any) {
-      const isDevelopment = process.env['NODE_ENV'] === 'development';
+      console.error('[ABOUT] Handler error:', error);
       return res.status(500).json({ 
         error: 'Erreur interne du serveur',
-        ...(isDevelopment && { details: error.message })
+        details: error.message
       });
     }
   }

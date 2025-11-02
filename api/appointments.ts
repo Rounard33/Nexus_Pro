@@ -1,15 +1,10 @@
-import {createClient} from '@supabase/supabase-js';
+import {createClient, SupabaseClient} from '@supabase/supabase-js';
 import type {VercelRequest, VercelResponse} from '@vercel/node';
 import {rateLimitMiddleware} from './utils/rate-limiter';
 import {sanitizeAppointment, validateAppointment, validateAppointmentQuery} from './utils/validation';
 
-const supabaseAdmin = createClient(
-  process.env['SUPABASE_URL']!,
-  process.env['SUPABASE_SERVICE_ROLE_KEY']!
-);
-
 // Fonction pour vérifier l'authentification et les droits admin
-async function verifyAuth(req: VercelRequest): Promise<{authenticated: boolean; isAdmin?: boolean; user?: any; error?: string}> {
+async function verifyAuth(req: VercelRequest, supabaseAdmin: SupabaseClient): Promise<{authenticated: boolean; isAdmin?: boolean; user?: any; error?: string}> {
   const authHeader = req.headers.authorization;
   
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -157,6 +152,25 @@ export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ) {
+  // Vérifier et créer le client Supabase dans le handler
+  const supabaseUrl = process.env['SUPABASE_URL'];
+  const supabaseKey = process.env['SUPABASE_SERVICE_ROLE_KEY'];
+  
+  if (!supabaseUrl || !supabaseKey) {
+    console.error('[APPOINTMENTS] Missing env vars:', {
+      hasUrl: !!supabaseUrl,
+      hasKey: !!supabaseKey,
+      nodeEnv: process.env['NODE_ENV']
+    });
+    return res.status(500).json({ 
+      error: 'Configuration serveur incomplète',
+      message: 'Variables d\'environnement Supabase manquantes'
+    });
+  }
+
+  // Créer le client maintenant que nous savons que les variables existent
+  const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
+  
   const origin = req.headers.origin as string;
   
   // Rate limiting : limites différentes selon la méthode
@@ -226,8 +240,12 @@ export default async function handler(
       const { data, error } = await query;
 
       if (error) {
-        console.error('Supabase error:', error);
-        return res.status(500).json({ error: error.message });
+        console.error('[APPOINTMENTS] Supabase error:', error);
+        return res.status(500).json({ 
+          error: 'Erreur lors de la récupération des rendez-vous',
+          details: error.message,
+          code: error.code
+        });
       }
 
       // Ne pas logger les données sensibles en production
@@ -269,11 +287,11 @@ export default async function handler(
         .in('status', ['pending', 'accepted']);
 
       if (checkError) {
-        console.error('Check error:', checkError);
-        const isDevelopment = process.env['NODE_ENV'] === 'development';
+        console.error('[APPOINTMENTS] Check error:', checkError);
         return res.status(500).json({ 
           error: 'Erreur lors de la vérification des créneaux',
-          ...(isDevelopment && { details: checkError.message })
+          details: checkError.message,
+          code: checkError.code
         });
       }
 
@@ -294,11 +312,11 @@ export default async function handler(
         .single();
 
       if (error) {
-        console.error('Supabase error:', error);
-        const isDevelopment = process.env['NODE_ENV'] === 'development';
+        console.error('[APPOINTMENTS] Supabase create error:', error);
         return res.status(500).json({ 
           error: 'Erreur lors de la création du rendez-vous',
-          ...(isDevelopment && { details: error.message })
+          details: error.message,
+          code: error.code
         });
       }
 
@@ -306,11 +324,10 @@ export default async function handler(
       
       return res.status(201).json(data);
     } catch (error: any) {
-      console.error('Server error:', error);
-      const isDevelopment = process.env['NODE_ENV'] === 'development';
+      console.error('[APPOINTMENTS] Handler create error:', error);
       return res.status(500).json({ 
         error: 'Erreur interne du serveur',
-        ...(isDevelopment && { details: error.message })
+        details: error.message
       });
     }
   }
@@ -323,7 +340,7 @@ export default async function handler(
     }
 
     // Vérifier l'authentification et les droits admin
-    const auth = await verifyAuth(req);
+    const auth = await verifyAuth(req, supabaseAdmin);
     if (!auth.authenticated) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
@@ -367,13 +384,11 @@ export default async function handler(
         .single();
 
       if (error) {
-        console.error('Supabase error:', error);
-        if (isDevelopment) {
-          console.error('Error details:', JSON.stringify(error, null, 2));
-        }
+        console.error('[APPOINTMENTS] Supabase update error:', error);
         return res.status(500).json({ 
           error: 'Erreur lors de la mise à jour',
-          ...(isDevelopment && { details: error.message })
+          details: error.message,
+          code: error.code
         });
       }
 
@@ -381,8 +396,11 @@ export default async function handler(
       
       return res.status(200).json(data);
     } catch (error: any) {
-      console.error('Server error:', error);
-      return res.status(500).json({ error: error.message || 'Internal server error' });
+      console.error('[APPOINTMENTS] Handler update error:', error);
+      return res.status(500).json({ 
+        error: 'Erreur interne du serveur',
+        details: error.message
+      });
     }
   }
 

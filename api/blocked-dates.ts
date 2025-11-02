@@ -2,11 +2,6 @@ import {createClient} from '@supabase/supabase-js';
 import type {VercelRequest, VercelResponse} from '@vercel/node';
 import {rateLimitMiddleware} from './utils/rate-limiter';
 
-const supabaseAdmin = createClient(
-  process.env['SUPABASE_URL']!,
-  process.env['SUPABASE_SERVICE_ROLE_KEY']!
-);
-
 // Domaines autorisés pour CORS (identique aux autres routes)
 function getAllowedOrigins(): string[] {
   const origins = process.env['ALLOWED_ORIGINS']?.split(',') || [];
@@ -58,6 +53,25 @@ export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ) {
+  // Vérifier et créer le client Supabase dans le handler
+  const supabaseUrl = process.env['SUPABASE_URL'];
+  const supabaseKey = process.env['SUPABASE_SERVICE_ROLE_KEY'];
+  
+  if (!supabaseUrl || !supabaseKey) {
+    console.error('[BLOCKED-DATES] Missing env vars:', {
+      hasUrl: !!supabaseUrl,
+      hasKey: !!supabaseKey,
+      nodeEnv: process.env['NODE_ENV']
+    });
+    return res.status(500).json({ 
+      error: 'Configuration serveur incomplète',
+      message: 'Variables d\'environnement Supabase manquantes'
+    });
+  }
+
+  // Créer le client maintenant que nous savons que les variables existent
+  const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
+  
   const origin = req.headers.origin as string;
   
   // Rate limiting : 100 requêtes GET par minute
@@ -96,21 +110,20 @@ export default async function handler(
         .order('blocked_date', { ascending: true });
 
       if (error) {
-        console.error('Supabase error:', error);
-        const isDevelopment = process.env['NODE_ENV'] === 'development';
+        console.error('[BLOCKED-DATES] Supabase error:', error);
         return res.status(500).json({ 
           error: 'Erreur lors de la récupération des dates bloquées',
-          ...(isDevelopment && { details: error.message })
+          details: error.message,
+          code: error.code
         });
       }
 
       return res.status(200).json(data);
     } catch (error: any) {
-      console.error('Server error:', error);
-      const isDevelopment = process.env['NODE_ENV'] === 'development';
+      console.error('[BLOCKED-DATES] Handler error:', error);
       return res.status(500).json({ 
         error: 'Erreur interne du serveur',
-        ...(isDevelopment && { details: error.message })
+        details: error.message
       });
     }
   }

@@ -1,14 +1,9 @@
-import {createClient} from '@supabase/supabase-js';
+import {createClient, SupabaseClient} from '@supabase/supabase-js';
 import type {VercelRequest, VercelResponse} from '@vercel/node';
 import {rateLimitMiddleware} from './utils/rate-limiter';
 
-const supabaseAdmin = createClient(
-  process.env['SUPABASE_URL']!,
-  process.env['SUPABASE_SERVICE_ROLE_KEY']!
-);
-
 // Fonction pour vérifier l'authentification et les droits admin
-async function verifyAuth(req: VercelRequest): Promise<{authenticated: boolean; isAdmin?: boolean; user?: any; error?: string}> {
+async function verifyAuth(req: VercelRequest, supabaseAdmin: SupabaseClient): Promise<{authenticated: boolean; isAdmin?: boolean; user?: any; error?: string}> {
   const authHeader = req.headers.authorization;
   
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -156,6 +151,25 @@ export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ) {
+  // Vérifier et créer le client Supabase dans le handler
+  const supabaseUrl = process.env['SUPABASE_URL'];
+  const supabaseKey = process.env['SUPABASE_SERVICE_ROLE_KEY'];
+  
+  if (!supabaseUrl || !supabaseKey) {
+    console.error('[OPENING-HOURS] Missing env vars:', {
+      hasUrl: !!supabaseUrl,
+      hasKey: !!supabaseKey,
+      nodeEnv: process.env['NODE_ENV']
+    });
+    return res.status(500).json({ 
+      error: 'Configuration serveur incomplète',
+      message: 'Variables d\'environnement Supabase manquantes'
+    });
+  }
+
+  // Créer le client maintenant que nous savons que les variables existent
+  const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
+  
   const origin = req.headers.origin as string;
   
   // Rate limiting
@@ -195,21 +209,20 @@ export default async function handler(
         .order('display_order', { ascending: true });
 
       if (error) {
-        console.error('Supabase error:', error);
-        const isDevelopment = process.env['NODE_ENV'] === 'development';
+        console.error('[OPENING-HOURS] Supabase error:', error);
         return res.status(500).json({ 
           error: 'Erreur lors de la récupération des horaires',
-          ...(isDevelopment && { details: error.message })
+          details: error.message,
+          code: error.code
         });
       }
 
       return res.status(200).json(data);
     } catch (error: any) {
-      console.error('Server error:', error);
-      const isDevelopment = process.env['NODE_ENV'] === 'development';
+      console.error('[OPENING-HOURS] Handler error:', error);
       return res.status(500).json({ 
         error: 'Erreur interne du serveur',
-        ...(isDevelopment && { details: error.message })
+        details: error.message
       });
     }
   }
@@ -228,7 +241,7 @@ export default async function handler(
     }
 
     // Vérifier l'authentification et les droits admin
-    const auth = await verifyAuth(req);
+    const auth = await verifyAuth(req, supabaseAdmin);
     if (!auth.authenticated) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
@@ -260,21 +273,20 @@ export default async function handler(
         .single();
 
       if (error) {
-        console.error('Supabase error:', error);
-        const isDevelopment = process.env['NODE_ENV'] === 'development';
+        console.error('[OPENING-HOURS] Supabase update error:', error);
         return res.status(500).json({ 
           error: 'Erreur lors de la mise à jour des horaires',
-          ...(isDevelopment && { details: error.message })
+          details: error.message,
+          code: error.code
         });
       }
 
       return res.status(200).json(data);
     } catch (error: any) {
-      console.error('Server error:', error);
-      const isDevelopment = process.env['NODE_ENV'] === 'development';
+      console.error('[OPENING-HOURS] Handler update error:', error);
       return res.status(500).json({ 
         error: 'Erreur interne du serveur',
-        ...(isDevelopment && { details: error.message })
+        details: error.message
       });
     }
   }
