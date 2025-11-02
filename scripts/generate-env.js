@@ -117,6 +117,12 @@ const envDev = parseEnvFile(envDevPath);
 // Charger .env.production pour prod
 const envProd = parseEnvFile(envProdPath);
 
+// S'assurer que le répertoire existe (nécessaire pour Vercel/build CI)
+const envDir = path.join(__dirname, '..', 'src', 'environments');
+if (!fs.existsSync(envDir)) {
+  fs.mkdirSync(envDir, { recursive: true });
+}
+
 // Générer environment.ts (dev)
 const devContent = generateEnvironmentFile({ ...env, ...envDev }, false);
 fs.writeFileSync(envTsPath, devContent, 'utf-8');
