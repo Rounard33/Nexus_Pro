@@ -2,14 +2,10 @@ import {HttpClient, HttpHeaders} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
 import {from, Observable} from 'rxjs';
 import {switchMap} from 'rxjs/operators';
+import {environment} from '../../environments/environment';
 import {AuthService} from './auth.service';
 
-// URL de base de votre API
-// En local avec Vercel CLI : http://localhost:3000/api
-// En production : remplacez par votre URL Vercel
-// Pour tester en local, vous pouvez utiliser : 'http://localhost:3000/api'
-// En production après déploiement Vercel : 'https://votre-app.vercel.app/api'
-const API_URL = 'http://localhost:3000/api'; // TODO: À remplacer par votre URL Vercel en production
+const API_URL = environment.apiUrl;
 
 export interface Prestation {
   id?: string;
