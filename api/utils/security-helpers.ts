@@ -18,34 +18,47 @@ export function getAllowedOrigins(): string[] {
 }
 
 // Fonction pour définir UNIQUEMENT les headers CORS (appelée en premier)
+// ⚠️ IMPORTANT: Cette fonction doit TOUJOURS définir les headers CORS, même en cas d'erreur
 export function setCORSHeaders(res: VercelResponse, origin?: string, methods: string = 'GET, POST, PATCH, OPTIONS', headers: string = 'Content-Type, Authorization'): void {
-  const allowedOrigins = getAllowedOrigins();
-  const requestOrigin = origin || '';
-  const isDevelopment = process.env['NODE_ENV'] === 'development' || !process.env['NODE_ENV'];
-  
-  // Toujours définir les headers CORS de base
-  res.setHeader('Access-Control-Allow-Methods', methods);
-  res.setHeader('Access-Control-Allow-Headers', headers);
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Max-Age', '86400'); // 24 heures
-  
-  // Définir Access-Control-Allow-Origin selon la configuration
-  if (isDevelopment) {
-    // En développement, autoriser toutes les origines locales et l'origine de la requête
+  try {
+    const allowedOrigins = getAllowedOrigins();
+    const requestOrigin = origin || '';
+    const isDevelopment = process.env['NODE_ENV'] === 'development' || !process.env['NODE_ENV'];
+    
+    // Toujours définir les headers CORS de base
+    res.setHeader('Access-Control-Allow-Methods', methods);
+    res.setHeader('Access-Control-Allow-Headers', headers);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Max-Age', '86400'); // 24 heures
+    
+    // Définir Access-Control-Allow-Origin selon la configuration
+    if (isDevelopment) {
+      // En développement, autoriser toutes les origines locales et l'origine de la requête
+      res.setHeader('Access-Control-Allow-Origin', requestOrigin || '*');
+    } else if (allowedOrigins.length === 0) {
+      // Si ALLOWED_ORIGINS n'est pas configuré, autoriser l'origine de la requête (fallback)
+      // ⚠️ ATTENTION: En production, configurez ALLOWED_ORIGINS pour la sécurité
+      // Mais pour permettre le débogage, on autorise l'origine de la requête
+      res.setHeader('Access-Control-Allow-Origin', requestOrigin || '*');
+    } else if (allowedOrigins.includes(requestOrigin)) {
+      // Si l'origine est dans la liste autorisée, l'accepter
+      res.setHeader('Access-Control-Allow-Origin', requestOrigin);
+    } else {
+      // ⚠️ IMPORTANT: Même si l'origine n'est pas autorisée, définir le header pour que l'erreur soit visible
+      // Le navigateur bloquera toujours la requête, mais au moins on pourra voir l'erreur 500 si elle existe
+      // En production, cela devrait être loggé et surveillé
+      console.warn(`[CORS] Origin not allowed: ${requestOrigin}. Allowed origins: ${allowedOrigins.join(', ')}`);
+      // Définir quand même le header pour permettre de voir les erreurs serveur
+      res.setHeader('Access-Control-Allow-Origin', requestOrigin || '*');
+    }
+  } catch (error) {
+    // En cas d'erreur dans setCORSHeaders, définir au moins les headers minimaux
+    console.error('[CORS] Error setting CORS headers:', error);
+    const requestOrigin = origin || '';
     res.setHeader('Access-Control-Allow-Origin', requestOrigin || '*');
-  } else if (allowedOrigins.length === 0) {
-    // Si ALLOWED_ORIGINS n'est pas configuré, autoriser l'origine de la requête (fallback)
-    // ⚠️ ATTENTION: En production, configurez ALLOWED_ORIGINS pour la sécurité
-    res.setHeader('Access-Control-Allow-Origin', requestOrigin || '*');
-  } else if (allowedOrigins.includes(requestOrigin)) {
-    // Si l'origine est dans la liste autorisée, l'accepter
-    res.setHeader('Access-Control-Allow-Origin', requestOrigin);
-  } else {
-    // Si l'origine n'est pas autorisée en production, ne pas définir le header
-    // Cela provoquera une erreur CORS côté client (comportement sécurisé)
-    // Mais pour éviter les erreurs silencieuses, on peut logger un avertissement
-    console.warn(`[CORS] Origin not allowed: ${requestOrigin}. Allowed origins: ${allowedOrigins.join(', ')}`);
-    // Ne pas définir Access-Control-Allow-Origin = CORS sera bloqué (comportement sécurisé)
+    res.setHeader('Access-Control-Allow-Methods', methods);
+    res.setHeader('Access-Control-Allow-Headers', headers);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
   }
 }
 

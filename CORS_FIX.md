@@ -9,18 +9,71 @@ from origin 'https://lacouleurdelaura.vercel.app' has been blocked by CORS polic
 No 'Access-Control-Allow-Origin' header is present on the requested resource.
 ```
 
-### Explication
+**ET** vous voyez aussi dans l'onglet Network :
+- Status: `500 Internal Server Error`
+- Header: `X-Vercel-Error: FUNCTION_INVOCATION_FAILED`
 
-**CORS (Cross-Origin Resource Sharing)** est un mécanisme de sécurité du navigateur qui bloque les requêtes HTTP entre différents domaines par défaut.
+### Explication : Deux problèmes simultanés
 
-Dans votre cas :
+**Problème 1 : CORS (Cross-Origin Resource Sharing)**
+- Le navigateur bloque les requêtes HTTP entre différents domaines par défaut
 - **Frontend** : `https://lacouleurdelaura.vercel.app` (votre site web)
 - **Backend API** : `https://nexus-pro-liart.vercel.app` (votre API)
-- **Problème** : L'API ne retourne pas le header `Access-Control-Allow-Origin` permettant au frontend d'accéder aux ressources
+- **Problème** : L'API ne retourne pas le header `Access-Control-Allow-Origin`
 
-## ✅ Solution : Configurer ALLOWED_ORIGINS
+**Problème 2 : 500 Internal Server Error**
+- Votre fonction Vercel plante avec une erreur `FUNCTION_INVOCATION_FAILED`
+- **Cause probable** : Une exception non gérée dans le code (Supabase, variables d'environnement, etc.)
+- **Conséquence** : Quand la fonction plante, elle ne peut pas envoyer les headers CORS
 
-### Étape 1 : Ajouter la variable d'environnement dans Vercel
+### 🔍 Pourquoi les deux erreurs apparaissent ensemble ?
+
+1. La fonction API plante (500) avant de pouvoir envoyer la réponse
+2. Quand Vercel gère l'erreur, il n'inclut pas les headers CORS dans la réponse d'erreur
+3. Le navigateur voit une réponse sans header `Access-Control-Allow-Origin`
+4. Le navigateur bloque la requête (erreur CORS) ET affiche l'erreur 500
+
+## ✅ Solutions : Deux étapes nécessaires
+
+### 🔴 ÉTAPE 1 : Résoudre l'erreur 500 (PRIORITÉ)
+
+L'erreur 500 signifie que votre fonction Vercel plante. Il faut d'abord résoudre cela.
+
+#### 1.1 Vérifier les logs Vercel
+
+1. Allez sur https://vercel.com/dashboard
+2. Sélectionnez votre projet **nexus-pro-liart**
+3. Allez dans **Logs** ou **Deployments** → Cliquez sur le dernier déploiement → **Function Logs**
+4. Cherchez les erreurs avec :
+   - `[CREATIONS]`, `[FAQS]`, `[PRESTATIONS]`, etc.
+   - Messages d'erreur comme "Missing env vars", erreurs Supabase, etc.
+
+#### 1.2 Causes fréquentes de l'erreur 500
+
+**A. Variables d'environnement manquantes**
+- Vérifiez que `SUPABASE_URL` est défini dans Vercel
+- Vérifiez que `SUPABASE_SERVICE_ROLE_KEY` est défini dans Vercel
+- Vérifiez que `ALLOWED_ORIGINS` est défini (même si vide, ça peut aider au débogage)
+
+**B. Problème de connexion Supabase**
+- Les clés Supabase sont peut-être invalides
+- Le projet Supabase est peut-être suspendu ou supprimé
+
+**C. Erreur dans le code**
+- Une exception non gérée dans les requêtes Supabase
+- Un problème avec le rate limiting
+
+#### 1.3 Comment déboguer
+
+Ajoutez ces variables dans Vercel pour voir les erreurs détaillées :
+- Vérifiez les **Function Logs** dans Vercel Dashboard
+- Les logs devraient montrer l'erreur exacte
+
+### 🟡 ÉTAPE 2 : Configurer ALLOWED_ORIGINS (après avoir résolu le 500)
+
+Une fois que l'erreur 500 est résolue, configurez CORS correctement.
+
+#### 2.1 Ajouter la variable d'environnement dans Vercel
 
 1. Allez sur le dashboard Vercel : https://vercel.com/dashboard
 2. Sélectionnez votre projet **nexus-pro-liart**
@@ -55,7 +108,31 @@ Pour vérifier que la configuration fonctionne :
 
 ## 🔍 Dépannage
 
-### Si l'erreur persiste après configuration
+### Ordre de résolution
+
+1. **D'abord** : Résoudre l'erreur 500 (voir logs Vercel)
+2. **Ensuite** : Configurer ALLOWED_ORIGINS
+3. **Enfin** : Vérifier que tout fonctionne
+
+### Si l'erreur 500 persiste
+
+1. **Vérifiez les logs Vercel** :
+   - Dashboard Vercel → Votre projet → **Logs** ou **Deployments** → **Function Logs**
+   - Cherchez les messages d'erreur détaillés
+
+2. **Vérifiez les variables d'environnement** :
+   ```bash
+   # Dans Vercel Dashboard → Settings → Environment Variables
+   SUPABASE_URL=... (doit être défini)
+   SUPABASE_SERVICE_ROLE_KEY=... (doit être défini)
+   ALLOWED_ORIGINS=https://lacouleurdelaura.vercel.app (optionnel mais recommandé)
+   ```
+
+3. **Testez la connexion Supabase** :
+   - Vérifiez que votre projet Supabase est actif
+   - Vérifiez que les clés sont correctes
+
+### Si l'erreur CORS persiste (mais plus d'erreur 500)
 
 1. **Vérifiez que la variable est bien définie** :
    - Dans Vercel Dashboard → Settings → Environment Variables
