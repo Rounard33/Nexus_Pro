@@ -2,25 +2,11 @@
   "version": 2,
   "buildCommand": "npm run generate:env && npm run build:prod",
   "outputDirectory": "dist/template/browser",
-  "framework": null,
   "installCommand": "npm install",
-  "builds": [
+  "rewrites": [
     {
-      "src": "api/**/*.ts",
-      "use": "@vercel/node"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
-    },
-    {
-      "handle": "filesystem"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
