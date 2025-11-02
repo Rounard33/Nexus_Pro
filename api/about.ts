@@ -1,6 +1,6 @@
 import {createClient} from '@supabase/supabase-js';
 import type {VercelRequest, VercelResponse} from '@vercel/node';
-import {applyRateLimit, setCORSHeaders, setSecurityHeaders} from './utils/security-helpers';
+import {applyRateLimit, setCORSHeaders, setSecurityHeaders} from './utils/security-helpers.js';
 
 export default async function handler(
   req: VercelRequest,

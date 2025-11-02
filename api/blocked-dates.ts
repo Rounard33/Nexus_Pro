@@ -1,7 +1,7 @@
 import {createClient} from '@supabase/supabase-js';
 import type {VercelRequest, VercelResponse} from '@vercel/node';
-import {rateLimitMiddleware} from './utils/rate-limiter';
-import {setCORSHeaders} from './utils/security-helpers';
+import {rateLimitMiddleware} from './utils/rate-limiter.js';
+import {setCORSHeaders} from './utils/security-helpers.js';
 
 // Domaines autorisés pour CORS (identique aux autres routes)
 function getAllowedOrigins(): string[] {

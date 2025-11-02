@@ -3,7 +3,7 @@
  */
 
 import type {VercelResponse} from '@vercel/node';
-import {rateLimitMiddleware} from './rate-limiter';
+import {rateLimitMiddleware} from './rate-limiter.js';
 
 // Domaines autorisés pour CORS
 export function getAllowedOrigins(): string[] {
