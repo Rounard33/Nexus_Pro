@@ -77,18 +77,20 @@
         <div class="booking-section" *ngIf="selectedDate">
           <h3 class="section-title">2. Choisissez une heure</h3>
           
-          <div class="time-slots" *ngIf="availableTimes.length > 0">
+          <div class="time-slots" *ngIf="allTimes.length > 0">
             <button
               type="button"
-              *ngFor="let time of availableTimes"
+              *ngFor="let time of allTimes"
               class="time-slot"
               [class.selected]="selectedTime === time"
+              [class.unavailable]="!isTimeAvailable(time)"
+              [disabled]="!isTimeAvailable(time)"
               (click)="selectTime(time)">
               {{ time }}
             </button>
           </div>
 
-          <div class="no-times" *ngIf="availableTimes.length === 0">
+          <div class="no-times" *ngIf="allTimes.length === 0">
             <p>Aucun créneau disponible pour cette date.</p>
           </div>
 

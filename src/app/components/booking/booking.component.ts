@@ -28,6 +28,7 @@ export class BookingComponent implements OnInit, OnChanges {
   openingHours: OpeningHours[] = [];
   selectedTime: string | null = null;
   availableTimes: string[] = [];
+  allTimes: string[] = []; // Tous les créneaux (disponibles et non disponibles)
   existingAppointments: Appointment[] = [];
 
   // Mois et jours
@@ -127,11 +128,12 @@ export class BookingComponent implements OnInit, OnChanges {
 
     // Charger les rendez-vous existants pour éviter les doublons
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
     const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
     this.contentService.getAppointments(
       undefined,
-      today.toISOString().split('T')[0],
-      nextMonth.toISOString().split('T')[0]
+      this.formatDateLocal(today),
+      this.formatDateLocal(nextMonth)
     ).subscribe({
       next: (appointments) => {
         this.existingAppointments = appointments.filter(a => 
@@ -198,7 +200,7 @@ export class BookingComponent implements OnInit, OnChanges {
     if (!this.selectedDate) return;
 
     const dayOfWeek = this.selectedDate.getDay();
-    const dateStr = this.selectedDate.toISOString().split('T')[0];
+    const dateStr = this.formatDateLocal(this.selectedDate);
     
     // Si les horaires ne sont pas encore chargés, attendre
     if (this.openingHours.length === 0) {
@@ -264,25 +266,21 @@ export class BookingComponent implements OnInit, OnChanges {
           }
         }
         
-        // Générer les heures disponibles (créneaux de 1h)
+        // Générer les heures disponibles (créneaux de 15 minutes)
         // last_appointment est inclus comme dernier créneau valide
         let current = new Date(startTime);
         while (current <= lastAppointmentTime && current < endTime) {
           const timeStr = this.formatTime(current);
           
-          // Vérifier si ce créneau n'est pas déjà réservé
-          const isReserved = this.existingAppointments.some(apt => 
-            apt.appointment_date === dateStr &&
-            apt.appointment_time === timeStr &&
-            (apt.status === 'pending' || apt.status === 'accepted')
-          );
+          // Vérifier si ce créneau est dans une plage bloquée (1h30 autour d'un rendez-vous)
+          const isInBlockedSlot = this.isTimeInBlockedSlot(dateStr, timeStr);
 
-          if (!isReserved) {
+          if (!isInBlockedSlot) {
             times.push(timeStr);
           }
 
-          // Ajouter 1 heure pour le prochain créneau
-          current.setHours(current.getHours() + 1);
+          // Ajouter 15 minutes pour le prochain créneau
+          current.setMinutes(current.getMinutes() + 15);
           
           // Si le prochain créneau dépasse lastAppointmentTime ou endTime, arrêter
           if (current > lastAppointmentTime || current >= endTime) {
@@ -293,6 +291,74 @@ export class BookingComponent implements OnInit, OnChanges {
     });
 
     this.availableTimes = [...new Set(times)].sort(); // Supprimer les doublons et trier
+    
+    // Générer tous les créneaux (y compris ceux non disponibles) pour les griser
+    this.generateAllTimeSlots(dayOfWeek, dateStr);
+  }
+
+  // Générer tous les créneaux possibles pour une date (y compris ceux non disponibles)
+  private generateAllTimeSlots(dayOfWeek: number, dateStr: string): void {
+    const dayHours = this.openingHours.find(h => h.day_of_week === dayOfWeek && h.is_active !== false);
+    
+    if (!dayHours || !dayHours.periods) {
+      this.allTimes = [];
+      return;
+    }
+
+    const periods = dayHours.periods.split('|').map((p: string) => p.trim());
+    const allTimesList: string[] = [];
+    
+    periods.forEach((period: string) => {
+      const periodMatch = period.match(/(\d{1,2})h(?:(\d{2}))?\s*-\s*(\d{1,2})h(?:(\d{2}))?/);
+      
+      if (periodMatch) {
+        const startHour = parseInt(periodMatch[1]);
+        const startMin = periodMatch[2] ? parseInt(periodMatch[2]) : 0;
+        const endHour = parseInt(periodMatch[3]);
+        const endMin = periodMatch[4] ? parseInt(periodMatch[4]) : 0;
+        
+        const startTime = new Date();
+        startTime.setHours(startHour, startMin, 0, 0);
+        
+        const endTime = new Date();
+        endTime.setHours(endHour, endMin, 0, 0);
+        
+        // Déterminer le dernier créneau possible
+        let lastAppointmentTime = endTime;
+        if (dayHours.last_appointment) {
+          const lastMatch = dayHours.last_appointment.match(/(\d{1,2})h(?:(\d{2}))?/);
+          if (lastMatch) {
+            const lastHour = parseInt(lastMatch[1]);
+            const lastMin = lastMatch[2] ? parseInt(lastMatch[2]) : 0;
+            lastAppointmentTime = new Date();
+            lastAppointmentTime.setHours(lastHour, lastMin, 0, 0);
+            if (lastAppointmentTime > endTime) {
+              lastAppointmentTime = endTime;
+            }
+          }
+        }
+        
+        // Générer tous les créneaux de 15 minutes
+        let current = new Date(startTime);
+        while (current <= lastAppointmentTime && current < endTime) {
+          const timeStr = this.formatTime(current);
+          allTimesList.push(timeStr);
+          
+          current.setMinutes(current.getMinutes() + 15);
+          
+          if (current > lastAppointmentTime || current >= endTime) {
+            break;
+          }
+        }
+      }
+    });
+    
+    this.allTimes = [...new Set(allTimesList)].sort();
+  }
+
+  // Vérifier si un créneau est disponible
+  isTimeAvailable(time: string): boolean {
+    return this.availableTimes.includes(time);
   }
 
   // Sélectionner une heure
@@ -313,6 +379,51 @@ export class BookingComponent implements OnInit, OnChanges {
     const hours = date.getHours().toString().padStart(2, '0');
     const minutes = date.getMinutes().toString().padStart(2, '0');
     return `${hours}:${minutes}`;
+  }
+
+  // Formater une date en YYYY-MM-DD en heure locale (évite les problèmes de fuseau horaire)
+  private formatDateLocal(date: Date): string {
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  // Vérifier si un créneau est dans une plage bloquée de 1h30 (du début du rendez-vous jusqu'à 1h30 après)
+  private isTimeInBlockedSlot(dateStr: string, timeStr: string): boolean {
+    // Seuls les rendez-vous pending ou accepted bloquent les créneaux
+    const blockingAppointments = this.existingAppointments.filter(apt => 
+      apt.appointment_date === dateStr &&
+      (apt.status === 'pending' || apt.status === 'accepted')
+    );
+
+    if (blockingAppointments.length === 0) {
+      return false;
+    }
+
+    const [checkHour, checkMin] = timeStr.split(':').map(Number);
+    const checkTime = new Date();
+    checkTime.setHours(checkHour, checkMin, 0, 0);
+
+    // Pour chaque rendez-vous bloquant, vérifier si le créneau est dans la plage de 1h30
+    for (const apt of blockingAppointments) {
+      const [aptHour, aptMin] = apt.appointment_time.split(':').map(Number);
+      const aptTime = new Date();
+      aptTime.setHours(aptHour, aptMin, 0, 0);
+
+      // Plage bloquée : du début du rendez-vous jusqu'à 1h30 après
+      // Exemple: rendez-vous à 9h30 → bloque de 9h30 à 11h00
+      const blockStart = new Date(aptTime);
+      const blockEnd = new Date(aptTime);
+      blockEnd.setMinutes(blockEnd.getMinutes() + 90); // +1h30
+
+      // Si le créneau est dans la plage bloquée (inclus le début, exclu la fin)
+      if (checkTime >= blockStart && checkTime < blockEnd) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   // Validation et soumission
@@ -346,7 +457,7 @@ export class BookingComponent implements OnInit, OnChanges {
       client_email: formValue.client_email.trim().toLowerCase(),
       client_phone: formValue.client_phone ? formValue.client_phone.trim() : undefined,
       prestation_id: this.prestation.id, // ID vérifié ci-dessus
-      appointment_date: this.selectedDate.toISOString().split('T')[0],
+      appointment_date: this.formatDateLocal(this.selectedDate),
       appointment_time: this.selectedTime,
       status: 'pending',
       notes: formValue.notes ? formValue.notes.trim() : undefined
@@ -517,7 +628,7 @@ export class BookingComponent implements OnInit, OnChanges {
   }
 
   isDateAvailable(date: Date): boolean {
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = this.formatDateLocal(date);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     

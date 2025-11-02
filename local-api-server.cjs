@@ -86,9 +86,9 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
 const { createClient } = require('@supabase/supabase-js');
 const http = require('http');
 const url = require('url');
-const { setSecurityHeaders } = require('./local-api-server-utils');
-const { validateAppointment, sanitizeAppointment } = require('./local-api-server-validation');
-const { applyRateLimit } = require('./local-api-server-rate-limiter');
+const { setSecurityHeaders } = require('./local-api-server-utils.cjs');
+const { validateAppointment, sanitizeAppointment } = require('./local-api-server-validation.cjs');
+const { applyRateLimit } = require('./local-api-server-rate-limiter.cjs');
 
 let supabase;
 try {
@@ -551,12 +551,11 @@ const server = http.createServer(async (req, res) => {
         const sanitizedData = sanitizeAppointment(body);
         const { appointment_date, appointment_time } = sanitizedData;
 
-        // Vérifier qu'il n'y a pas déjà un RDV à cette date/heure
+        // Récupérer tous les rendez-vous pending ou accepted pour cette date
         const { data: existingAppointments, error: checkError } = await supabase
           .from('appointments')
-          .select('id')
+          .select('appointment_time')
           .eq('appointment_date', appointment_date)
-          .eq('appointment_time', appointment_time)
           .in('status', ['pending', 'accepted']);
 
         if (checkError) {
@@ -569,10 +568,37 @@ const server = http.createServer(async (req, res) => {
           return;
         }
 
+        // Vérifier si le créneau demandé chevauche avec une plage bloquée de 1h30
         if (existingAppointments && existingAppointments.length > 0) {
-          res.writeHead(409, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: 'Ce créneau est déjà réservé' }));
-          return;
+          // Fonction pour formater les minutes en HH:MM
+          function formatTimeMinutes(minutes) {
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+          }
+
+          const [newHour, newMin] = appointment_time.split(':').map(Number);
+          const newTime = newHour * 60 + newMin; // Convertir en minutes depuis minuit
+          
+          for (const apt of existingAppointments) {
+            const [aptHour, aptMin] = apt.appointment_time.split(':').map(Number);
+            const aptTime = aptHour * 60 + aptMin; // Convertir en minutes depuis minuit
+            
+            // Plage bloquée : de l'heure du rendez-vous jusqu'à 1h30 après (90 minutes)
+            // Exemple: rendez-vous à 9h30 (570 min) → bloque de 570 à 660 minutes (11h00)
+            const blockStart = aptTime;
+            const blockEnd = aptTime + 90; // +1h30
+            
+            // Vérifier si le créneau demandé est dans cette plage bloquée
+            if (newTime >= blockStart && newTime < blockEnd) {
+              res.writeHead(409, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ 
+                error: 'Ce créneau est déjà réservé',
+                message: `Un rendez-vous existe à ${apt.appointment_time} et bloque les créneaux jusqu'à ${formatTimeMinutes(blockEnd)}`
+              }));
+              return;
+            }
+          }
         }
 
         // Insérer uniquement les champs autorisés et validés

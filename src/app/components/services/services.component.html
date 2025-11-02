@@ -12,6 +12,9 @@
         <div class="prestation-image-wrapper">
           <div class="prestation-image" [style.background-image]="'url(' + prestation.image + ')'">
           </div>
+          <div class="prestation-image-overlay" *ngIf="prestation.shortDescription">
+            <p class="prestation-short-description">{{ prestation.shortDescription }}</p>
+          </div>
         </div>
         <div class="prestation-info">
           <h3 class="prestation-name">{{ prestation.name }}</h3>

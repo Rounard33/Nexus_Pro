@@ -4,6 +4,13 @@ import {rateLimitMiddleware} from './utils/rate-limiter.js';
 import {setCORSHeaders} from './utils/security-helpers.js';
 import {sanitizeAppointment, validateAppointment, validateAppointmentQuery} from './utils/validation.js';
 
+// Fonction utilitaire pour formater les minutes en HH:MM
+function formatTimeMinutes(minutes: number): string {
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+}
+
 // Fonction pour vérifier l'authentification et les droits admin
 async function verifyAuth(req: VercelRequest, supabaseAdmin: SupabaseClient): Promise<{authenticated: boolean; isAdmin?: boolean; user?: any; error?: string}> {
   const authHeader = req.headers.authorization;
@@ -282,14 +289,14 @@ export default async function handler(
       // Nettoyer et normaliser les données
       const sanitizedData = sanitizeAppointment(req.body);
 
-      // Vérifier qu'il n'y a pas déjà un RDV à cette date/heure
+      // Vérifier qu'il n'y a pas déjà un RDV qui bloque ce créneau (plage de 1h30)
       const { appointment_date, appointment_time } = sanitizedData;
       
+      // Récupérer tous les rendez-vous pending ou accepted pour cette date
       const { data: existingAppointments, error: checkError } = await supabaseAdmin
         .from('appointments')
-        .select('id')
+        .select('appointment_time')
         .eq('appointment_date', appointment_date)
-        .eq('appointment_time', appointment_time)
         .in('status', ['pending', 'accepted']);
 
       if (checkError) {
@@ -301,8 +308,28 @@ export default async function handler(
         });
       }
 
+      // Vérifier si le créneau demandé chevauche avec une plage bloquée de 1h30
       if (existingAppointments && existingAppointments.length > 0) {
-        return res.status(409).json({ error: 'Ce créneau est déjà réservé' });
+        const [newHour, newMin] = appointment_time.split(':').map(Number);
+        const newTime = newHour * 60 + newMin; // Convertir en minutes depuis minuit
+        
+        for (const apt of existingAppointments) {
+          const [aptHour, aptMin] = apt.appointment_time.split(':').map(Number);
+          const aptTime = aptHour * 60 + aptMin; // Convertir en minutes depuis minuit
+          
+          // Plage bloquée : de l'heure du rendez-vous jusqu'à 1h30 après (90 minutes)
+          // Exemple: rendez-vous à 9h30 (570 min) → bloque de 570 à 660 minutes (11h00)
+          const blockStart = aptTime;
+          const blockEnd = aptTime + 90; // +1h30
+          
+          // Vérifier si le créneau demandé est dans cette plage bloquée
+          if (newTime >= blockStart && newTime < blockEnd) {
+            return res.status(409).json({ 
+              error: 'Ce créneau est déjà réservé',
+              message: `Un rendez-vous existe à ${apt.appointment_time} et bloque les créneaux jusqu'à ${formatTimeMinutes(blockEnd)}`
+            });
+          }
+        }
       }
 
       // Insérer uniquement les champs autorisés et validés

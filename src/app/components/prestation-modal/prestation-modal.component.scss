@@ -106,11 +106,11 @@
   padding: 2rem 3rem 3rem 3rem;
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 2.5rem;
 
   @media (max-width: 768px) {
     padding: 1.5rem 2.5rem 2.5rem 2.5rem;
-    gap: 1.5rem;
+    gap: 2rem;
   }
 }
 
@@ -139,14 +139,25 @@
 }
 
 .modal-description {
-  line-height: 1.9;
-  color: var(--gray-700);
-  font-size: 1.125rem;
-  font-weight: 300;
+  margin-bottom: 1rem;
+}
 
-  p {
-    margin: 0;
-    text-align: justify;
+.description-text {
+  margin: 0;
+  padding: 1.5rem 0;
+  line-height: 1.85;
+  color: var(--gray-700);
+  font-size: 1.1rem;
+  font-weight: 300;
+  text-align: left;
+  letter-spacing: 0.01em;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  // Style pour les retours à la ligne dans le texte
+  &::first-line {
+    text-indent: 0;
   }
 }
 
