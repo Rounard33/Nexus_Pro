@@ -77,10 +77,18 @@ function generateEnvironmentFile(env, isProduction = false) {
                          process.env.ANON_KEY ||
                          '';
 
+  const apiUrl = process.env.NG_APP_API_URL || 
+    env.NG_APP_API_URL || 
+    env.API_URL || 
+    process.env.API_URL || 
+    (isProduction ? 'https://nexus-pro-liart.vercel.app/api' : 'http://localhost:3000/api');
+
+
   return `export const environment = {
   production: ${isProduction},
   supabaseUrl: '${supabaseUrl}',
-  supabaseAnonKey: '${supabaseAnonKey}'
+  supabaseAnonKey: '${supabaseAnonKey}',
+  apiUrl: '${apiUrl}'
 };
 `;
 }

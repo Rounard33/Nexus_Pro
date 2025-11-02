@@ -1,11 +1,10 @@
 {
   "version": 2,
-  "buildCommand": null,
-  "devCommand": null,
-  "installCommand": null,
+  "buildCommand": "npm run generate:env && npm run build:prod",
+  "outputDirectory": "dist/template/browser",
   "framework": null,
-  "outputDirectory": null,
-  "ignoreCommand": "echo 'Skipping build'",
+  "installCommand": "npm install",
+  "devCommand": null,
   "builds": [
     {
       "src": "api/**/*.ts",
@@ -16,6 +15,10 @@
     {
       "src": "/api/(.*)",
       "dest": "/api/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
     }
   ]
 }
