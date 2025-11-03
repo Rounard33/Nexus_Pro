@@ -1,7 +1,7 @@
 import {createClient, SupabaseClient} from '@supabase/supabase-js';
 import type {VercelRequest, VercelResponse} from '@vercel/node';
 import {rateLimitMiddleware} from './utils/rate-limiter.js';
-import {setCORSHeaders} from './utils/security-helpers.js';
+import {setCORSHeaders, setSecurityHeaders} from './utils/security-helpers.js';
 import {sanitizeAppointment, validateAppointment, validateAppointmentQuery} from './utils/validation.js';
 
 // Fonction utilitaire pour formater les minutes en HH:MM
@@ -121,40 +121,7 @@ function getAllowedOrigins(): string[] {
   return origins.filter(origin => origin.trim().length > 0);
 }
 
-function setSecurityHeaders(res: VercelResponse, origin?: string): void {
-  // Headers de sécurité de base
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
-  res.setHeader('X-XSS-Protection', '1; mode=block');
-  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-  
-  // Content Security Policy
-  const csp = [
-    "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval'", // Angular nécessite unsafe-inline et unsafe-eval en dev
-    "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: https:",
-    "font-src 'self' data:",
-    "connect-src 'self' https://*.supabase.co",
-    "frame-ancestors 'none'",
-    "base-uri 'self'",
-    "form-action 'self'"
-  ].join('; ');
-  
-  res.setHeader('Content-Security-Policy', csp);
-  
-  // CORS sécurisé
-  const allowedOrigins = getAllowedOrigins();
-  const requestOrigin = origin || '';
-  
-  if (allowedOrigins.includes(requestOrigin) || process.env['NODE_ENV'] === 'development') {
-    res.setHeader('Access-Control-Allow-Origin', requestOrigin);
-  }
-  
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-}
+// setSecurityHeaders est maintenant importé depuis security-helpers.ts
 
 export default async function handler(
   req: VercelRequest,

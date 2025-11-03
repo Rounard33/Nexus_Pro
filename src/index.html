@@ -10,9 +10,11 @@
   <meta name="author" content="NexusPro Team">
   
   <!-- Security Headers -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' http://localhost:3000 https://*.supabase.co https://*.vercel.app wss://*.supabase.co; frame-ancestors 'none'; frame-src 'self' https://*.google.com; base-uri 'self'; form-action 'self';">
+  <!-- Note: La CSP principale est définie via les headers HTTP dans l'API -->
+  <!-- Note: frame-ancestors et X-Frame-Options ne fonctionnent que via headers HTTP, pas dans meta tags -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' http://localhost:3000 https://*.supabase.co https://*.vercel.app wss://*.supabase.co; frame-src 'self' https://*.google.com; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests">
   <meta http-equiv="X-Content-Type-Options" content="nosniff">
-  <meta http-equiv="X-Frame-Options" content="DENY">
+  <!-- X-Frame-Options ne fonctionne que via headers HTTP -->
   <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
   
   <!-- Open Graph / Facebook -->

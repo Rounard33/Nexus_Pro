@@ -70,9 +70,21 @@ export function setSecurityHeaders(res: VercelResponse, origin?: string): void {
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   
   // Content Security Policy
+  // En développement: autoriser unsafe-inline/unsafe-eval pour le hot-reload Angular
+  // En production: utiliser uniquement 'self' pour les scripts statiques Angular
+  // 'self' est plus sûr que 'unsafe-inline' car il bloque les scripts inline et eval
+  let scriptSrc: string;
+  if (isDevelopment) {
+    scriptSrc = "'self' 'unsafe-inline' 'unsafe-eval'";
+  } else {
+    // En production: autoriser uniquement les scripts depuis 'self'
+    // Cela bloque 'unsafe-inline' et 'unsafe-eval' tout en permettant Angular
+    scriptSrc = "'self'";
+  }
+
   const csp = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+    `script-src ${scriptSrc}`,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: https:",
     "font-src 'self' data:",

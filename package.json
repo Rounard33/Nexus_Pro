@@ -33,7 +33,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "lint": "ng lint",
-    "serve:prod": "npx http-server dist -p 4200",
+    "serve:prod": "npx http-server dist/template/browser -p 4200 --proxy http://localhost:4200?",
     "vercel:dev": "npx vercel dev",
     "vercel:deploy": "npx vercel --prod",
     "api:dev": "node local-api-server.cjs"
