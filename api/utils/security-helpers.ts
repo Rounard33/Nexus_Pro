@@ -73,6 +73,7 @@ export function setSecurityHeaders(res: VercelResponse, origin?: string): void {
   // En développement: autoriser unsafe-inline/unsafe-eval pour le hot-reload Angular
   // En production: utiliser uniquement 'self' pour les scripts statiques Angular
   // 'self' est plus sûr que 'unsafe-inline' car il bloque les scripts inline et eval
+  const isDevelopment = process.env['NODE_ENV'] === 'development' || !process.env['NODE_ENV'];
   let scriptSrc: string;
   if (isDevelopment) {
     scriptSrc = "'self' 'unsafe-inline' 'unsafe-eval'";
