@@ -3,6 +3,8 @@
   min-height: 100vh;
   background: #f5f5f5;
   position: relative;
+  // Largeur de référence de la sidebar
+  --sidebar-width: 280px;
 }
 
 .mobile-menu-toggle {
@@ -12,17 +14,23 @@
   left: 1rem;
   z-index: 10000;
   background: white !important;
-  border: 2px solid #8b7a62 !important;
+  border: none; // remove default button border
+  outline: none; // remove focus outline ring
+  -webkit-appearance: none;
+  appearance: none;
   border-radius: 8px;
   padding: 0.75rem;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
-  transition: all 0.2s ease;
-  min-width: 48px;
-  min-height: 48px;
+  transition: all 0.5s ease;
+  width: 60px;
+  height: 60px;
   align-items: center;
   justify-content: center;
-
+  
+  // Masquer l'icône hamburger
+  svg {
+    display: none !important;
+  }
   &:hover {
     background: #f5f5f5 !important;
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3) !important;
@@ -32,13 +40,13 @@
     transform: scale(0.95);
   }
 
-  svg {
-    display: block;
-    width: 24px;
-    height: 24px;
-    stroke: #333 !important;
-    stroke-width: 2.5;
-  }
+  // svg {
+  //   display: block;
+  //   width: 24px;
+  //   height: 24px;
+  //   stroke: #333 !important;
+  //   stroke-width: 2.5;
+  // }
 }
 
 .mobile-overlay {
@@ -89,8 +97,8 @@
   flex: 1;
   padding: 1rem 0;
   overflow-y: auto;
-  top: 100px;
-  position: absolute;
+  // top: 100px;
+  // position: absolute;
 }
 
 .nav-item {
@@ -175,20 +183,32 @@
 }
 
 @media (max-width: 768px) {
+  // Adapter la largeur de référence de la sidebar sur mobile
+  .admin-container {
+    --sidebar-width: min(85vw, 280px);
+  }
   .mobile-menu-toggle {
     display: flex !important; // Forcer l'affichage sur mobile
     position: fixed !important;
-    top: calc(70px + 0.5rem) !important; // Positionné juste sous le header (70px min-height + petit espace)
-    left: 1rem !important;
+    top: 50% !important; // Centré verticalement
+    left: 0 !important; // Collé au bord gauche
+    transform: translate3d(-40%, -50%, 0) !important; // Légèrement caché à gauche
     z-index: 99999 !important; // Extrêmement élevé pour être au-dessus de tout (header, etc.)
     background: white !important;
-    border: 2px solid #8b7a62 !important;
-    opacity: 1 !important;
+    border: none !important; // ensure no border on mobile
+    outline: none !important;
     visibility: visible !important;
     pointer-events: auto !important;
-    min-width: 48px !important;
-    min-height: 48px !important;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    transition: transform 0.4s ease !important; // synchroniser avec la sidebar
+  }
+
+  // Quand la sidebar est ouverte, faire suivre le bouton le long du bord droit de la sidebar
+  .admin-container.sidebar-open .mobile-menu-toggle {
+    // Déplacer le bouton du même déplacement que la sidebar
+    transform: translate3d(calc(var(--sidebar-width) - 40%), -50%, 0) !important; // reste légèrement caché
   }
 
   .mobile-overlay {
@@ -204,19 +224,18 @@
     transform: translateX(-100%); // Masqué par défaut
     box-shadow: 2px 0 10px rgba(0, 0, 0, 0.15);
     z-index: 100;
-    transition: transform 0.3s ease;
+    transition: transform 0.4s ease; // synchroniser avec le bouton
 
     &.sidebar-open {
       transform: translateX(0); // Visible quand ouvert
     }
   }
 
-
   .sidebar-nav {
     padding: 0.75rem 0;
     overflow-y: auto;
-        top: 150px;
-    position: absolute;
+    // top: 150px;
+    // position: absolute;
   }
 
   .nav-item {
@@ -259,9 +278,15 @@
   }
 
   .admin-content {
-    padding: 1rem;
+    padding: 1rem 1rem 1rem 3rem;
     width: 100%;
     max-width: 100%;
   }
 }
 
+.truc {
+  height: 100vh;
+  display: flex;
+  margin-top: 80px;
+  flex-direction: column;
+}

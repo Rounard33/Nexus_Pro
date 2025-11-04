@@ -1,10 +1,10 @@
-<div class="admin-container">
+<div class="admin-container" [class.sidebar-open]="sidebarOpen">
   <!-- Mobile Menu Toggle -->
   <button class="mobile-menu-toggle" (click)="toggleSidebar()" aria-label="Toggle menu">
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <line x1="3" y1="6" x2="21" y2="6"/>
-      <line x1="3" y1="12" x2="21" y2="12"/>
-      <line x1="3" y1="18" x2="21" y2="18"/>
+      <line x1="3" y1="6" x2="21" y2="6" />
+      <line x1="3" y1="12" x2="21" y2="12" />
+      <line x1="3" y1="18" x2="21" y2="18" />
     </svg>
   </button>
 
@@ -13,72 +13,62 @@
 
   <!-- Sidebar -->
   <aside class="admin-sidebar" [class.sidebar-open]="sidebarOpen">
-    <div class="sidebar-header">
-      <h2 class="sidebar-title">Administration</h2>
-      <p class="sidebar-subtitle" *ngIf="currentUser">{{ currentUser.email }}</p>
+    <div class="truc">
+
+      <div class="sidebar-header">
+        <h2 class="sidebar-title">Administration</h2>
+        <p class="sidebar-subtitle" *ngIf="currentUser">{{ currentUser.email }}</p>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a routerLink="/admin" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-item"
+          (click)="setActiveTab('dashboard')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+            <path d="M9 22V12h6v10" />
+          </svg>
+          <span>Tableau de bord</span>
+        </a>
+
+        <a routerLink="/admin/appointments" routerLinkActive="active" class="nav-item"
+          (click)="setActiveTab('appointments')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 6v6l4 2" />
+          </svg>
+          <span>Rendez-vous</span>
+        </a>
+
+        <a routerLink="/admin/statistics" routerLinkActive="active" class="nav-item"
+          (click)="setActiveTab('statistics')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 3v18h18" />
+            <path d="M18 7l-5 5-4-4-3 3" />
+          </svg>
+          <span>Statistiques</span>
+        </a>
+
+        <a routerLink="/admin/hours" routerLinkActive="active" class="nav-item" (click)="setActiveTab('hours')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 6v6l4 2" />
+          </svg>
+          <span>Horaires</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button class="logout-btn" (click)="logout()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </svg>
+          <span>Déconnexion</span>
+        </button>
+      </div>
     </div>
 
-    <nav class="sidebar-nav">
-      <a
-        routerLink="/admin"
-        routerLinkActive="active"
-        [routerLinkActiveOptions]="{exact: true}"
-        class="nav-item"
-        (click)="setActiveTab('dashboard')">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-          <path d="M9 22V12h6v10"/>
-        </svg>
-        <span>Tableau de bord</span>
-      </a>
-
-      <a
-        routerLink="/admin/appointments"
-        routerLinkActive="active"
-        class="nav-item"
-        (click)="setActiveTab('appointments')">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10"/>
-          <path d="M12 6v6l4 2"/>
-        </svg>
-        <span>Rendez-vous</span>
-      </a>
-
-      <a
-        routerLink="/admin/statistics"
-        routerLinkActive="active"
-        class="nav-item"
-        (click)="setActiveTab('statistics')">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M3 3v18h18"/>
-          <path d="M18 7l-5 5-4-4-3 3"/>
-        </svg>
-        <span>Statistiques</span>
-      </a>
-
-      <a
-        routerLink="/admin/hours"
-        routerLinkActive="active"
-        class="nav-item"
-        (click)="setActiveTab('hours')">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10"/>
-          <path d="M12 6v6l4 2"/>
-        </svg>
-        <span>Horaires</span>
-      </a>
-    </nav>
-
-    <div class="sidebar-footer">
-      <button class="logout-btn" (click)="logout()">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-          <polyline points="16 17 21 12 16 7"/>
-          <line x1="21" y1="12" x2="9" y2="12"/>
-        </svg>
-        <span>Déconnexion</span>
-      </button>
-    </div>
   </aside>
 
   <!-- Main Content -->
@@ -88,4 +78,3 @@
     </div>
   </main>
 </div>
-
