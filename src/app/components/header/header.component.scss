@@ -28,17 +28,32 @@
 }
 
 .logo-link {
-  display: flex;
-  align-items: center;
+  display: block;
   text-decoration: none;
-  color: var(--primary-800);
-  font-weight: 400;
-  font-size: 1.5rem;
-  transition: color var(--transition-fast);
-  font-family: var(--font-display);
+  transition: opacity var(--transition-fast);
 
   &:hover {
-    color: var(--primary-700);
+    opacity: 0.8;
+  }
+}
+
+.logo-container {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+}
+
+.logo-image {
+  height: 50px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+  flex-shrink: 0;
+  margin-bottom: 0.15em; // Ajustement pour aligner la base du triangle avec le baseline du texte
+
+  @media (max-width: 768px) {
+    height: 40px;
+    margin-bottom: 0.12em;
   }
 }
 
@@ -46,6 +61,15 @@
   font-family: 'Allura', cursive;
   color: var(--primary-900);
   font-weight: 400;
+  font-size: 1.5rem;
+  white-space: nowrap;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+
+  @media (max-width: 768px) {
+    font-size: 1.25rem;
+  }
 }
 
 .nav {
