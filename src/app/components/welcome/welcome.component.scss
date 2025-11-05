@@ -124,6 +124,12 @@
 
 .title-line {
   display: block;
+  font-family: 'Allura', cursive;
+  font-size: 6rem;
+
+  @media (max-width: 768px) {
+    font-size: 4rem;
+  }
 }
 
 .description-welcome {
