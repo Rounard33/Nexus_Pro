@@ -96,8 +96,6 @@ export class ContactComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   contactInfo = {
-    email: 'contact@reikietsens.com',
-    phone: '+33 6 74 70 09 66',
     address: '132 route de Capian - 33550 Langoiran'
   };
 
