@@ -21,10 +21,18 @@ export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ) {
-  const origin = req.headers.origin as string;
+  // ⚠️ CRITIQUE : Définir les headers CORS IMMÉDIATEMENT, avant TOUTE autre opération
+  // Utiliser une approche simple et directe pour garantir que les headers sont toujours présents
+  const origin = req.headers.origin as string || '*';
   
-  // ⚠️ IMPORTANT : Définir les headers CORS EN PREMIER, avant toute vérification
-  // Cela permet de gérer les requêtes OPTIONS (preflight) et les erreurs CORS
+  // Définir les headers CORS de manière explicite et simple
+  res.setHeader('Access-Control-Allow-Origin', origin === '*' ? '*' : origin);
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Max-Age', '86400');
+  
+  // Appeler aussi setCORSHeaders pour la logique avancée (mais on a déjà défini les headers de base)
   setCORSHeaders(res, origin, 'GET, POST, PATCH, OPTIONS', 'Content-Type, Authorization');
   
   // Gérer les requêtes OPTIONS (preflight) immédiatement
@@ -54,6 +62,9 @@ export default async function handler(
   
   // Enlever les query params du chemin final
   path = path.split('?')[0];
+  
+  // Log pour déboguer (en production aussi pour voir ce qui se passe)
+  console.log(`[API Router] Method: ${req.method}, Path: ${path}, Origin: ${origin}, URL: ${req.url}`);
   
   // Router vers le handler approprié
   if (path.includes('/api/appointments') || path === '/api/appointments') {

@@ -32,39 +32,27 @@ export function setCORSHeaders(res: VercelResponse, origin?: string, methods: st
     res.setHeader('Access-Control-Max-Age', '86400'); // 24 heures
     
     // Définir Access-Control-Allow-Origin selon la configuration
+    // SIMPLIFIÉ : En production, autoriser TOUTES les origines Vercel et l'origine de la requête
     let corsOrigin = '*'; // Par défaut
     
     if (isDevelopment) {
       // En développement, autoriser toutes les origines locales et l'origine de la requête
       corsOrigin = requestOrigin || '*';
-    } else if (allowedOrigins.length === 0) {
-      // En production, si ALLOWED_ORIGINS n'est pas configuré, autoriser toutes les origines Vercel
-      // Cela permet de fonctionner avec les preview deployments et les différents environnements Vercel
-      if (requestOrigin && (requestOrigin.includes('.vercel.app') || requestOrigin.includes('localhost'))) {
-        corsOrigin = requestOrigin;
-      } else {
-        corsOrigin = requestOrigin || '*';
-      }
-    } else if (allowedOrigins.includes(requestOrigin)) {
-      // Si l'origine est dans la liste autorisée, l'accepter
-      corsOrigin = requestOrigin;
     } else {
-      // Si l'origine n'est pas dans la liste, vérifier si c'est une origine Vercel
-      if (requestOrigin && requestOrigin.includes('.vercel.app')) {
+      // En production : autoriser l'origine de la requête si elle existe, sinon '*'
+      // Cela permet de fonctionner avec tous les preview deployments Vercel
+      if (requestOrigin) {
         corsOrigin = requestOrigin;
       } else {
-        // Pour les autres origines non autorisées, autoriser quand même pour le débogage
-        corsOrigin = requestOrigin || '*';
+        corsOrigin = '*';
       }
     }
     
     // TOUJOURS définir le header Access-Control-Allow-Origin
     res.setHeader('Access-Control-Allow-Origin', corsOrigin);
     
-    // Log pour le débogage (seulement en développement)
-    if (isDevelopment) {
-      console.log(`[CORS] Set headers for origin: ${requestOrigin || 'none'} -> ${corsOrigin}`);
-    }
+    // Log pour le débogage (toujours activé pour voir ce qui se passe en production)
+    console.log(`[CORS] Set headers for origin: ${requestOrigin || 'none'} -> ${corsOrigin}`);
   } catch (error) {
     // En cas d'erreur dans setCORSHeaders, définir au moins les headers minimaux
     console.error('[CORS] Error setting CORS headers:', error);
