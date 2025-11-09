@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+docs/
+.angular/
+
+# Local development files
+local-api-server*.cjs
+*.sql
+
+# Environment files
+.env
+.env.local
+.env.production
+.env.development
+*.env*
+
+# IDE
+.vscode/
+.idea/
+*.sublime-*
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Cache
+.vercel/
+.cache/
+.sass-cache/
