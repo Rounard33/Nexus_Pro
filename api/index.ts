@@ -12,19 +12,19 @@ import {handleTestimonials} from '../handlers/testimonials.js';
 import {setCORSHeaders, setSecurityHeaders} from './utils/security-helpers.js';
 
 /**
- * Routeur principal pour toutes les routes API (catch-all)
+ * Routeur principal pour toutes les routes API
  * Consolide toutes les fonctions API en une seule Serverless Function
  * 
- * Le nom de fichier [...slug].ts indique à Vercel qu'il s'agit d'un catch-all
- * qui capture toutes les routes /api/*
+ * Toutes les routes /api/* sont redirigées vers cette fonction via vercel.json
  */
 export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ) {
-  // ⚠️ CRITIQUE : Définir les headers CORS EN PREMIER, avant TOUTE autre opération
-  // Cela garantit que les headers CORS sont toujours présents, même en cas d'erreur
   const origin = req.headers.origin as string;
+  
+  // ⚠️ IMPORTANT : Définir les headers CORS EN PREMIER, avant toute vérification
+  // Cela permet de gérer les requêtes OPTIONS (preflight) et les erreurs CORS
   setCORSHeaders(res, origin, 'GET, POST, PATCH, OPTIONS', 'Content-Type, Authorization');
   
   // Gérer les requêtes OPTIONS (preflight) immédiatement
@@ -32,28 +32,28 @@ export default async function handler(
     return res.status(200).end();
   }
   
-  // Définir les autres headers de sécurité
   setSecurityHeaders(res, origin);
   
   // Extraire le chemin de la requête
-  // Avec catch-all [...slug], req.query.slug contient le chemin
-  const slug = req.query['slug'] as string | string[];
-  let path = '/api/';
+  // Avec le rewrite /api/(.*) -> /api/index?path=$1, le chemin original est dans req.query.path
+  let path = req.url || '';
   
-  if (slug) {
-    if (Array.isArray(slug)) {
-      path = `/api/${slug.join('/')}`;
-    } else {
-      path = `/api/${slug}`;
-    }
+  // Récupérer le chemin original depuis le query param (passé par le rewrite)
+  const pathParam = req.query['path'] as string;
+  if (pathParam) {
+    path = `/api/${pathParam}`;
   } else {
-    // Fallback : utiliser req.url
-    const url = req.url || '';
-    path = url.split('?')[0];
-    if (!path.startsWith('/api/')) {
-      path = `/api${path}`;
-    }
+    // Fallback : utiliser req.url directement si pas de rewrite
+    path = path.split('?')[0];
   }
+  
+  // S'assurer que le chemin commence par /api/
+  if (!path.startsWith('/api/')) {
+    path = `/api${path}`;
+  }
+  
+  // Enlever les query params du chemin final
+  path = path.split('?')[0];
   
   // Router vers le handler approprié
   if (path.includes('/api/appointments') || path === '/api/appointments') {
