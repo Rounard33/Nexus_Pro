@@ -28,5 +28,6 @@ export interface ClientProfile {
 export interface ClientDetail extends ClientProfile {
   rejectedAppointments: number;
   cancelledAppointments: number;
+  eligibleTreatments: number;
 }
 
