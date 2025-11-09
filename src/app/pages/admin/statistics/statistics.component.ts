@@ -1,19 +1,9 @@
 import {CommonModule} from '@angular/common';
 import {Component, OnInit} from '@angular/core';
+import {PrestationStats, StatCard} from '../../../models/statistics.model';
 import {Appointment, ContentService} from '../../../services/content.service';
-
-interface StatCard {
-  title: string;
-  value: number;
-  label: string;
-  icon: string;
-  color: string;
-}
-
-interface PrestationStats {
-  prestation: string;
-  count: number;
-}
+import {StatisticsService} from '../../../services/statistics.service';
+import {DateUtils} from '../../../utils/date.utils';
 
 @Component({
   selector: 'app-statistics',
@@ -27,22 +17,21 @@ export class StatisticsComponent implements OnInit {
   topPrestations: PrestationStats[] = [];
   isLoading = true;
 
-  constructor(private contentService: ContentService) {}
+  constructor(
+    private contentService: ContentService,
+    private statisticsService: StatisticsService
+  ) {}
 
   ngOnInit(): void {
     this.loadStatistics();
   }
 
   private loadStatistics(): void {
-    const today = new Date();
-    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-    const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-
     // Charger tous les rendez-vous du mois
     this.contentService.getAppointments(
       undefined,
-      firstDayOfMonth.toISOString().split('T')[0],
-      lastDayOfMonth.toISOString().split('T')[0]
+      DateUtils.getFirstDayOfMonth(),
+      DateUtils.getLastDayOfMonth()
     ).subscribe({
       next: (appointments) => {
         this.calculateStats(appointments);
@@ -57,45 +46,40 @@ export class StatisticsComponent implements OnInit {
   }
 
   private calculateStats(appointments: Appointment[]): void {
-    const pending = appointments.filter(a => a.status === 'pending').length;
-    const accepted = appointments.filter(a => a.status === 'accepted').length;
-    const rejected = appointments.filter(a => a.status === 'rejected').length;
-    // total ne compte que les rendez-vous acceptés (pas les pending)
-    const total = accepted;
-    const acceptanceRate = (accepted + rejected) > 0 ? Math.round((accepted / (accepted + rejected)) * 100) : 0;
+    const stats = this.statisticsService.calculateStats(appointments);
 
     this.stats = [
       {
         title: 'Total acceptés ce mois',
-        value: total,
+        value: stats.total,
         label: 'rendez-vous',
         icon: 'calendar',
         color: 'primary'
       },
       {
         title: 'En attente',
-        value: pending,
+        value: stats.pending,
         label: 'rendez-vous',
         icon: 'clock',
         color: 'warning'
       },
       {
         title: 'Acceptés',
-        value: accepted,
+        value: stats.accepted,
         label: 'rendez-vous',
         icon: 'check',
         color: 'success'
       },
       {
         title: 'Refusés',
-        value: rejected,
+        value: stats.rejected,
         label: 'rendez-vous',
         icon: 'x',
         color: 'danger'
       },
       {
         title: 'Taux d\'acceptation',
-        value: acceptanceRate,
+        value: stats.acceptanceRate,
         label: '%',
         icon: 'chart',
         color: 'info'
@@ -104,17 +88,8 @@ export class StatisticsComponent implements OnInit {
   }
 
   private calculateTopPrestations(appointments: Appointment[]): void {
-    const prestationCounts: {[key: string]: number} = {};
-
-    appointments.forEach(appointment => {
-      const prestationName = appointment.prestations?.name || 'Inconnue';
-      prestationCounts[prestationName] = (prestationCounts[prestationName] || 0) + 1;
-    });
-
-    this.topPrestations = Object.entries(prestationCounts)
-      .map(([prestation, count]) => ({prestation, count}))
-      .sort((a, b) => b.count - a.count)
+    this.topPrestations = this.statisticsService
+      .calculatePrestationStats(appointments)
       .slice(0, 5);
   }
 }
-
