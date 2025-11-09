@@ -36,7 +36,7 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/admin/clients/clients.component').then(m => m.ClientsComponent) 
       },
       { 
-        path: 'clients/:email', 
+        path: 'clients/:id', 
         loadComponent: () => import('./pages/admin/clients/client-detail/client-detail.component').then(m => m.ClientDetailComponent) 
       }
     ]

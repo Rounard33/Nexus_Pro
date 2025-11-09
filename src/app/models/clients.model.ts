@@ -7,6 +7,8 @@ export interface LoyaltyReward {
 }
 
 export interface ClientProfile {
+  id?: string; // UUID de la base (pour référence interne)
+  clientId?: string; // Identifiant opaque pour les URLs
   email: string;
   name: string;
   phone?: string;

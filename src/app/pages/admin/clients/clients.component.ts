@@ -8,6 +8,7 @@ import {ClientProfile} from '../../../models/clients.model';
 import {ClientService} from '../../../services/client.service';
 import {ContentService} from '../../../services/content.service';
 import {BirthdayUtils} from '../../../utils/birthday.utils';
+import {generateTemporaryClientId} from '../../../utils/client-id-helper';
 import {FormatUtils} from '../../../utils/format.utils';
 
 @Component({
@@ -92,13 +93,26 @@ export class ClientsComponent implements OnInit, OnDestroy {
     forkJoin(clientDataObservables).subscribe({
       next: (clientDataArray) => {
         clientDataArray.forEach((clientData, index) => {
-          if (clientData && clientData.birthdate) {
-            const client = this.clients[index];
-            if (client) {
-              client.birthdate = clientData.birthdate;
-              const {nextBirthday, age} = BirthdayUtils.calculateBirthdayInfo(clientData.birthdate);
-              client.nextBirthday = nextBirthday;
-              client.age = age;
+          const client = this.clients[index];
+          if (client) {
+            if (clientData) {
+              // Stocker l'ID et le clientId (identifiant opaque) du client depuis l'API
+              client.id = clientData.id;
+              client.clientId = clientData.clientId;
+              if (clientData.birthdate) {
+                client.birthdate = clientData.birthdate;
+                const {nextBirthday, age} = BirthdayUtils.calculateBirthdayInfo(clientData.birthdate);
+                client.nextBirthday = nextBirthday;
+                client.age = age;
+              }
+            } else {
+              // Si le client n'existe pas encore dans la table clients,
+              // on ne peut pas générer le vrai clientId (nécessite le secret serveur)
+              // On va créer le client dans la table lors de la première navigation
+              // Pour l'instant, on utilise un identifiant temporaire basé sur l'email
+              // ⚠️ IMPORTANT: Ce clientId temporaire ne fonctionnera pas avec l'API
+              // Il faut créer le client dans la table d'abord
+              client.clientId = generateTemporaryClientId(client.email);
             }
           }
         });
@@ -127,7 +141,38 @@ export class ClientsComponent implements OnInit, OnDestroy {
   }
 
   viewClientDetails(client: ClientProfile): void {
-    this.router.navigate(['/admin/clients', encodeURIComponent(client.email)]);
+    // Toujours récupérer le client depuis l'API pour obtenir le vrai clientId
+    // Cela garantit qu'on a toujours le bon clientId même si le client vient d'être créé
+    this.contentService.getClientByEmail(client.email).pipe(
+      catchError(() => {
+        // Si le client n'existe pas, le créer d'abord
+        return this.contentService.createOrUpdateClient({
+          email: client.email,
+          name: client.name,
+          phone: client.phone
+        });
+      })
+    ).subscribe({
+      next: (clientData) => {
+        // Utiliser le clientId de l'API (vrai hash) ou générer depuis l'email si nécessaire
+        const finalClientId = clientData.clientId || this.generateClientIdFromEmail(client.email);
+        client.clientId = finalClientId;
+        this.router.navigate(['/admin/clients', finalClientId]);
+      },
+      error: (error) => {
+        console.error('Erreur lors de la récupération/création du client:', error);
+        // Fallback: utiliser l'email directement si tout échoue
+        // Mais il faudra modifier la route pour accepter les emails aussi
+        console.warn('Impossible de récupérer le clientId, navigation impossible');
+      }
+    });
+  }
+
+  private generateClientIdFromEmail(email: string): string {
+    // Cette fonction ne génère pas le vrai hash (nécessite le secret serveur)
+    // Mais on va forcer la récupération depuis l'API qui retournera le vrai clientId
+    // Pour l'instant, on retourne un placeholder qui sera remplacé
+    return 'temp-' + email.toLowerCase().trim().replace(/[^a-z0-9]/g, '');
   }
 
   formatDate(dateString: string | null): string {

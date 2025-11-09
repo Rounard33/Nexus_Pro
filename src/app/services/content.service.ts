@@ -77,6 +77,7 @@ export interface BlockedDate {
 
 export interface Client {
   id?: string;
+  clientId?: string; // Identifiant opaque pour les URLs
   email: string;
   name: string;
   phone?: string;
@@ -201,6 +202,18 @@ export class ContentService {
           'Authorization': `Bearer ${token}`
         });
         return this.http.get<Client>(`${API_URL}/clients?email=${encodeURIComponent(email)}`, {headers});
+      })
+    );
+  }
+
+  getClientById(id: string): Observable<Client> {
+    return from(this.authService.getSessionToken()).pipe(
+      switchMap(token => {
+        const headers = new HttpHeaders({
+          'Authorization': `Bearer ${token}`
+        });
+        // Utiliser clientId (identifiant opaque) au lieu de l'UUID
+        return this.http.get<Client>(`${API_URL}/clients?clientId=${encodeURIComponent(id)}`, {headers});
       })
     );
   }

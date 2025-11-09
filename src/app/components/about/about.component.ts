@@ -2,6 +2,7 @@ import {CommonModule} from '@angular/common';
 import {Component, OnInit} from '@angular/core';
 import {RouterModule} from '@angular/router';
 import {AboutContent, ContentService} from '../../services/content.service';
+import {getAboutImageUrl} from '../../utils/supabase-storage.utils';
 import {SectionHeaderComponent} from '../section-header/section-header.component';
 
 @Component({
@@ -34,6 +35,10 @@ export class AboutComponent implements OnInit {
 
   getAboutImage(): string {
     // Récupérer l'image du premier élément ou utiliser l'image par défaut
-    return this.aboutContent.find(item => item.image_url)?.image_url || 'assets/img/pauline.jpg';
+    const imageUrl = this.aboutContent.find(item => item.image_url)?.image_url;
+    if (imageUrl) {
+      return getAboutImageUrl(imageUrl);
+    }
+    return 'assets/img/pauline.jpg';
   }
 }

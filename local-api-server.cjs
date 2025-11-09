@@ -638,6 +638,85 @@ const server = http.createServer(async (req, res) => {
           return;
         }
         
+        // Créer automatiquement le client dans la table clients s'il n'existe pas
+        if (data && data.client_email) {
+          const clientEmail = data.client_email.toLowerCase().trim();
+          
+          console.log(`[Appointments POST] ===== CRÉATION CLIENT =====`);
+          console.log(`[Appointments POST] Email: "${clientEmail}"`);
+          console.log(`[Appointments POST] Nom: "${data.client_name || 'null'}"`);
+          console.log(`[Appointments POST] Téléphone: "${data.client_phone || 'null'}"`);
+          
+          try {
+            // ÉTAPE 1: Vérifier si le client existe déjà
+            console.log(`[Appointments POST] ÉTAPE 1: Vérification existence...`);
+            const { data: existingClient, error: checkError } = await supabase
+              .from('clients')
+              .select('id, email')
+              .eq('email', clientEmail)
+              .maybeSingle();
+            
+            if (checkError && checkError.code !== 'PGRST116') {
+              console.error(`[Appointments POST] ❌ Erreur vérification:`, checkError);
+            }
+            
+            if (existingClient) {
+              console.log(`[Appointments POST] ✅ Client existe déjà: ${clientEmail} (ID: ${existingClient.id})`);
+            } else {
+              console.log(`[Appointments POST] ÉTAPE 2: Client n'existe pas, INSERT en cours...`);
+              
+              // ÉTAPE 2: Insérer le client (SIMPLE - juste les champs de base)
+              // Validation et limitation de taille pour la sécurité
+              const clientData = {
+                email: clientEmail,
+                name: (data.client_name || '').trim().substring(0, 100) || null, // Max 100 caractères
+                phone: (data.client_phone || '').trim().substring(0, 20) || null // Max 20 caractères
+              };
+              
+              // Validation supplémentaire de l'email
+              const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+              if (!emailRegex.test(clientData.email)) {
+                console.error(`[Appointments POST] ❌ Email invalide: "${clientData.email}"`);
+                // Ne pas créer le client si l'email est invalide
+                return;
+              }
+              
+              console.log(`[Appointments POST] Données à insérer:`, JSON.stringify(clientData, null, 2));
+              
+              const { data: insertedClient, error: insertError } = await supabase
+                .from('clients')
+                .insert(clientData)
+                .select()
+                .single();
+              
+              if (insertError) {
+                console.error(`[Appointments POST] ❌ ERREUR INSERT:`);
+                console.error(`[Appointments POST] Code: ${insertError.code}`);
+                console.error(`[Appointments POST] Message: ${insertError.message}`);
+                console.error(`[Appointments POST] Détails:`, JSON.stringify(insertError, null, 2));
+                
+                // Si erreur de duplication, le client existe maintenant - on continue
+                if (insertError.code === '23505' || insertError.message?.includes('duplicate') || insertError.message?.includes('unique')) {
+                  console.log(`[Appointments POST] ⚠️ Client créé entre temps, on continue...`);
+                }
+              } else if (insertedClient) {
+                console.log(`[Appointments POST] ✅✅✅ CLIENT CRÉÉ AVEC SUCCÈS!`);
+                console.log(`[Appointments POST] ID: ${insertedClient.id}`);
+                console.log(`[Appointments POST] Email: ${insertedClient.email}`);
+                console.log(`[Appointments POST] Nom: ${insertedClient.name}`);
+              } else {
+                console.error(`[Appointments POST] ❌ Insert réussi mais aucune donnée retournée!`);
+              }
+            }
+            console.log(`[Appointments POST] ===== FIN CRÉATION CLIENT =====`);
+          } catch (error) {
+            console.error('[Appointments POST] ❌ EXCEPTION lors de la création du client:', error);
+            console.error('[Appointments POST] Stack:', error.stack);
+          }
+        } else {
+          console.log('[Appointments POST] ⚠️ Pas de client_email dans les données');
+        }
+        
         res.writeHead(201, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(data));
       }
@@ -801,26 +880,178 @@ const server = http.createServer(async (req, res) => {
         return;
       }
 
-      // GET - Récupérer un client par email
+      // GET - Récupérer un client par email, id ou clientId
       if (req.method === 'GET') {
         // Rate limiting pour GET : 200 par minute (plus permissif car authentifié)
         if (!applyRateLimit(req, res, 200, 60000)) {
           return;
         }
         
-        const { email } = parsedUrl.query;
+        const { email, id, clientId } = parsedUrl.query;
 
-        if (!email) {
+        if (!email && !id && !clientId) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: 'Email requis' }));
+          res.end(JSON.stringify({ error: 'Email, ID ou clientId requis' }));
           return;
         }
 
-        const { data, error } = await supabase
-          .from('clients')
-          .select('*')
-          .eq('email', email.toLowerCase().trim())
-          .single();
+        let data;
+        let error;
+        let searchEmail = null;
+
+        if (clientId) {
+          // Recherche par clientId (identifiant opaque)
+          // D'abord essayer de trouver directement par la colonne client_id
+          const { data: clientByColumn, error: columnError } = await supabase
+            .from('clients')
+            .select('*')
+            .eq('client_id', clientId)
+            .single();
+          
+          if (clientByColumn && !columnError) {
+            data = clientByColumn;
+            searchEmail = clientByColumn.email;
+          } else {
+            // Fallback: chercher dans tous les clients et vérifier le clientId
+            const { data: allClients, error: fetchError } = await supabase
+              .from('clients')
+              .select('*')
+              .limit(1000);
+            
+            if (!fetchError && allClients) {
+              // Fonction pour générer clientId depuis email
+              const crypto = require('crypto');
+              const secret = process.env.CLIENT_ID_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY;
+              if (!secret) {
+                console.error('[Clients GET] ⚠️ CLIENT_ID_SECRET non défini, utilisation de SERVICE_ROLE_KEY');
+              }
+              
+              function generateClientId(email) {
+                if (!secret) {
+                  throw new Error('CLIENT_ID_SECRET ou SUPABASE_SERVICE_ROLE_KEY requis pour générer clientId');
+                }
+                const normalizedEmail = email.toLowerCase().trim();
+                const hmac = crypto.createHmac('sha256', secret);
+                hmac.update(normalizedEmail);
+                const hash = hmac.digest('base64');
+                return hash.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '').substring(0, 16);
+              }
+              
+              // Chercher le client avec le clientId correspondant
+              for (const client of allClients) {
+                if (client.email && generateClientId(client.email) === clientId) {
+                  data = client;
+                  searchEmail = client.email;
+                  break;
+                }
+              }
+              
+              // Si pas trouvé dans clients, chercher dans appointments
+              if (!data) {
+                const { data: appointments } = await supabase
+                  .from('appointments')
+                  .select('client_email, client_name, client_phone')
+                  .limit(1000);
+                
+                if (appointments) {
+                  for (const apt of appointments) {
+                    if (apt.client_email && generateClientId(apt.client_email) === clientId) {
+                      searchEmail = apt.client_email.toLowerCase().trim();
+                      // Créer le client automatiquement
+                      const { data: newClient, error: createError } = await supabase
+                        .from('clients')
+                        .insert({
+                          email: searchEmail,
+                          name: apt.client_name || null,
+                          phone: apt.client_phone || null
+                        })
+                        .select()
+                        .single();
+                      
+                      if (!createError && newClient) {
+                        data = newClient;
+                      }
+                      break;
+                    }
+                  }
+                }
+              }
+            }
+            
+            if (!data) {
+              error = { code: 'PGRST116' };
+            }
+          }
+        } else if (id) {
+          // Recherche par UUID
+          const result = await supabase
+            .from('clients')
+            .select('*')
+            .eq('id', id)
+            .single();
+          data = result.data;
+          error = result.error;
+          if (data) searchEmail = data.email;
+        } else if (email) {
+          // Recherche par email
+          searchEmail = email.toLowerCase().trim();
+          const result = await supabase
+            .from('clients')
+            .select('*')
+            .eq('email', searchEmail)
+            .single();
+          data = result.data;
+          error = result.error;
+        }
+
+        // Si le client n'existe pas dans la table clients, vérifier s'il existe dans les rendez-vous
+        if (error && error.code === 'PGRST116' && searchEmail) {
+          console.log(`[Clients GET] Client non trouvé, recherche dans les rendez-vous pour: "${searchEmail}"`);
+          
+          const normalizedSearchEmail = searchEmail.toLowerCase().trim();
+          const { data: appointments, error: aptError } = await supabase
+            .from('appointments')
+            .select('client_name, client_email, client_phone')
+            .eq('client_email', normalizedSearchEmail)
+            .limit(1);
+          
+          if (!aptError && appointments && appointments.length > 0) {
+            const appointment = appointments[0];
+            const appointmentEmail = appointment.client_email?.toLowerCase().trim();
+            
+            if (appointmentEmail) {
+              console.log(`[Clients GET] Rendez-vous trouvé, création du client...`);
+              
+              // Validation et limitation de taille pour la sécurité
+              const clientData = {
+                email: appointmentEmail,
+                name: (appointment.client_name || '').trim().substring(0, 100) || null, // Max 100 caractères
+                phone: (appointment.client_phone || '').trim().substring(0, 20) || null // Max 20 caractères
+              };
+              
+              // Validation supplémentaire de l'email
+              const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+              if (!emailRegex.test(clientData.email)) {
+                console.error(`[Clients GET] ❌ Email invalide: "${clientData.email}"`);
+                error = { code: 'PGRST116' }; // Simuler "non trouvé"
+              } else {
+                const { data: newClient, error: createError } = await supabase
+                  .from('clients')
+                  .insert(clientData)
+                  .select()
+                  .single();
+                
+                if (!createError && newClient) {
+                  data = newClient;
+                  error = null;
+                  console.log(`[Clients GET] ✅ Client créé automatiquement: ${appointmentEmail}`);
+                } else {
+                  error = createError;
+                }
+              }
+            }
+          }
+        }
 
         if (error) {
           if (error.code === 'PGRST116') {
@@ -835,6 +1066,21 @@ const server = http.createServer(async (req, res) => {
             ...(isDevelopment && { details: error.message })
           }));
           return;
+        }
+
+        // Ajouter clientId dans la réponse si pas déjà présent
+        if (data && data.email && !data.clientId) {
+          const crypto = require('crypto');
+          const secret = process.env.CLIENT_ID_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY;
+          if (secret) {
+            const normalizedEmail = data.email.toLowerCase().trim();
+            const hmac = crypto.createHmac('sha256', secret);
+            hmac.update(normalizedEmail);
+            const hash = hmac.digest('base64');
+            data.clientId = hash.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '').substring(0, 16);
+          } else {
+            console.warn('[Clients GET] ⚠️ Impossible de générer clientId: CLIENT_ID_SECRET non défini');
+          }
         }
 
         res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -885,6 +1131,21 @@ const server = http.createServer(async (req, res) => {
             ...(isDevelopment && { details: error.message })
           }));
           return;
+        }
+
+        // Ajouter clientId dans la réponse si pas déjà présent
+        if (data && data.email && !data.clientId) {
+          const crypto = require('crypto');
+          const secret = process.env.CLIENT_ID_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY;
+          if (secret) {
+            const normalizedEmail = data.email.toLowerCase().trim();
+            const hmac = crypto.createHmac('sha256', secret);
+            hmac.update(normalizedEmail);
+            const hash = hmac.digest('base64');
+            data.clientId = hash.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '').substring(0, 16);
+          } else {
+            console.warn('[Clients POST] ⚠️ Impossible de générer clientId: CLIENT_ID_SECRET non défini');
+          }
         }
 
         res.writeHead(200, { 'Content-Type': 'application/json' });

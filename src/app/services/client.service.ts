@@ -51,6 +51,8 @@ export class ClientService {
     const { nextBirthday, age } = BirthdayUtils.calculateBirthdayInfo(clientData?.birthdate);
 
     return {
+      id: clientData?.id,
+      clientId: clientData?.clientId,
       email: clientAppointments[0].client_email,
       name: clientAppointments[0].client_name,
       phone: clientAppointments[0].client_phone || clientData?.phone,

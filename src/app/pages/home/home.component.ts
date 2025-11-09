@@ -15,6 +15,7 @@ import {Prestation, ServicesComponent} from '../../components/services/services.
 import {Testimonial, TestimonialsComponent} from '../../components/testimonials/testimonials.component';
 import {WelcomeComponent} from '../../components/welcome/welcome.component';
 import {Appointment, ContentService} from '../../services/content.service';
+import {getCreationImageUrl, getPrestationImageUrl, getTestimonialAvatarUrl} from '../../utils/supabase-storage.utils';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -79,7 +80,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
           duration: p.duration,
           shortDescription: p.short_description,
           description: p.description,
-          image: p.image_url || ''
+          image: getPrestationImageUrl(p.image_url) // Utiliser la fonction utilitaire pour construire l'URL Supabase Storage
         }));
       },
       error: (error) => {
@@ -95,7 +96,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
           name: c.name,
           price: c.price,
           description: c.description,
-          image: c.image_url || ''
+          image: getCreationImageUrl(c.image_url) // Utiliser la fonction utilitaire pour construire l'URL Supabase Storage
         }));
       },
       error: (error) => {
@@ -111,7 +112,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
           name: t.name,
           role: t.role || '',
           text: t.text,
-          avatar: t.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(t.name)}&background=f5f1e8&color=6f5f4e&size=150`
+          avatar: t.avatar_url ? getTestimonialAvatarUrl(t.avatar_url) : `https://ui-avatars.com/api/?name=${encodeURIComponent(t.name)}&background=f5f1e8&color=6f5f4e&size=150`
         }));
       },
       error: (error) => {

@@ -1,5 +1,6 @@
 import {createClient, SupabaseClient} from '@supabase/supabase-js';
 import type {VercelRequest, VercelResponse} from '@vercel/node';
+import {findClientById, generateClientId, verifyClientId} from './utils/client-id.js';
 import {rateLimitMiddleware} from './utils/rate-limiter.js';
 import {applyRateLimit, getAllowedOrigins, setCORSHeaders, setSecurityHeaders} from './utils/security-helpers.js';
 import {sanitizeAppointment, validateAppointment, validateAppointmentQuery} from './utils/validation.js';
@@ -612,6 +613,99 @@ async function handleAppointments(req: VercelRequest, res: VercelResponse, supab
       return res.status(500).json({ error: 'Erreur lors de la création du rendez-vous', details: error.message });
     }
 
+    // DEBUG: Logger les données retournées
+    console.log('[Appointments POST] ========== DEBUG ==========');
+    console.log('[Appointments POST] Data reçue:', JSON.stringify(data, null, 2));
+    console.log('[Appointments POST] data existe?', !!data);
+    console.log('[Appointments POST] data.client_email existe?', !!data?.client_email);
+    console.log('[Appointments POST] data.client_email valeur:', data?.client_email);
+    console.log('[Appointments POST] Toutes les clés de data:', data ? Object.keys(data) : 'data est null');
+    console.log('[Appointments POST] ============================');
+
+    // Créer automatiquement le client dans la table clients s'il n'existe pas
+    // Utiliser sanitizedData au cas où data n'a pas client_email
+    const emailToUse = data?.client_email || sanitizedData?.client_email;
+    
+    if (emailToUse) {
+      const clientEmail = emailToUse.toLowerCase().trim();
+      const clientName = data?.client_name || sanitizedData?.client_name || null;
+      const clientPhone = data?.client_phone || sanitizedData?.client_phone || null;
+      
+      console.log(`[Appointments POST] ===== CRÉATION CLIENT =====`);
+      console.log(`[Appointments POST] Email: "${clientEmail}"`);
+      console.log(`[Appointments POST] Nom: "${clientName || 'null'}"`);
+      console.log(`[Appointments POST] Téléphone: "${clientPhone || 'null'}"`);
+      
+      try {
+        // ÉTAPE 1: Vérifier si le client existe déjà
+        console.log(`[Appointments POST] ÉTAPE 1: Vérification existence...`);
+        const { data: existingClient, error: checkError } = await supabase
+          .from('clients')
+          .select('id, email')
+          .eq('email', clientEmail)
+          .maybeSingle();
+        
+        if (checkError) {
+          console.error(`[Appointments POST] ❌ Erreur vérification:`, checkError);
+        }
+        
+        if (existingClient) {
+          console.log(`[Appointments POST] ✅ Client existe déjà: ${clientEmail} (ID: ${existingClient.id})`);
+        } else {
+          console.log(`[Appointments POST] ÉTAPE 2: Client n'existe pas, INSERT en cours...`);
+          
+          // ÉTAPE 2: Insérer le client (SIMPLE - juste les champs de base)
+          // Validation et limitation de taille pour la sécurité
+          const clientData: any = {
+            email: clientEmail,
+            name: ((data?.client_name || sanitizedData?.client_name) || '').trim().substring(0, 100) || null, // Max 100 caractères
+            phone: ((data?.client_phone || sanitizedData?.client_phone) || '').trim().substring(0, 20) || null // Max 20 caractères
+          };
+          
+          // Validation supplémentaire de l'email
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(clientData.email)) {
+            console.error(`[Appointments POST] ❌ Email invalide: "${clientData.email}"`);
+            // Ne pas créer le client si l'email est invalide
+            return;
+          }
+          
+          console.log(`[Appointments POST] Données à insérer:`, JSON.stringify(clientData, null, 2));
+          
+          const { data: insertedClient, error: insertError } = await supabase
+            .from('clients')
+            .insert(clientData)
+            .select()
+            .single();
+          
+          if (insertError) {
+            console.error(`[Appointments POST] ❌ ERREUR INSERT:`);
+            console.error(`[Appointments POST] Code: ${insertError.code}`);
+            console.error(`[Appointments POST] Message: ${insertError.message}`);
+            console.error(`[Appointments POST] Détails:`, JSON.stringify(insertError, null, 2));
+            
+            // Si erreur de duplication, le client existe maintenant - on continue
+            if (insertError.code === '23505' || insertError.message?.includes('duplicate') || insertError.message?.includes('unique')) {
+              console.log(`[Appointments POST] ⚠️ Client créé entre temps, on continue...`);
+            }
+          } else if (insertedClient) {
+            console.log(`[Appointments POST] ✅✅✅ CLIENT CRÉÉ AVEC SUCCÈS!`);
+            console.log(`[Appointments POST] ID: ${insertedClient.id}`);
+            console.log(`[Appointments POST] Email: ${insertedClient.email}`);
+            console.log(`[Appointments POST] Nom: ${insertedClient.name}`);
+          } else {
+            console.error(`[Appointments POST] ❌ Insert réussi mais aucune donnée retournée!`);
+          }
+        }
+        console.log(`[Appointments POST] ===== FIN CRÉATION CLIENT =====`);
+      } catch (error: any) {
+        console.error('[Appointments POST] ❌ EXCEPTION lors de la création du client:', error);
+        console.error('[Appointments POST] Stack:', error.stack);
+      }
+    } else {
+      console.log('[Appointments POST] ⚠️ Pas de client_email dans les données');
+    }
+
     return res.status(201).json(data);
   }
 
@@ -703,23 +797,246 @@ async function handleClients(req: VercelRequest, res: VercelResponse, supabase: 
   }
 
   if (req.method === 'GET') {
-    const email = req.query['email'] as string;
+    // Décoder correctement les paramètres de requête
+    const emailParam = req.query['email'];
+    const email = emailParam ? decodeURIComponent(String(emailParam)) : undefined;
+    const id = req.query['id'] as string; // UUID de la base
+    const clientIdParam = req.query['clientId'];
+    const clientId = clientIdParam ? decodeURIComponent(String(clientIdParam)) : undefined;
 
-    if (!email) {
-      return res.status(400).json({ error: 'Email requis' });
+    console.log('[Clients GET] Params:', { email, id, clientId, rawQuery: req.query });
+
+    if (!email && !id && !clientId) {
+      return res.status(400).json({ error: 'Email, ID ou clientId requis' });
     }
 
-    const { data, error } = await supabase
-      .from('clients')
-      .select('*')
-      .eq('email', email.toLowerCase().trim())
-      .single();
+    let data;
+    let error;
 
-    if (error) {
+    let searchEmail: string | null = null;
+
+    if (clientId) {
+      // Recherche par identifiant opaque (recommandé pour les URLs)
+      data = await findClientById(supabase, clientId);
+      if (!data) {
+        // Si le client n'est pas trouvé, chercher dans les rendez-vous pour créer le client
+        // findClientById devrait déjà le faire, mais si ça échoue, on essaie ici
+        console.log(`[Clients GET] Client non trouvé par clientId: ${clientId}, recherche dans les rendez-vous...`);
+        
+        // Récupérer tous les rendez-vous pour trouver l'email correspondant
+        const { data: allAppointments, error: aptError } = await supabase
+          .from('appointments')
+          .select('client_email, client_name, client_phone')
+          .limit(1000);
+        
+        if (!aptError && allAppointments) {
+          // Chercher l'email correspondant au clientId
+          for (const apt of allAppointments) {
+            if (apt.client_email && verifyClientId(clientId, apt.client_email)) {
+              searchEmail = apt.client_email.toLowerCase().trim();
+              console.log(`[Clients GET] Email trouvé pour clientId ${clientId}: ${searchEmail}`);
+              break;
+            }
+          }
+        }
+        
+        // Si on a trouvé un email, créer le client
+        if (searchEmail) {
+          // Le code ci-dessous créera le client automatiquement
+          error = { code: 'PGRST116' }; // Simuler l'erreur pour déclencher la création
+        } else {
+          return res.status(404).json({ error: 'Client non trouvé' });
+        }
+      } else {
+        searchEmail = data.email;
+      }
+    } else if (id) {
+      // Recherche par UUID (pour compatibilité, mais non recommandé)
+      const result = await supabase
+        .from('clients')
+        .select('*')
+        .eq('id', id)
+        .single();
+      data = result.data;
+      error = result.error;
+      if (data) searchEmail = data.email;
+    } else if (email) {
+      // Recherche par email (pour compatibilité)
+      searchEmail = email.toLowerCase().trim();
+      const result = await supabase
+        .from('clients')
+        .select('*')
+        .eq('email', searchEmail)
+        .single();
+      data = result.data;
+      error = result.error;
+    } else {
+      return res.status(400).json({ error: 'Email, ID ou clientId requis' });
+    }
+
+    // Si le client n'existe pas dans la table clients, vérifier s'il existe dans les rendez-vous
+    if (error && error.code === 'PGRST116' && searchEmail) {
+      // Chercher dans les rendez-vous pour créer le client automatiquement
+      console.log(`[Clients GET] Client non trouvé, recherche dans les rendez-vous pour: "${searchEmail}"`);
+      
+      // Normaliser l'email pour la recherche (lowercase, trim)
+      const normalizedSearchEmail = searchEmail.toLowerCase().trim();
+      
+      // Chercher avec l'email normalisé (utiliser eq car les emails sont normalisés en lowercase)
+      const { data: appointments, error: aptError } = await supabase
+        .from('appointments')
+        .select('client_name, client_email, client_phone')
+        .eq('client_email', normalizedSearchEmail)
+        .limit(1);
+      
+      if (aptError) {
+        console.error('[Clients GET] Erreur lors de la recherche dans les rendez-vous:', aptError);
+        return res.status(500).json({ error: 'Erreur lors de la recherche', details: aptError.message });
+      }
+      
+      console.log(`[Clients GET] Nombre de rendez-vous trouvés: ${appointments?.length || 0}`);
+      
+      if (appointments && appointments.length > 0) {
+        // Prendre le premier rendez-vous trouvé
+        const appointment = appointments[0];
+        const appointmentEmail = appointment.client_email?.toLowerCase().trim();
+        
+        if (!appointmentEmail) {
+          console.error('[Clients GET] Email manquant dans le rendez-vous');
+          return res.status(404).json({ error: 'Client non trouvé' });
+        }
+        
+        console.log(`[Clients GET] Rendez-vous trouvé pour "${appointmentEmail}", création du client...`);
+        console.log(`[Clients GET] Données du rendez-vous:`, {
+          name: appointment.client_name,
+          email: appointmentEmail,
+          phone: appointment.client_phone
+        });
+        
+        // Créer le client automatiquement à partir des données du rendez-vous
+        const clientIdHash = generateClientId(appointmentEmail);
+        const clientData: any = {
+          email: appointmentEmail,
+          name: appointment.client_name || null,
+          phone: appointment.client_phone || null
+        };
+        
+        console.log(`[Clients GET] Tentative de création avec client_id: ${clientIdHash}`);
+        
+        // Essayer avec insert d'abord (plus simple et fiable)
+        let { data: newClient, error: createError } = await supabase
+          .from('clients')
+          .insert({
+            ...clientData,
+            client_id: clientIdHash
+          })
+          .select()
+          .single();
+        
+        // Si erreur de duplication (client existe déjà), récupérer le client existant
+        if (createError && (
+          createError.code === '23505' || // Violation de contrainte unique
+          createError.message?.includes('duplicate') ||
+          createError.message?.includes('unique') ||
+          createError.message?.includes('already exists')
+        )) {
+          console.log('[Clients GET] Client existe déjà, récupération...');
+          const { data: existingClientNow, error: fetchError } = await supabase
+            .from('clients')
+            .select('*')
+            .eq('email', appointmentEmail)
+            .single();
+          
+          if (!fetchError && existingClientNow) {
+            newClient = existingClientNow;
+            createError = null;
+            console.log(`[Clients GET] ✅ Client récupéré: ${appointmentEmail} (ID: ${existingClientNow.id})`);
+          } else {
+            createError = fetchError || createError;
+          }
+        }
+        // Si erreur liée à client_id (colonne n'existe pas), réessayer sans
+        else if (createError && (
+          createError.message?.includes('client_id') || 
+          createError.code === '42703' || 
+          createError.code === '42P01' ||
+          createError.message?.includes('column') ||
+          createError.message?.includes('does not exist')
+        )) {
+          console.log('[Clients GET] Colonne client_id non disponible, création sans client_id');
+          const retry = await supabase
+            .from('clients')
+            .insert(clientData)
+            .select()
+            .single();
+          
+          if (!retry.error && retry.data) {
+            newClient = retry.data;
+            createError = null;
+            console.log(`[Clients GET] ✅ Client créé (sans client_id): ${appointmentEmail}`);
+          } else if (retry.error && (
+            retry.error.code === '23505' ||
+            retry.error.message?.includes('duplicate') ||
+            retry.error.message?.includes('unique') ||
+            retry.error.message?.includes('already exists')
+          )) {
+            // Client créé entre temps, récupérer
+            console.log('[Clients GET] Client créé entre temps, récupération...');
+            const { data: existingClientNow, error: fetchError } = await supabase
+              .from('clients')
+              .select('*')
+              .eq('email', appointmentEmail)
+              .single();
+            
+            if (!fetchError && existingClientNow) {
+              newClient = existingClientNow;
+              createError = null;
+              console.log(`[Clients GET] ✅ Client récupéré: ${appointmentEmail} (ID: ${existingClientNow.id})`);
+            } else {
+              createError = fetchError || retry.error;
+            }
+          } else {
+            createError = retry.error;
+          }
+        }
+        
+        if (createError) {
+          console.error('[Clients GET] ❌ Erreur lors de la création automatique:', createError);
+          console.error('[Clients GET] Code erreur:', createError.code);
+          console.error('[Clients GET] Message:', createError.message);
+          console.error('[Clients GET] Détails:', JSON.stringify(createError, null, 2));
+          return res.status(500).json({ error: 'Erreur lors de la création du client', details: createError.message });
+        }
+        
+        if (!newClient) {
+          console.error('[Clients GET] ❌ Client créé mais aucune donnée retournée');
+          return res.status(500).json({ error: 'Erreur: Client créé mais données non récupérées' });
+        }
+        
+        data = newClient;
+        error = null;
+        console.log(`[Clients GET] ✅ Client créé automatiquement depuis les rendez-vous: ${appointmentEmail}`);
+        console.log(`[Clients GET] Client créé avec ID: ${newClient.id}`);
+      } else {
+        console.log(`[Clients GET] ❌ Aucun rendez-vous trouvé pour: "${normalizedSearchEmail}"`);
+        // Chercher aussi sans normalisation au cas où
+        const { data: allAppointments } = await supabase
+          .from('appointments')
+          .select('client_email')
+          .limit(10);
+        console.log(`[Clients GET] Exemples d'emails dans les rendez-vous:`, allAppointments?.map((a: any) => a.client_email));
+        return res.status(404).json({ error: 'Client non trouvé' });
+      }
+    } else if (error) {
       if (error.code === 'PGRST116') {
         return res.status(404).json({ error: 'Client non trouvé' });
       }
       return res.status(500).json({ error: 'Erreur lors de la récupération du client', details: error.message });
+    }
+
+    // Ajouter l'identifiant opaque dans la réponse (utiliser celui de la base ou le générer)
+    if (data && data.email) {
+      data.clientId = data.client_id || generateClientId(data.email);
     }
 
     return res.json(data);
@@ -733,13 +1050,15 @@ async function handleClients(req: VercelRequest, res: VercelResponse, supabase: 
     }
 
     const email = clientData['email'].toLowerCase().trim();
+    const clientId = generateClientId(email);
 
     const dataToUpsert = {
       email: email,
       name: clientData['name'] || null,
       phone: clientData['phone'] || null,
       birthdate: clientData['birthdate'] || null,
-      notes: clientData['notes'] || null
+      notes: clientData['notes'] || null,
+      client_id: clientId // Stocker le client_id dans la base
     };
 
     const { data, error } = await supabase
@@ -755,6 +1074,11 @@ async function handleClients(req: VercelRequest, res: VercelResponse, supabase: 
       return res.status(500).json({ error: 'Erreur lors de la création/mise à jour du client', details: error.message });
     }
 
+    // Ajouter l'identifiant opaque dans la réponse (pour compatibilité)
+    if (data && data.email) {
+      data.clientId = data.client_id || generateClientId(data.email);
+    }
+
     return res.json(data);
   }
   
@@ -767,8 +1091,13 @@ async function handleClients(req: VercelRequest, res: VercelResponse, supabase: 
     }
 
     const normalizedEmail = email.toLowerCase().trim();
+    
+    // S'assurer que le client_id est à jour lors de la mise à jour
+    const clientId = generateClientId(normalizedEmail);
 
-    const dataToUpdate: any = {};
+    const dataToUpdate: any = {
+      client_id: clientId // Toujours mettre à jour le client_id
+    };
     if (updates['name'] !== undefined) dataToUpdate.name = updates['name'];
     if (updates['phone'] !== undefined) dataToUpdate.phone = updates['phone'] || null;
     if (updates['birthdate'] !== undefined) dataToUpdate.birthdate = updates['birthdate'] || null;
@@ -786,6 +1115,11 @@ async function handleClients(req: VercelRequest, res: VercelResponse, supabase: 
         return res.status(404).json({ error: 'Client non trouvé' });
       }
       return res.status(500).json({ error: 'Erreur lors de la mise à jour du client', details: error.message });
+    }
+
+    // Ajouter clientId dans la réponse (pour compatibilité)
+    if (data) {
+      data.clientId = data.client_id || generateClientId(data.email);
     }
 
     return res.json(data);

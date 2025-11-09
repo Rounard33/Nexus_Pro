@@ -2,14 +2,14 @@ import {CommonModule} from '@angular/common';
 import {Component, OnInit} from '@angular/core';
 import {FormsModule} from '@angular/forms';
 import {ActivatedRoute, Router, RouterModule} from '@angular/router';
-import {forkJoin, of} from 'rxjs';
+import {of} from 'rxjs';
 import {catchError} from 'rxjs/operators';
 import {
-  APPOINTMENT_STATUS_CLASSES,
-  APPOINTMENT_STATUS_LABELS,
-  AppointmentStatus
+    APPOINTMENT_STATUS_CLASSES,
+    APPOINTMENT_STATUS_LABELS,
+    AppointmentStatus
 } from '../../../../models/appointment-status.enum';
-import {ClientDetail} from '../../../../models/clients.model';
+import {ClientDetail, LoyaltyReward} from '../../../../models/clients.model';
 import {ClientService} from '../../../../services/client.service';
 import {Appointment, Client, ContentService} from '../../../../services/content.service';
 import {LoyaltyService} from '../../../../services/loyalty.service';
@@ -30,7 +30,7 @@ export class ClientDetailComponent implements OnInit {
   isLoading = false;
   isSaving = false;
   isEditingBirthdate = false;
-  clientEmail: string = '';
+  clientId: string = '';
   birthdateInput: string = '';
 
   constructor(
@@ -44,7 +44,7 @@ export class ClientDetailComponent implements OnInit {
 
   ngOnInit(): void {
     this.route.params.subscribe(params => {
-      this.clientEmail = decodeURIComponent(params['email']);
+      this.clientId = params['id'];
       this.loadClientDetails();
     });
   }
@@ -52,42 +52,52 @@ export class ClientDetailComponent implements OnInit {
   loadClientDetails(): void {
     this.isLoading = true;
     
-    // Charger les rendez-vous et les données client en parallèle
-    const appointments$ = this.contentService.getAppointments();
-    const client$ = this.contentService.getClientByEmail(this.clientEmail).pipe(
-      catchError(() => of(null))
-    );
-
-    forkJoin({
-      appointments: appointments$,
-      client: client$
-    }).subscribe({
-      next: ({appointments, client}) => {
-        // Stocker les données client
-        this.clientData = client;
-
-        // Construire la fiche client avec le service
-        this.client = this.clientService.buildClientDetail(
-          appointments,
-          client,
-          this.clientEmail
-        );
-
-        if (!this.client) {
+    // D'abord récupérer le client par ID pour obtenir l'email
+    this.contentService.getClientById(this.clientId).pipe(
+      catchError(() => {
+        this.router.navigate(['/admin/clients']);
+        return of(null);
+      })
+    ).subscribe({
+      next: (clientData) => {
+        if (!clientData) {
           this.router.navigate(['/admin/clients']);
           return;
         }
 
-        // Ajouter les données de fidélité
-        this.client.loyaltyRewards = this.loyaltyService.parseLoyaltyRewards(client?.notes);
-        this.client.lastRewardDate = this.client.loyaltyRewards.length > 0 
-          ? this.client.loyaltyRewards.sort((a, b) => b.date.localeCompare(a.date))[0].date 
-          : null;
+        this.clientData = clientData;
+        const email = clientData.email;
 
-        // Initialiser le champ d'édition
-        this.birthdateInput = client?.birthdate || '';
+        // Ensuite charger les rendez-vous et construire la fiche client
+        this.contentService.getAppointments().subscribe({
+          next: (appointments) => {
+            this.client = this.clientService.buildClientDetail(
+              appointments,
+              clientData,
+              email
+            );
 
-        this.isLoading = false;
+            if (!this.client) {
+              this.router.navigate(['/admin/clients']);
+              return;
+            }
+
+            // Ajouter les données de fidélité
+            this.client.loyaltyRewards = this.loyaltyService.parseLoyaltyRewards(clientData?.notes);
+            this.client.lastRewardDate = this.client.loyaltyRewards.length > 0 
+              ? this.client.loyaltyRewards.sort((a: LoyaltyReward, b: LoyaltyReward) => b.date.localeCompare(a.date))[0].date 
+              : null;
+
+            // Initialiser le champ d'édition
+            this.birthdateInput = clientData?.birthdate || '';
+
+            this.isLoading = false;
+          },
+          error: (error) => {
+            console.error('Erreur lors du chargement des rendez-vous:', error);
+            this.isLoading = false;
+          }
+        });
       },
       error: (error) => {
         console.error('Erreur lors du chargement des détails du client:', error);
