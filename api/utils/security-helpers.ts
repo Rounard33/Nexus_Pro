@@ -36,20 +36,26 @@ export function setCORSHeaders(res: VercelResponse, origin?: string, methods: st
       // En développement, autoriser toutes les origines locales et l'origine de la requête
       res.setHeader('Access-Control-Allow-Origin', requestOrigin || '*');
     } else if (allowedOrigins.length === 0) {
-      // Si ALLOWED_ORIGINS n'est pas configuré, autoriser l'origine de la requête (fallback)
-      // ⚠️ ATTENTION: En production, configurez ALLOWED_ORIGINS pour la sécurité
-      // Mais pour permettre le débogage, on autorise l'origine de la requête
-      res.setHeader('Access-Control-Allow-Origin', requestOrigin || '*');
+      // En production, si ALLOWED_ORIGINS n'est pas configuré, autoriser toutes les origines Vercel
+      // Cela permet de fonctionner avec les preview deployments et les différents environnements Vercel
+      if (requestOrigin && (requestOrigin.includes('.vercel.app') || requestOrigin.includes('localhost'))) {
+        res.setHeader('Access-Control-Allow-Origin', requestOrigin);
+      } else {
+        res.setHeader('Access-Control-Allow-Origin', requestOrigin || '*');
+      }
     } else if (allowedOrigins.includes(requestOrigin)) {
       // Si l'origine est dans la liste autorisée, l'accepter
       res.setHeader('Access-Control-Allow-Origin', requestOrigin);
     } else {
-      // ⚠️ IMPORTANT: Même si l'origine n'est pas autorisée, définir le header pour que l'erreur soit visible
-      // Le navigateur bloquera toujours la requête, mais au moins on pourra voir l'erreur 500 si elle existe
-      // En production, cela devrait être loggé et surveillé
-      console.warn(`[CORS] Origin not allowed: ${requestOrigin}. Allowed origins: ${allowedOrigins.join(', ')}`);
-      // Définir quand même le header pour permettre de voir les erreurs serveur
-      res.setHeader('Access-Control-Allow-Origin', requestOrigin || '*');
+      // Si l'origine n'est pas dans la liste, vérifier si c'est une origine Vercel
+      console.warn(`[CORS] Origin not in allowed list: ${requestOrigin}. Allowed origins: ${allowedOrigins.join(', ')}`);
+      // Autoriser quand même pour les preview deployments Vercel
+      if (requestOrigin && requestOrigin.includes('.vercel.app')) {
+        res.setHeader('Access-Control-Allow-Origin', requestOrigin);
+      } else {
+        // Pour les autres origines non autorisées, définir quand même pour voir les erreurs serveur
+        res.setHeader('Access-Control-Allow-Origin', requestOrigin || '*');
+      }
     }
   } catch (error) {
     // En cas d'erreur dans setCORSHeaders, définir au moins les headers minimaux

@@ -1,7 +1,7 @@
 import {createClient, SupabaseClient} from '@supabase/supabase-js';
 import type {VercelRequest, VercelResponse} from '@vercel/node';
 import {rateLimitMiddleware} from '../api/utils/rate-limiter.js';
-import {setCORSHeaders, setSecurityHeaders} from '../api/utils/security-helpers.js';
+import {setSecurityHeaders} from '../api/utils/security-helpers.js';
 
 // Fonction pour vérifier l'authentification et les droits admin
 async function verifyAuth(req: VercelRequest, supabaseAdmin: SupabaseClient): Promise<{authenticated: boolean; isAdmin?: boolean; user?: any; error?: string}> {
@@ -107,14 +107,7 @@ export async function handleOpeningHours(
 ) {
   const origin = req.headers.origin as string;
   
-  // ⚠️ IMPORTANT : Définir les headers CORS EN PREMIER, avant toute vérification
-  setCORSHeaders(res, origin, 'GET, PATCH, OPTIONS', 'Content-Type, Authorization');
-  
-  // Gérer les requêtes OPTIONS (preflight) immédiatement
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-  
+  // Note: Les headers CORS sont déjà définis dans le routeur principal (api/index.ts)
   // Vérifier et créer le client Supabase dans le handler
   const supabaseUrl = process.env['SUPABASE_URL'];
   const supabaseKey = process.env['SUPABASE_SERVICE_ROLE_KEY'];
