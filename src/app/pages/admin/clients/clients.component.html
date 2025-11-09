@@ -1,0 +1,85 @@
+<div class="clients">
+  <div class="clients-header">
+    <h1 class="clients-title">Fiches clients</h1>
+    <p class="clients-subtitle">Gérez vos clients et consultez leur historique</p>
+  </div>
+
+  <!-- Barre de recherche -->
+  <div class="search-bar">
+    <div class="search-input-wrapper">
+      <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/>
+        <path d="m21 21-4.35-4.35"/>
+      </svg>
+      <input
+        type="text"
+        class="search-input"
+        placeholder="Rechercher un client (nom, email, téléphone)..."
+        (input)="onSearchChange($event)"
+        [value]="searchTerm">
+    </div>
+  </div>
+
+  <!-- État de chargement -->
+  <div class="loading-state" *ngIf="isLoading">
+    <p>Chargement des clients...</p>
+  </div>
+
+  <!-- Liste des clients -->
+  <div class="clients-grid" *ngIf="!isLoading && filteredClients.length > 0">
+    <div class="client-card" *ngFor="let client of filteredClients" (click)="viewClientDetails(client)">
+      <div class="client-card-header">
+        <div class="client-avatar">
+          <span class="avatar-initial">{{ client.name.charAt(0).toUpperCase() }}</span>
+        </div>
+        <div class="client-info">
+          <h3 class="client-name">{{ client.name }}</h3>
+          <p class="client-email">{{ client.email }}</p>
+          <p class="client-phone" *ngIf="client.phone">{{ client.phone }}</p>
+        </div>
+      </div>
+      
+      <div class="client-stats">
+        <div class="stat-item">
+          <span class="stat-value">{{ client.totalAppointments }}</span>
+          <span class="stat-label">RDV total{{ client.totalAppointments > 1 ? 'aux' : '' }}</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value stat-accepted">{{ client.acceptedAppointments }}</span>
+          <span class="stat-label">Accepté{{ client.acceptedAppointments > 1 ? 's' : '' }}</span>
+        </div>
+        <div class="stat-item" *ngIf="client.pendingAppointments > 0">
+          <span class="stat-value stat-pending">{{ client.pendingAppointments }}</span>
+          <span class="stat-label">En attente</span>
+        </div>
+      </div>
+
+      <div class="client-footer">
+        <div class="client-date">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 6v6l4 2"/>
+          </svg>
+          <span>Dernier RDV : {{ formatDate(client.lastAppointmentDate) }}</span>
+        </div>
+        <button class="view-details-btn">
+          Voir la fiche
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- État vide -->
+  <div class="empty-state" *ngIf="!isLoading && filteredClients.length === 0">
+    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+      <circle cx="12" cy="7" r="4"/>
+    </svg>
+    <p *ngIf="searchTerm">Aucun client trouvé pour "{{ searchTerm }}"</p>
+    <p *ngIf="!searchTerm">Aucun client pour le moment</p>
+  </div>
+</div>
+

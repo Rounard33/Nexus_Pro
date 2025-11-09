@@ -41,8 +41,10 @@ export class DashboardComponent implements OnInit {
       lastDayOfMonth.toISOString().split('T')[0]
     ).subscribe({
       next: (appointments) => {
-        this.stats.totalThisMonth = appointments.length;
-        this.stats.acceptedThisMonth = appointments.filter(a => a.status === 'accepted').length;
+        // totalThisMonth ne compte que les rendez-vous acceptés (pas les pending)
+        const acceptedAppointments = appointments.filter(a => a.status === 'accepted');
+        this.stats.totalThisMonth = acceptedAppointments.length;
+        this.stats.acceptedThisMonth = acceptedAppointments.length;
         this.stats.rejectedThisMonth = appointments.filter(a => a.status === 'rejected').length;
       },
       error: (error) => {

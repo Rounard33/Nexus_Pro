@@ -258,12 +258,6 @@ async function verifyAdmin(user, supabase) {
 }
 
 const server = http.createServer(async (req, res) => {
-  // Rate limiting global : 100 requêtes par minute par défaut
-  // Limites spécifiques par route seront appliquées dans chaque handler
-  if (!applyRateLimit(req, res, 100, 60000)) {
-    return; // Rate limit dépassé, réponse déjà envoyée
-  }
-
   // Headers de sécurité (CORS, XSS, etc.)
   const origin = req.headers.origin;
   setSecurityHeaders(res, origin);
@@ -276,6 +270,19 @@ const server = http.createServer(async (req, res) => {
 
   const parsedUrl = url.parse(req.url, true);
   const pathname = parsedUrl.pathname;
+
+  // Rate limiting global seulement pour les routes publiques (GET sans auth)
+  // Les routes protégées auront leur propre rate limiting plus permissif
+  const isProtectedRoute = pathname.includes('/api/appointments') || 
+                          pathname.includes('/api/clients') || 
+                          pathname.includes('/api/opening-hours');
+  
+  // Pour les routes publiques (GET), appliquer un rate limiting plus souple
+  if (req.method === 'GET' && !isProtectedRoute) {
+    if (!applyRateLimit(req, res, 200, 60000)) { // 200 req/min pour les GET publics
+      return;
+    }
+  }
 
   try {
     // Routes existantes
@@ -336,6 +343,10 @@ const server = http.createServer(async (req, res) => {
     else if (pathname === '/api/opening-hours') {
       // GET : Récupérer les horaires
       if (req.method === 'GET') {
+        // Rate limiting pour GET : 200 par minute (plus permissif car peut être authentifié)
+        if (!applyRateLimit(req, res, 200, 60000)) {
+          return;
+        }
         const { data, error } = await supabase
           .from('opening_hours')
           .select('*')
@@ -452,6 +463,10 @@ const server = http.createServer(async (req, res) => {
     else if (pathname === '/api/appointments') {
       // GET : Récupérer les rendez-vous
       if (req.method === 'GET') {
+        // Rate limiting pour GET : 200 par minute (plus permissif car authentifié)
+        if (!applyRateLimit(req, res, 200, 60000)) {
+          return;
+        }
         const { status, startDate, endDate } = parsedUrl.query;
 
         // Valider les paramètres de requête
@@ -529,8 +544,8 @@ const server = http.createServer(async (req, res) => {
       }
       // POST : Créer un rendez-vous
       else if (req.method === 'POST') {
-        // Rate limiting spécifique pour création : 20 par minute
-        if (!applyRateLimit(req, res, 20, 60000)) {
+        // Rate limiting spécifique pour création : 50 par minute (augmenté)
+        if (!applyRateLimit(req, res, 50, 60000)) {
           return;
         }
         
@@ -628,8 +643,8 @@ const server = http.createServer(async (req, res) => {
       }
       // PATCH : Mettre à jour un rendez-vous (accepter/refuser) - PROTÉGÉ
       else if (req.method === 'PATCH') {
-        // Rate limiting spécifique pour mise à jour : 30 par minute
-        if (!applyRateLimit(req, res, 30, 60000)) {
+        // Rate limiting spécifique pour mise à jour : 100 par minute (augmenté pour éviter les blocages)
+        if (!applyRateLimit(req, res, 100, 60000)) {
           return;
         }
         
@@ -760,6 +775,177 @@ const server = http.createServer(async (req, res) => {
         res.end(JSON.stringify({ error: 'Method not allowed' }));
       }
     }
+    // NOUVELLE ROUTE : Clients
+    else if (pathname === '/api/clients') {
+      // Vérifier l'authentification pour toutes les opérations
+      const auth = await verifyAuth(req, supabaseAuth);
+      if (!auth.authenticated) {
+        const isDevelopment = !process.env.NODE_ENV || process.env.NODE_ENV === 'development';
+        res.writeHead(401, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ 
+          error: auth.error || 'Unauthorized',
+          message: auth.message || 'Missing or invalid authorization header',
+          ...(isDevelopment && { details: auth.message })
+        }));
+        return;
+      }
+
+      // Vérifier les droits admin
+      const adminCheck = await verifyAdmin(auth.user, supabase);
+      if (!adminCheck.isAdmin) {
+        res.writeHead(403, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ 
+          error: 'Forbidden: Admin access required',
+          message: 'User is not an admin. Please contact an administrator to grant you access.'
+        }));
+        return;
+      }
+
+      // GET - Récupérer un client par email
+      if (req.method === 'GET') {
+        // Rate limiting pour GET : 200 par minute (plus permissif car authentifié)
+        if (!applyRateLimit(req, res, 200, 60000)) {
+          return;
+        }
+        
+        const { email } = parsedUrl.query;
+
+        if (!email) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Email requis' }));
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from('clients')
+          .select('*')
+          .eq('email', email.toLowerCase().trim())
+          .single();
+
+        if (error) {
+          if (error.code === 'PGRST116') {
+            res.writeHead(404, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Client non trouvé' }));
+            return;
+          }
+          const isDevelopment = !process.env.NODE_ENV || process.env.NODE_ENV === 'development';
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ 
+            error: 'Erreur lors de la récupération du client',
+            ...(isDevelopment && { details: error.message })
+          }));
+          return;
+        }
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(data));
+      }
+      // POST - Créer ou mettre à jour un client (upsert)
+      else if (req.method === 'POST') {
+        // Rate limiting spécifique pour création : 50 par minute (augmenté)
+        if (!applyRateLimit(req, res, 50, 60000)) {
+          return;
+        }
+
+        const clientData = await readBody(req);
+
+        if (!clientData.email) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Email requis' }));
+          return;
+        }
+
+        // Normaliser l'email
+        const email = clientData.email.toLowerCase().trim();
+
+        // Préparer les données pour l'upsert
+        const dataToUpsert = {
+          email: email,
+          name: clientData.name || null,
+          phone: clientData.phone || null,
+          birthdate: clientData.birthdate || null,
+          notes: clientData.notes || null
+        };
+
+        // Utiliser upsert (INSERT ... ON CONFLICT DO UPDATE)
+        const { data, error } = await supabase
+          .from('clients')
+          .upsert(dataToUpsert, {
+            onConflict: 'email',
+            ignoreDuplicates: false
+          })
+          .select()
+          .single();
+
+        if (error) {
+          const isDevelopment = !process.env.NODE_ENV || process.env.NODE_ENV === 'development';
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ 
+            error: 'Erreur lors de la création/mise à jour du client',
+            ...(isDevelopment && { details: error.message })
+          }));
+          return;
+        }
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(data));
+      }
+      // PATCH - Mettre à jour un client
+      else if (req.method === 'PATCH') {
+        // Rate limiting spécifique pour mise à jour : 100 par minute (augmenté)
+        if (!applyRateLimit(req, res, 100, 60000)) {
+          return;
+        }
+
+        const { email } = parsedUrl.query;
+        const updates = await readBody(req);
+
+        if (!email) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Email requis' }));
+          return;
+        }
+
+        // Normaliser l'email
+        const normalizedEmail = email.toLowerCase().trim();
+
+        // Préparer les mises à jour (seulement les champs fournis)
+        const dataToUpdate = {};
+        if (updates.name !== undefined) dataToUpdate.name = updates.name;
+        if (updates.phone !== undefined) dataToUpdate.phone = updates.phone || null;
+        if (updates.birthdate !== undefined) dataToUpdate.birthdate = updates.birthdate || null;
+        if (updates.notes !== undefined) dataToUpdate.notes = updates.notes || null;
+
+        const { data, error } = await supabase
+          .from('clients')
+          .update(dataToUpdate)
+          .eq('email', normalizedEmail)
+          .select()
+          .single();
+
+        if (error) {
+          if (error.code === 'PGRST116') {
+            res.writeHead(404, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Client non trouvé' }));
+            return;
+          }
+          const isDevelopment = !process.env.NODE_ENV || process.env.NODE_ENV === 'development';
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ 
+            error: 'Erreur lors de la mise à jour du client',
+            ...(isDevelopment && { details: error.message })
+          }));
+          return;
+        }
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(data));
+      }
+      else {
+        res.writeHead(405, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Method not allowed' }));
+      }
+    }
     else {
       res.writeHead(404, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'Not found' }));
@@ -787,4 +973,5 @@ server.listen(PORT, () => {
   console.log(`   - http://localhost:${PORT}/api/available-slots (GET)`);
   console.log(`   - http://localhost:${PORT}/api/blocked-dates (GET)`);
   console.log(`   - http://localhost:${PORT}/api/appointments (GET, POST, PATCH)`);
+  console.log(`   - http://localhost:${PORT}/api/clients (GET, POST, PATCH) - PROTÉGÉ`);
 });

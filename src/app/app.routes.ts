@@ -30,6 +30,14 @@ export const routes: Routes = [
       { 
         path: 'hours', 
         loadComponent: () => import('./pages/admin/hours/hours.component').then(m => m.HoursComponent) 
+      },
+      { 
+        path: 'clients', 
+        loadComponent: () => import('./pages/admin/clients/clients.component').then(m => m.ClientsComponent) 
+      },
+      { 
+        path: 'clients/:email', 
+        loadComponent: () => import('./pages/admin/clients/client-detail/client-detail.component').then(m => m.ClientDetailComponent) 
       }
     ]
   },

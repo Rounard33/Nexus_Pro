@@ -60,12 +60,13 @@ export class StatisticsComponent implements OnInit {
     const pending = appointments.filter(a => a.status === 'pending').length;
     const accepted = appointments.filter(a => a.status === 'accepted').length;
     const rejected = appointments.filter(a => a.status === 'rejected').length;
-    const total = appointments.length;
-    const acceptanceRate = total > 0 ? Math.round((accepted / (accepted + rejected)) * 100) : 0;
+    // total ne compte que les rendez-vous acceptés (pas les pending)
+    const total = accepted;
+    const acceptanceRate = (accepted + rejected) > 0 ? Math.round((accepted / (accepted + rejected)) * 100) : 0;
 
     this.stats = [
       {
-        title: 'Total ce mois',
+        title: 'Total acceptés ce mois',
         value: total,
         label: 'rendez-vous',
         icon: 'calendar',

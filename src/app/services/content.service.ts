@@ -75,6 +75,17 @@ export interface BlockedDate {
   reason?: string;
 }
 
+export interface Client {
+  id?: string;
+  email: string;
+  name: string;
+  phone?: string;
+  birthdate?: string; // Format: YYYY-MM-DD
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface Appointment {
   id?: string;
   client_name: string;
@@ -178,6 +189,42 @@ export class ContentService {
           'Authorization': `Bearer ${token}`
         });
         return this.http.patch<OpeningHours>(`${API_URL}/opening-hours?id=${id}`, updates, {headers});
+      })
+    );
+  }
+
+  // Clients
+  getClientByEmail(email: string): Observable<Client> {
+    return from(this.authService.getSessionToken()).pipe(
+      switchMap(token => {
+        const headers = new HttpHeaders({
+          'Authorization': `Bearer ${token}`
+        });
+        return this.http.get<Client>(`${API_URL}/clients?email=${encodeURIComponent(email)}`, {headers});
+      })
+    );
+  }
+
+  // Créer ou mettre à jour un client (requiert authentification)
+  createOrUpdateClient(client: Partial<Client>): Observable<Client> {
+    return from(this.authService.getSessionToken()).pipe(
+      switchMap(token => {
+        const headers = new HttpHeaders({
+          'Authorization': `Bearer ${token}`
+        });
+        return this.http.post<Client>(`${API_URL}/clients`, client, {headers});
+      })
+    );
+  }
+
+  // Mettre à jour un client (requiert authentification)
+  updateClient(email: string, updates: Partial<Client>): Observable<Client> {
+    return from(this.authService.getSessionToken()).pipe(
+      switchMap(token => {
+        const headers = new HttpHeaders({
+          'Authorization': `Bearer ${token}`
+        });
+        return this.http.patch<Client>(`${API_URL}/clients?email=${encodeURIComponent(email)}`, updates, {headers});
       })
     );
   }
