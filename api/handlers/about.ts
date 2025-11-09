@@ -1,8 +1,8 @@
 import {createClient} from '@supabase/supabase-js';
 import type {VercelRequest, VercelResponse} from '@vercel/node';
-import {applyRateLimit, setCORSHeaders, setSecurityHeaders} from './utils/security-helpers.js';
+import {applyRateLimit, setCORSHeaders, setSecurityHeaders} from '../utils/security-helpers.js';
 
-export default async function handler(
+export async function handleAbout(
   req: VercelRequest,
   res: VercelResponse
 ) {
@@ -21,7 +21,7 @@ export default async function handler(
   const supabaseKey = process.env['SUPABASE_SERVICE_ROLE_KEY'];
   
   if (!supabaseUrl || !supabaseKey) {
-    console.error('[PRESTATIONS] Missing env vars:', {
+    console.error('[ABOUT] Missing env vars:', {
       hasUrl: !!supabaseUrl,
       hasKey: !!supabaseKey,
       nodeEnv: process.env['NODE_ENV']
@@ -46,15 +46,14 @@ export default async function handler(
   if (req.method === 'GET') {
     try {
       const { data, error } = await supabase
-        .from('prestations')
+        .from('about_content')
         .select('*')
-        .eq('is_active', true)
         .order('display_order', { ascending: true });
       
       if (error) {
-        console.error('[PRESTATIONS] Supabase error:', error);
+        console.error('[ABOUT] Supabase error:', error);
         return res.status(500).json({ 
-          error: 'Erreur lors de la récupération des prestations',
+          error: 'Erreur lors de la récupération du contenu',
           details: error.message,
           code: error.code
         });
@@ -62,7 +61,7 @@ export default async function handler(
       
       return res.json(data);
     } catch (error: any) {
-      console.error('[PRESTATIONS] Handler error:', error);
+      console.error('[ABOUT] Handler error:', error);
       return res.status(500).json({ 
         error: 'Erreur interne du serveur',
         details: error.message
@@ -72,3 +71,4 @@ export default async function handler(
   
   return res.status(405).json({ error: 'Method not allowed' });
 }
+

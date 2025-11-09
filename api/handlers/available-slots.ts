@@ -1,8 +1,8 @@
 import {createClient} from '@supabase/supabase-js';
 import type {VercelRequest, VercelResponse} from '@vercel/node';
-import {applyRateLimit, setCORSHeaders, setSecurityHeaders} from './utils/security-helpers.js';
+import {applyRateLimit, setCORSHeaders, setSecurityHeaders} from '../utils/security-helpers.js';
 
-export default async function handler(
+export async function handleAvailableSlots(
   req: VercelRequest,
   res: VercelResponse
 ) {
@@ -92,3 +92,4 @@ export default async function handler(
 
   return res.status(405).json({ error: 'Method not allowed' });
 }
+

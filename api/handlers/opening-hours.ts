@@ -1,7 +1,7 @@
 import {createClient, SupabaseClient} from '@supabase/supabase-js';
 import type {VercelRequest, VercelResponse} from '@vercel/node';
-import {rateLimitMiddleware} from './utils/rate-limiter.js';
-import {setCORSHeaders, setSecurityHeaders} from './utils/security-helpers.js';
+import {rateLimitMiddleware} from '../utils/rate-limiter.js';
+import {setCORSHeaders, setSecurityHeaders} from '../utils/security-helpers.js';
 
 // Fonction pour vérifier l'authentification et les droits admin
 async function verifyAuth(req: VercelRequest, supabaseAdmin: SupabaseClient): Promise<{authenticated: boolean; isAdmin?: boolean; user?: any; error?: string}> {
@@ -101,21 +101,7 @@ async function verifyAuth(req: VercelRequest, supabaseAdmin: SupabaseClient): Pr
   }
 }
 
-// Domaines autorisés pour CORS (identique à appointments.ts)
-function getAllowedOrigins(): string[] {
-  const origins = process.env['ALLOWED_ORIGINS']?.split(',') || [];
-  const isDevelopment = process.env['NODE_ENV'] === 'development' || !process.env['NODE_ENV'];
-  
-  if (isDevelopment) {
-    return [...origins, 'http://localhost:4200', 'http://localhost:3000'];
-  }
-  
-  return origins.filter(origin => origin.trim().length > 0);
-}
-
-// setSecurityHeaders est maintenant importé depuis security-helpers.ts
-
-export default async function handler(
+export async function handleOpeningHours(
   req: VercelRequest,
   res: VercelResponse
 ) {
@@ -266,3 +252,4 @@ export default async function handler(
 
   return res.status(405).json({ error: 'Method not allowed' });
 }
+
