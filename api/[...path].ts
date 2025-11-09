@@ -123,6 +123,7 @@ export default async function handler(
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Max-Age', '86400');
+  res.setHeader('Content-Type', 'application/json');
   
   console.log(`[API Router] Method: ${req.method}, Origin: ${origin || 'none'}, Allowed: ${allowedOrigin}`);
   
@@ -144,10 +145,20 @@ export default async function handler(
       path = pathArray;
     }
   } else {
-    // Fallback : utiliser req.url
+    // Fallback : utiliser req.url directement
     const url = req.url || '';
-    path = url.split('?')[0].replace('/api/', '');
+    // Enlever /api/ du début si présent
+    const cleanUrl = url.split('?')[0];
+    if (cleanUrl.startsWith('/api/')) {
+      path = cleanUrl.substring(5); // Enlever '/api/'
+    } else if (cleanUrl.startsWith('/api')) {
+      path = cleanUrl.substring(4); // Enlever '/api'
+    } else {
+      path = cleanUrl.replace(/^\//, ''); // Enlever le premier /
+    }
   }
+  
+  console.log(`[API Router] Extracted path: "${path}" from query:`, req.query, 'url:', req.url);
   
   // Vérifier les variables d'environnement Supabase
   const supabaseUrl = process.env['SUPABASE_URL'];
@@ -165,7 +176,12 @@ export default async function handler(
   
   // Router vers le handler approprié
   try {
-    switch (path) {
+    // Normaliser le chemin (enlever les espaces, etc.)
+    const normalizedPath = path.trim().toLowerCase();
+    
+    console.log(`[API Router] Routing to: "${normalizedPath}"`);
+    
+    switch (normalizedPath) {
       case 'prestations':
         return await handlePrestations(req, res, supabase);
       
@@ -197,9 +213,16 @@ export default async function handler(
         return await handleClients(req, res, supabase);
       
       default:
+        console.error(`[API Router] Route not found: "${normalizedPath}" (original: "${path}")`);
         return res.status(404).json({ 
           error: 'Route not found',
-          message: `No handler found for path: ${path}`
+          message: `No handler found for path: ${path}`,
+          debug: {
+            path,
+            normalizedPath,
+            query: req.query,
+            url: req.url
+          }
         });
     }
   } catch (error: any) {
@@ -215,6 +238,7 @@ export default async function handler(
 
 async function handlePrestations(req: VercelRequest, res: VercelResponse, supabase: any) {
   setCORSHeaders(res, req.headers.origin as string, 'GET, OPTIONS', 'Content-Type');
+  res.setHeader('Content-Type', 'application/json');
   if (!applyRateLimit(req, res, 100)) return;
   
   if (req.method === 'GET') {
@@ -234,6 +258,7 @@ async function handlePrestations(req: VercelRequest, res: VercelResponse, supaba
 
 async function handleCreations(req: VercelRequest, res: VercelResponse, supabase: any) {
   setCORSHeaders(res, req.headers.origin as string, 'GET, OPTIONS', 'Content-Type');
+  res.setHeader('Content-Type', 'application/json');
   if (!applyRateLimit(req, res, 100)) return;
   
   if (req.method === 'GET') {
@@ -253,6 +278,7 @@ async function handleCreations(req: VercelRequest, res: VercelResponse, supabase
 
 async function handleTestimonials(req: VercelRequest, res: VercelResponse, supabase: any) {
   setCORSHeaders(res, req.headers.origin as string, 'GET, OPTIONS', 'Content-Type');
+  res.setHeader('Content-Type', 'application/json');
   if (!applyRateLimit(req, res, 100)) return;
   
   if (req.method === 'GET') {
@@ -272,6 +298,7 @@ async function handleTestimonials(req: VercelRequest, res: VercelResponse, supab
 
 async function handleFaqs(req: VercelRequest, res: VercelResponse, supabase: any) {
   setCORSHeaders(res, req.headers.origin as string, 'GET, OPTIONS', 'Content-Type');
+  res.setHeader('Content-Type', 'application/json');
   if (!applyRateLimit(req, res, 100)) return;
   
   if (req.method === 'GET') {
@@ -291,6 +318,7 @@ async function handleFaqs(req: VercelRequest, res: VercelResponse, supabase: any
 
 async function handleAbout(req: VercelRequest, res: VercelResponse, supabase: any) {
   setCORSHeaders(res, req.headers.origin as string, 'GET, OPTIONS', 'Content-Type');
+  res.setHeader('Content-Type', 'application/json');
   if (!applyRateLimit(req, res, 100)) return;
   
   if (req.method === 'GET') {
@@ -309,6 +337,7 @@ async function handleAbout(req: VercelRequest, res: VercelResponse, supabase: an
 
 async function handleAvailableSlots(req: VercelRequest, res: VercelResponse, supabase: any) {
   setCORSHeaders(res, req.headers.origin as string, 'GET, OPTIONS', 'Content-Type');
+  res.setHeader('Content-Type', 'application/json');
   if (!applyRateLimit(req, res, 100)) return;
   
   if (req.method === 'GET') {
@@ -338,7 +367,7 @@ async function handleAvailableSlots(req: VercelRequest, res: VercelResponse, sup
 
     if (error) {
       return res.status(500).json({ error: 'Erreur lors de la récupération des créneaux', details: error.message });
-    }
+      }
     return res.json(data);
   }
   return res.status(405).json({ error: 'Method not allowed' });
@@ -346,6 +375,7 @@ async function handleAvailableSlots(req: VercelRequest, res: VercelResponse, sup
 
 async function handleBlockedDates(req: VercelRequest, res: VercelResponse, supabase: any) {
   setCORSHeaders(res, req.headers.origin as string, 'GET, OPTIONS', 'Content-Type');
+  res.setHeader('Content-Type', 'application/json');
   
   const rateLimit = rateLimitMiddleware(req, 100, 60000);
   Object.entries(rateLimit.headers).forEach(([key, value]) => {
@@ -383,6 +413,7 @@ async function handleBlockedDates(req: VercelRequest, res: VercelResponse, supab
 
 async function handleOpeningHours(req: VercelRequest, res: VercelResponse, supabase: any) {
   setCORSHeaders(res, req.headers.origin as string, 'GET, PATCH, OPTIONS', 'Content-Type, Authorization');
+  res.setHeader('Content-Type', 'application/json');
   
   const maxRequests = req.method === 'PATCH' ? 30 : 100;
   const rateLimit = rateLimitMiddleware(req, maxRequests, 60000);
@@ -466,6 +497,7 @@ async function handleOpeningHours(req: VercelRequest, res: VercelResponse, supab
 
 async function handleAppointments(req: VercelRequest, res: VercelResponse, supabase: any) {
   setCORSHeaders(res, req.headers.origin as string, 'GET, POST, PATCH, OPTIONS', 'Content-Type, Authorization');
+  res.setHeader('Content-Type', 'application/json');
   
   let maxRequests = 100;
   if (req.method === 'POST') {
@@ -491,7 +523,7 @@ async function handleAppointments(req: VercelRequest, res: VercelResponse, supab
       retryAfter: Math.max(1, retryAfter)
     });
   }
-
+  
   if (req.method === 'GET') {
     const { status, startDate, endDate } = req.query;
 
@@ -526,7 +558,7 @@ async function handleAppointments(req: VercelRequest, res: VercelResponse, supab
 
     return res.json(data);
   }
-
+  
   if (req.method === 'POST') {
     const validation = validateAppointment(req.body);
     if (!validation.valid) {
@@ -544,8 +576,8 @@ async function handleAppointments(req: VercelRequest, res: VercelResponse, supab
 
     if (checkError) {
       return res.status(500).json({ error: 'Erreur lors de la vérification des créneaux', details: checkError.message });
-    }
-
+  }
+  
     if (existingAppointments && existingAppointments.length > 0) {
       const [newHour, newMin] = appointment_time.split(':').map(Number);
       const newTime = newHour * 60 + newMin;
@@ -561,7 +593,7 @@ async function handleAppointments(req: VercelRequest, res: VercelResponse, supab
             error: 'Ce créneau est déjà réservé',
             message: `Un rendez-vous existe à ${apt.appointment_time} et bloque les créneaux jusqu'à ${formatTimeMinutes(blockEnd)}`
           });
-        }
+  }
       }
     }
 
@@ -602,8 +634,8 @@ async function handleAppointments(req: VercelRequest, res: VercelResponse, supab
     
     if (req.body.notes !== undefined && req.body.notes !== null) {
       updateData.notes = req.body.notes;
-    }
-
+  }
+  
     const validStatuses = ['pending', 'accepted', 'rejected', 'cancelled'];
     if (!updateData.status || !validStatuses.includes(updateData.status)) {
       return res.status(400).json({ 
@@ -629,12 +661,13 @@ async function handleAppointments(req: VercelRequest, res: VercelResponse, supab
 
     return res.json(data);
   }
-
+  
   return res.status(405).json({ error: 'Method not allowed' });
 }
 
 async function handleClients(req: VercelRequest, res: VercelResponse, supabase: any) {
   setCORSHeaders(res, req.headers.origin as string, 'GET, POST, PATCH, OPTIONS', 'Content-Type, Authorization');
+  res.setHeader('Content-Type', 'application/json');
   
   let maxRequests = 100;
   if (req.method === 'POST') {
@@ -660,7 +693,7 @@ async function handleClients(req: VercelRequest, res: VercelResponse, supabase: 
       retryAfter: Math.max(1, retryAfter)
     });
   }
-
+  
   const auth = await verifyAuth(req, supabase);
   if (!auth.authenticated || !auth.isAdmin) {
     return res.status(401).json({ 
@@ -691,7 +724,7 @@ async function handleClients(req: VercelRequest, res: VercelResponse, supabase: 
 
     return res.json(data);
   }
-
+  
   if (req.method === 'POST') {
     const clientData = req.body;
 
@@ -724,7 +757,7 @@ async function handleClients(req: VercelRequest, res: VercelResponse, supabase: 
 
     return res.json(data);
   }
-
+  
   if (req.method === 'PATCH') {
     const email = req.query['email'] as string;
     const updates = req.body;
@@ -756,7 +789,7 @@ async function handleClients(req: VercelRequest, res: VercelResponse, supabase: 
     }
 
     return res.json(data);
-  }
+}
 
   return res.status(405).json({ error: 'Méthode non autorisée' });
 }
