@@ -12,6 +12,34 @@ import {handleTestimonials} from '../handlers/testimonials.js';
 import {setCORSHeaders, setSecurityHeaders} from './utils/security-helpers.js';
 
 /**
+ * Détermine l'origine CORS à autoriser
+ * Si credentials sont activés, on ne peut pas utiliser '*', il faut une origine spécifique
+ */
+function getCORSOrigin(requestOrigin?: string): string {
+  // Si une origine est fournie dans la requête, l'utiliser
+  if (requestOrigin) {
+    // Autoriser toutes les origines Vercel (preview deployments)
+    if (requestOrigin.includes('.vercel.app') || requestOrigin.includes('localhost')) {
+      return requestOrigin;
+    }
+    // Autoriser aussi les origines configurées dans ALLOWED_ORIGINS
+    const allowedOrigins = process.env['ALLOWED_ORIGINS']?.split(',').map(o => o.trim()).filter(o => o.length > 0) || [];
+    if (allowedOrigins.length > 0 && allowedOrigins.includes(requestOrigin)) {
+      return requestOrigin;
+    }
+    // Par défaut, autoriser l'origine de la requête si elle existe
+    // (nécessaire car on utilise credentials = true, donc on ne peut pas utiliser '*')
+    return requestOrigin;
+  }
+  
+  // Si pas d'origine dans la requête, c'est probablement une requête same-origin
+  // Dans ce cas, on peut utiliser '*' car CORS ne s'applique pas vraiment
+  // Mais pour être sûr, on va quand même retourner '*' (même si avec credentials ça ne marchera pas)
+  // En pratique, si pas d'origine, le navigateur ne vérifie pas CORS
+  return '*';
+}
+
+/**
  * Routeur principal pour toutes les routes API (catch-all)
  * Consolide toutes les fonctions API en une seule Serverless Function
  * 
@@ -23,10 +51,13 @@ export default async function handler(
   res: VercelResponse
 ) {
   // ⚠️ CRITIQUE : Définir les headers CORS IMMÉDIATEMENT, avant TOUTE autre opération
-  const origin = req.headers.origin as string || '*';
+  const origin = req.headers.origin as string;
   
   // Définir les headers CORS de manière explicite et simple
-  res.setHeader('Access-Control-Allow-Origin', origin === '*' ? '*' : origin);
+  // IMPORTANT: Si Access-Control-Allow-Credentials est 'true', on ne peut PAS utiliser '*'
+  // Il faut utiliser l'origine spécifique de la requête, ou une liste d'origines autorisées
+  const allowedOrigin = getCORSOrigin(origin);
+  res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
