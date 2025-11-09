@@ -4,22 +4,11 @@ import {FormsModule} from '@angular/forms';
 import {Router, RouterModule} from '@angular/router';
 import {forkJoin, of, Subject} from 'rxjs';
 import {catchError, debounceTime, distinctUntilChanged, takeUntil} from 'rxjs/operators';
-import {Appointment, ContentService} from '../../../services/content.service';
-
-export interface ClientProfile {
-  email: string;
-  name: string;
-  phone?: string;
-  birthdate?: string;
-  appointments: Appointment[];
-  totalAppointments: number;
-  acceptedAppointments: number;
-  pendingAppointments: number;
-  lastAppointmentDate: string | null;
-  firstAppointmentDate: string | null;
-  nextBirthday?: string | null;
-  age?: number | null;
-}
+import {ClientProfile} from '../../../models/client.model';
+import {ClientService} from '../../../services/client.service';
+import {ContentService} from '../../../services/content.service';
+import {BirthdayUtils} from '../../../utils/birthday.utils';
+import {FormatUtils} from '../../../utils/format.utils';
 
 @Component({
   selector: 'app-clients',
@@ -40,6 +29,7 @@ export class ClientsComponent implements OnInit, OnDestroy {
 
   constructor(
     private contentService: ContentService,
+    private clientService: ClientService,
     private router: Router
   ) {}
 
@@ -77,7 +67,7 @@ export class ClientsComponent implements OnInit, OnDestroy {
     
     this.contentService.getAppointments().subscribe({
       next: (appointments) => {
-        this.clients = this.groupAppointmentsByClient(appointments);
+        this.clients = this.clientService.groupAppointmentsByClient(appointments);
         this.loadClientData();
         this.applyFilters();
         this.isLoading = false;
@@ -106,7 +96,7 @@ export class ClientsComponent implements OnInit, OnDestroy {
             const client = this.clients[index];
             if (client) {
               client.birthdate = clientData.birthdate;
-              const {nextBirthday, age} = this.calculateBirthdayInfo(clientData.birthdate);
+              const {nextBirthday, age} = BirthdayUtils.calculateBirthdayInfo(clientData.birthdate);
               client.nextBirthday = nextBirthday;
               client.age = age;
             }
@@ -118,102 +108,6 @@ export class ClientsComponent implements OnInit, OnDestroy {
         console.error('Erreur lors du chargement des données clients:', error);
       }
     });
-  }
-
-  private groupAppointmentsByClient(appointments: Appointment[]): ClientProfile[] {
-    const clientsMap = new Map<string, ClientProfile>();
-
-    appointments.forEach(apt => {
-      const email = apt.client_email.toLowerCase().trim();
-      
-      if (!clientsMap.has(email)) {
-        clientsMap.set(email, {
-          email: apt.client_email,
-          name: apt.client_name,
-          phone: apt.client_phone,
-          appointments: [],
-          totalAppointments: 0,
-          acceptedAppointments: 0,
-          pendingAppointments: 0,
-          lastAppointmentDate: null,
-          firstAppointmentDate: null,
-          nextBirthday: null,
-          age: null
-        });
-      }
-      
-      const client = clientsMap.get(email)!;
-      client.appointments.push(apt);
-      
-      // Compter seulement les rendez-vous acceptés dans totalAppointments
-      if (apt.status === 'accepted') {
-        client.totalAppointments++;
-        client.acceptedAppointments++;
-        
-        // Mettre à jour les dates seulement pour les rendez-vous acceptés
-        if (!client.lastAppointmentDate || apt.appointment_date > client.lastAppointmentDate) {
-          client.lastAppointmentDate = apt.appointment_date;
-        }
-        
-        if (!client.firstAppointmentDate || apt.appointment_date < client.firstAppointmentDate) {
-          client.firstAppointmentDate = apt.appointment_date;
-        }
-      } else if (apt.status === 'pending') {
-        client.pendingAppointments++;
-      }
-    });
-
-    // Convertir en tableau et trier par dernier RDV accepté (plus récent en premier)
-    // Si pas de RDV accepté, trier par total de RDV acceptés
-    return Array.from(clientsMap.values()).sort((a, b) => {
-      // Priorité 1 : Date du dernier RDV accepté
-      if (a.lastAppointmentDate && b.lastAppointmentDate) {
-        return b.lastAppointmentDate.localeCompare(a.lastAppointmentDate);
-      }
-      if (a.lastAppointmentDate) return -1;
-      if (b.lastAppointmentDate) return 1;
-      
-      // Priorité 2 : Nombre de RDV acceptés
-      return b.totalAppointments - a.totalAppointments;
-    });
-  }
-
-  private calculateBirthdayInfo(birthdate: string | null | undefined): {nextBirthday: string | null; age: number | null} {
-    if (!birthdate) {
-      return {nextBirthday: null, age: null};
-    }
-
-    // Parser la date de naissance directement (format YYYY-MM-DD)
-    const [birthYear, birthMonth, birthDay] = birthdate.split('-').map(Number);
-    
-    const today = new Date();
-    const currentYear = today.getFullYear();
-    const currentMonth = today.getMonth() + 1; // getMonth() retourne 0-11
-    const currentDay = today.getDate();
-    
-    // Calculer l'âge
-    let age = currentYear - birthYear;
-    if (currentMonth < birthMonth || (currentMonth === birthMonth && currentDay < birthDay)) {
-      age--;
-    }
-
-    // Calculer le prochain anniversaire (en utilisant directement les composantes)
-    let nextBirthdayYear = currentYear;
-    let nextBirthdayMonth = birthMonth;
-    let nextBirthdayDay = birthDay;
-    
-    // Si l'anniversaire de cette année est déjà passé, prendre l'année prochaine
-    if (currentMonth > birthMonth || (currentMonth === birthMonth && currentDay >= birthDay)) {
-      nextBirthdayYear = currentYear + 1;
-    }
-
-    // Formater la date au format YYYY-MM-DD (sans conversion de fuseau horaire)
-    const nextBirthday = `${nextBirthdayYear}-${String(nextBirthdayMonth).padStart(2, '0')}-${String(nextBirthdayDay).padStart(2, '0')}`;
-
-    return {
-      nextBirthday,
-      age
-    };
   }
 
   private applyFilters(): void {
@@ -237,9 +131,7 @@ export class ClientsComponent implements OnInit, OnDestroy {
   }
 
   formatDate(dateString: string | null): string {
-    if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    return FormatUtils.formatShortDate(dateString);
   }
 }
 

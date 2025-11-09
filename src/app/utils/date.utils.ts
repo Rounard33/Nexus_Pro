@@ -46,5 +46,40 @@ export class DateUtils {
     const dateTimeB = new Date(`${dateB}T${timeB}`);
     return dateTimeB.getTime() - dateTimeA.getTime(); // Plus récent en premier
   }
+
+  /**
+   * Retourne le premier jour du mois actuel au format YYYY-MM-DD
+   */
+  static getFirstDayOfMonth(): string {
+    const today = new Date();
+    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+    return firstDay.toISOString().split('T')[0];
+  }
+
+  /**
+   * Retourne le dernier jour du mois actuel au format YYYY-MM-DD
+   */
+  static getLastDayOfMonth(): string {
+    const today = new Date();
+    const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    return lastDay.toISOString().split('T')[0];
+  }
+
+  /**
+   * Retourne la date d'aujourd'hui au format YYYY-MM-DD
+   */
+  static getTodayISO(): string {
+    return new Date().toISOString().split('T')[0];
+  }
+
+  /**
+   * Retourne la date dans X jours au format YYYY-MM-DD
+   * @param days Nombre de jours à ajouter (peut être négatif)
+   */
+  static getDateInDays(days: number): string {
+    const date = new Date();
+    date.setDate(date.getDate() + days);
+    return date.toISOString().split('T')[0];
+  }
 }
 

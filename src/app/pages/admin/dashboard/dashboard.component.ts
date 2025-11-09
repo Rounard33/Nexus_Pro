@@ -2,6 +2,8 @@ import {CommonModule} from '@angular/common';
 import {Component, OnInit} from '@angular/core';
 import {Router, RouterModule} from '@angular/router';
 import {Appointment, ContentService} from '../../../services/content.service';
+import {StatisticsService} from '../../../services/statistics.service';
+import {DateUtils} from '../../../utils/date.utils';
 
 @Component({
   selector: 'app-dashboard',
@@ -22,6 +24,7 @@ export class DashboardComponent implements OnInit {
 
   constructor(
     private contentService: ContentService,
+    private statisticsService: StatisticsService,
     private router: Router
   ) {}
 
@@ -31,21 +34,16 @@ export class DashboardComponent implements OnInit {
   }
 
   private loadStats(): void {
-    const today = new Date();
-    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-    const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-
     this.contentService.getAppointments(
       undefined,
-      firstDayOfMonth.toISOString().split('T')[0],
-      lastDayOfMonth.toISOString().split('T')[0]
+      DateUtils.getFirstDayOfMonth(),
+      DateUtils.getLastDayOfMonth()
     ).subscribe({
       next: (appointments) => {
-        // totalThisMonth ne compte que les rendez-vous acceptés (pas les pending)
-        const acceptedAppointments = appointments.filter(a => a.status === 'accepted');
-        this.stats.totalThisMonth = acceptedAppointments.length;
-        this.stats.acceptedThisMonth = acceptedAppointments.length;
-        this.stats.rejectedThisMonth = appointments.filter(a => a.status === 'rejected').length;
+        const stats = this.statisticsService.calculateStats(appointments);
+        this.stats.totalThisMonth = stats.total;
+        this.stats.acceptedThisMonth = stats.accepted;
+        this.stats.rejectedThisMonth = stats.rejected;
       },
       error: (error) => {
         console.error('Erreur lors du chargement des statistiques:', error);
@@ -65,14 +63,10 @@ export class DashboardComponent implements OnInit {
   }
 
   private loadRecentAppointments(): void {
-    const today = new Date();
-    const nextWeek = new Date(today);
-    nextWeek.setDate(today.getDate() + 7);
-
     this.contentService.getAppointments(
       undefined,
-      today.toISOString().split('T')[0],
-      nextWeek.toISOString().split('T')[0]
+      DateUtils.getTodayISO(),
+      DateUtils.getDateInDays(7)
     ).subscribe({
       next: (appointments) => {
         this.recentAppointments = appointments
@@ -90,18 +84,13 @@ export class DashboardComponent implements OnInit {
   }
 
   getAcceptanceRate(): number {
-    const total = this.stats.acceptedThisMonth + this.stats.rejectedThisMonth;
-    if (total === 0) return 0;
-    return Math.round((this.stats.acceptedThisMonth / total) * 100);
+    return this.statisticsService.calculateAcceptanceRate(
+      this.stats.acceptedThisMonth,
+      this.stats.rejectedThisMonth
+    );
   }
 
   openDetails(type: string): void {
-    const today = new Date();
-    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-    const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-    const startDate = firstDayOfMonth.toISOString().split('T')[0];
-    const endDate = lastDayOfMonth.toISOString().split('T')[0];
-
     switch (type) {
       case 'total':
         // Tous les rendez-vous du mois
