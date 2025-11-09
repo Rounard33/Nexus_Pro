@@ -1,8 +1,8 @@
 import {createClient} from '@supabase/supabase-js';
 import type {VercelRequest, VercelResponse} from '@vercel/node';
-import {applyRateLimit, setCORSHeaders, setSecurityHeaders} from '../utils/security-helpers.js';
+import {applyRateLimit, setCORSHeaders, setSecurityHeaders} from '../api/utils/security-helpers.js';
 
-export async function handleFaqs(
+export async function handleCreations(
   req: VercelRequest,
   res: VercelResponse
 ) {
@@ -21,7 +21,7 @@ export async function handleFaqs(
   const supabaseKey = process.env['SUPABASE_SERVICE_ROLE_KEY'];
   
   if (!supabaseUrl || !supabaseKey) {
-    console.error('[FAQS] Missing env vars:', {
+    console.error('[CREATIONS] Missing env vars:', {
       hasUrl: !!supabaseUrl,
       hasKey: !!supabaseKey,
       nodeEnv: process.env['NODE_ENV']
@@ -46,15 +46,15 @@ export async function handleFaqs(
   if (req.method === 'GET') {
     try {
       const { data, error } = await supabase
-        .from('faqs')
+        .from('creations')
         .select('*')
         .eq('is_active', true)
         .order('display_order', { ascending: true });
       
       if (error) {
-        console.error('[FAQS] Supabase error:', error);
+        console.error('[CREATIONS] Supabase error:', error);
         return res.status(500).json({ 
-          error: 'Erreur lors de la récupération des FAQs',
+          error: 'Erreur lors de la récupération des créations',
           details: error.message,
           code: error.code
         });
@@ -62,7 +62,7 @@ export async function handleFaqs(
       
       return res.json(data);
     } catch (error: any) {
-      console.error('[FAQS] Handler error:', error);
+      console.error('[CREATIONS] Handler error:', error);
       return res.status(500).json({ 
         error: 'Erreur interne du serveur',
         details: error.message

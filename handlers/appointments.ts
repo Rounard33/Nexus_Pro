@@ -1,7 +1,15 @@
 import {createClient, SupabaseClient} from '@supabase/supabase-js';
 import type {VercelRequest, VercelResponse} from '@vercel/node';
-import {rateLimitMiddleware} from '../utils/rate-limiter.js';
-import {setCORSHeaders, setSecurityHeaders} from '../utils/security-helpers.js';
+import {rateLimitMiddleware} from '../api/utils/rate-limiter.js';
+import {setCORSHeaders, setSecurityHeaders} from '../api/utils/security-helpers.js';
+import {sanitizeAppointment, validateAppointment, validateAppointmentQuery} from '../api/utils/validation.js';
+
+// Fonction utilitaire pour formater les minutes en HH:MM
+function formatTimeMinutes(minutes: number): string {
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+}
 
 // Fonction pour vérifier l'authentification et les droits admin
 async function verifyAuth(req: VercelRequest, supabaseAdmin: SupabaseClient): Promise<{authenticated: boolean; isAdmin?: boolean; user?: any; error?: string}> {
@@ -101,14 +109,14 @@ async function verifyAuth(req: VercelRequest, supabaseAdmin: SupabaseClient): Pr
   }
 }
 
-export async function handleOpeningHours(
+export async function handleAppointments(
   req: VercelRequest,
   res: VercelResponse
 ) {
   const origin = req.headers.origin as string;
   
   // ⚠️ IMPORTANT : Définir les headers CORS EN PREMIER, avant toute vérification
-  setCORSHeaders(res, origin, 'GET, PATCH, OPTIONS', 'Content-Type, Authorization');
+  setCORSHeaders(res, origin, 'GET, POST, PATCH, OPTIONS', 'Content-Type, Authorization');
   
   // Gérer les requêtes OPTIONS (preflight) immédiatement
   if (req.method === 'OPTIONS') {
@@ -120,7 +128,7 @@ export async function handleOpeningHours(
   const supabaseKey = process.env['SUPABASE_SERVICE_ROLE_KEY'];
   
   if (!supabaseUrl || !supabaseKey) {
-    console.error('[OPENING-HOURS] Missing env vars:', {
+    console.error('[APPOINTMENTS] Missing env vars:', {
       hasUrl: !!supabaseUrl,
       hasKey: !!supabaseKey,
       nodeEnv: process.env['NODE_ENV']
@@ -135,8 +143,14 @@ export async function handleOpeningHours(
   // Créer le client maintenant que nous savons que les variables existent
   const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
   
-  // Rate limiting
-  const maxRequests = req.method === 'PATCH' ? 30 : 100; // 30 updates/min, 100 reads/min
+  // Rate limiting : limites différentes selon la méthode
+  let maxRequests = 100; // Par défaut : 100 req/min
+  if (req.method === 'POST') {
+    maxRequests = 20; // 20 créations de rendez-vous/min
+  } else if (req.method === 'PATCH') {
+    maxRequests = 30; // 30 mises à jour/min
+  }
+  
   const rateLimit = rateLimitMiddleware(req, maxRequests, 60000);
   
   // Ajouter les headers de rate limiting
@@ -159,26 +173,144 @@ export async function handleOpeningHours(
   
   setSecurityHeaders(res, origin);
 
+  // GET : Récupérer les rendez-vous
   if (req.method === 'GET') {
     try {
-      const { data, error } = await supabaseAdmin
-        .from('opening_hours')
-        .select('*')
-        .eq('is_active', true)
-        .order('display_order', { ascending: true });
+      const { status, startDate, endDate } = req.query;
+
+      // Valider les paramètres de requête
+      const queryValidation = validateAppointmentQuery({ status, startDate, endDate });
+      if (!queryValidation.valid) {
+        return res.status(400).json({ error: 'Paramètres invalides', details: queryValidation.errors });
+      }
+
+      let query = supabaseAdmin.from('appointments').select(`
+        *,
+        prestations (
+          name
+        )
+      `);
+
+      if (status && typeof status === 'string') {
+        query = query.eq('status', status);
+      }
+
+      if (startDate && endDate && typeof startDate === 'string' && typeof endDate === 'string') {
+        query = query.gte('appointment_date', startDate)
+                     .lte('appointment_date', endDate);
+      }
+
+      query = query.order('appointment_date', { ascending: true })
+                   .order('appointment_time', { ascending: true });
+
+      const { data, error } = await query;
 
       if (error) {
-        console.error('[OPENING-HOURS] Supabase error:', error);
+        console.error('[APPOINTMENTS] Supabase error:', error);
         return res.status(500).json({ 
-          error: 'Erreur lors de la récupération des horaires',
+          error: 'Erreur lors de la récupération des rendez-vous',
           details: error.message,
           code: error.code
         });
       }
 
+      // Ne pas logger les données sensibles en production
+      const isDevelopment = process.env['NODE_ENV'] === 'development';
+      if (isDevelopment && data && data.length > 0) {
+        console.log('Sample appointment with prestation:', JSON.stringify(data[0], null, 2));
+      }
+
       return res.status(200).json(data);
     } catch (error: any) {
-      console.error('[OPENING-HOURS] Handler error:', error);
+      console.error('Server error:', error);
+      return res.status(500).json({ error: error.message || 'Internal server error' });
+    }
+  }
+
+  // POST : Créer un rendez-vous
+  if (req.method === 'POST') {
+    try {
+      // Valider les données d'entrée
+      const validation = validateAppointment(req.body);
+      if (!validation.valid) {
+        return res.status(400).json({ 
+          error: 'Données invalides',
+          details: validation.errors
+        });
+      }
+
+      // Nettoyer et normaliser les données
+      const sanitizedData = sanitizeAppointment(req.body);
+
+      // Vérifier qu'il n'y a pas déjà un RDV qui bloque ce créneau (plage de 1h30)
+      const { appointment_date, appointment_time } = sanitizedData;
+      
+      // Récupérer tous les rendez-vous pending ou accepted pour cette date
+      const { data: existingAppointments, error: checkError } = await supabaseAdmin
+        .from('appointments')
+        .select('appointment_time')
+        .eq('appointment_date', appointment_date)
+        .in('status', ['pending', 'accepted']);
+
+      if (checkError) {
+        console.error('[APPOINTMENTS] Check error:', checkError);
+        return res.status(500).json({ 
+          error: 'Erreur lors de la vérification des créneaux',
+          details: checkError.message,
+          code: checkError.code
+        });
+      }
+
+      // Vérifier si le créneau demandé chevauche avec une plage bloquée de 1h30
+      if (existingAppointments && existingAppointments.length > 0) {
+        const [newHour, newMin] = appointment_time.split(':').map(Number);
+        const newTime = newHour * 60 + newMin; // Convertir en minutes depuis minuit
+        
+        for (const apt of existingAppointments) {
+          const [aptHour, aptMin] = apt.appointment_time.split(':').map(Number);
+          const aptTime = aptHour * 60 + aptMin; // Convertir en minutes depuis minuit
+          
+          // Plage bloquée : de l'heure du rendez-vous jusqu'à 1h30 après (90 minutes)
+          // Exemple: rendez-vous à 9h30 (570 min) → bloque de 570 à 660 minutes (11h00)
+          const blockStart = aptTime;
+          const blockEnd = aptTime + 90; // +1h30
+          
+          // Vérifier si le créneau demandé est dans cette plage bloquée
+          if (newTime >= blockStart && newTime < blockEnd) {
+            return res.status(409).json({ 
+              error: 'Ce créneau est déjà réservé',
+              message: `Un rendez-vous existe à ${apt.appointment_time} et bloque les créneaux jusqu'à ${formatTimeMinutes(blockEnd)}`
+            });
+          }
+        }
+      }
+
+      // Insérer uniquement les champs autorisés et validés
+      const { data, error } = await supabaseAdmin
+        .from('appointments')
+        .insert([sanitizedData])
+        .select(`
+          *,
+          prestations (
+            name
+          )
+        `)
+        .single();
+
+      if (error) {
+        console.error('[APPOINTMENTS] Supabase create error:', error);
+        return res.status(500).json({ 
+          error: 'Erreur lors de la création du rendez-vous',
+          details: error.message,
+          code: error.code
+        });
+      }
+
+      // TODO: Envoyer un email de notification (avec Brevo)
+      
+      return res.status(201).json(data);
+    } catch (error: any) {
+      console.error('[APPOINTMENTS] Handler create error:', error);
       return res.status(500).json({ 
         error: 'Erreur interne du serveur',
         details: error.message
@@ -186,17 +318,11 @@ export async function handleOpeningHours(
     }
   }
 
-  // PATCH : Mettre à jour les horaires - PROTÉGÉ
+  // PATCH : Mettre à jour un rendez-vous (accepter/refuser) - PROTÉGÉ
   if (req.method === 'PATCH') {
     const { id } = req.query;
     if (!id) {
-      return res.status(400).json({ error: 'Missing opening hours ID' });
-    }
-
-    // Valider que l'ID est un UUID valide
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (typeof id !== 'string' || !uuidRegex.test(id)) {
-      return res.status(400).json({ error: 'Invalid opening hours ID format' });
+      return res.status(400).json({ error: 'Missing appointment ID' });
     }
 
     // Vérifier l'authentification et les droits admin
@@ -210,39 +336,53 @@ export async function handleOpeningHours(
 
     try {
       // Nettoyer le body pour ne garder que les champs autorisés
-      const allowedFields = ['day_of_week', 'day_name', 'periods', 'last_appointment', 'is_active', 'display_order'];
-      const updateData: any = {};
+      const updateData: any = {
+        status: req.body.status?.toLowerCase()?.trim()
+      };
       
-      for (const field of allowedFields) {
-        if (req.body[field] !== undefined) {
-          updateData[field] = req.body[field];
-        }
+      if (req.body.notes !== undefined && req.body.notes !== null) {
+        updateData.notes = req.body.notes;
       }
 
-      // Validation basique
-      if (updateData.day_of_week !== undefined && (updateData.day_of_week < 0 || updateData.day_of_week > 6)) {
-        return res.status(400).json({ error: 'day_of_week must be between 0 and 6' });
+      // Vérifier que le statut est valide
+      const validStatuses = ['pending', 'accepted', 'rejected', 'cancelled'];
+      if (!updateData.status || !validStatuses.includes(updateData.status)) {
+        return res.status(400).json({ 
+          error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` 
+        });
+      }
+
+      const isDevelopment = process.env['NODE_ENV'] === 'development';
+      if (isDevelopment) {
+        console.log('Updating appointment:', id, 'with data:', updateData);
       }
 
       const { data, error } = await supabaseAdmin
-        .from('opening_hours')
+        .from('appointments')
         .update(updateData)
         .eq('id', id)
-        .select('*')
+        .select(`
+          *,
+          prestations (
+            name
+          )
+        `)
         .single();
 
       if (error) {
-        console.error('[OPENING-HOURS] Supabase update error:', error);
+        console.error('[APPOINTMENTS] Supabase update error:', error);
         return res.status(500).json({ 
-          error: 'Erreur lors de la mise à jour des horaires',
+          error: 'Erreur lors de la mise à jour',
           details: error.message,
           code: error.code
         });
       }
 
+      // TODO: Envoyer un email au client (avec Brevo)
+      
       return res.status(200).json(data);
     } catch (error: any) {
-      console.error('[OPENING-HOURS] Handler update error:', error);
+      console.error('[APPOINTMENTS] Handler update error:', error);
       return res.status(500).json({ 
         error: 'Erreur interne du serveur',
         details: error.message

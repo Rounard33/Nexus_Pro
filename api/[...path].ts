@@ -1,14 +1,14 @@
 import type {VercelRequest, VercelResponse} from '@vercel/node';
-import {handleAbout} from './handlers/about.js';
-import {handleAppointments} from './handlers/appointments.js';
-import {handleAvailableSlots} from './handlers/available-slots.js';
-import {handleBlockedDates} from './handlers/blocked-dates.js';
-import {handleClients} from './handlers/clients.js';
-import {handleCreations} from './handlers/creations.js';
-import {handleFaqs} from './handlers/faqs.js';
-import {handleOpeningHours} from './handlers/opening-hours.js';
-import {handlePrestations} from './handlers/prestations.js';
-import {handleTestimonials} from './handlers/testimonials.js';
+import {handleAbout} from '../handlers/about.js';
+import {handleAppointments} from '../handlers/appointments.js';
+import {handleAvailableSlots} from '../handlers/available-slots.js';
+import {handleBlockedDates} from '../handlers/blocked-dates.js';
+import {handleClients} from '../handlers/clients.js';
+import {handleCreations} from '../handlers/creations.js';
+import {handleFaqs} from '../handlers/faqs.js';
+import {handleOpeningHours} from '../handlers/opening-hours.js';
+import {handlePrestations} from '../handlers/prestations.js';
+import {handleTestimonials} from '../handlers/testimonials.js';
 
 /**
  * Routeur principal pour toutes les routes API (catch-all)

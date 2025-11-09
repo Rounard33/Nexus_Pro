@@ -1,8 +1,8 @@
 import {createClient} from '@supabase/supabase-js';
 import type {VercelRequest, VercelResponse} from '@vercel/node';
-import {applyRateLimit, setCORSHeaders, setSecurityHeaders} from '../utils/security-helpers.js';
+import {applyRateLimit, setCORSHeaders, setSecurityHeaders} from '../api/utils/security-helpers.js';
 
-export async function handleTestimonials(
+export async function handlePrestations(
   req: VercelRequest,
   res: VercelResponse
 ) {
@@ -21,7 +21,7 @@ export async function handleTestimonials(
   const supabaseKey = process.env['SUPABASE_SERVICE_ROLE_KEY'];
   
   if (!supabaseUrl || !supabaseKey) {
-    console.error('[TESTIMONIALS] Missing env vars:', {
+    console.error('[PRESTATIONS] Missing env vars:', {
       hasUrl: !!supabaseUrl,
       hasKey: !!supabaseKey,
       nodeEnv: process.env['NODE_ENV']
@@ -46,15 +46,15 @@ export async function handleTestimonials(
   if (req.method === 'GET') {
     try {
       const { data, error } = await supabase
-        .from('testimonials')
+        .from('prestations')
         .select('*')
         .eq('is_active', true)
         .order('display_order', { ascending: true });
       
       if (error) {
-        console.error('[TESTIMONIALS] Supabase error:', error);
+        console.error('[PRESTATIONS] Supabase error:', error);
         return res.status(500).json({ 
-          error: 'Erreur lors de la récupération des témoignages',
+          error: 'Erreur lors de la récupération des prestations',
           details: error.message,
           code: error.code
         });
@@ -62,7 +62,7 @@ export async function handleTestimonials(
       
       return res.json(data);
     } catch (error: any) {
-      console.error('[TESTIMONIALS] Handler error:', error);
+      console.error('[PRESTATIONS] Handler error:', error);
       return res.status(500).json({ 
         error: 'Erreur interne du serveur',
         details: error.message

@@ -1,7 +1,7 @@
 import {createClient, SupabaseClient} from '@supabase/supabase-js';
 import type {VercelRequest, VercelResponse} from '@vercel/node';
-import {rateLimitMiddleware} from '../utils/rate-limiter.js';
-import {setCORSHeaders, setSecurityHeaders} from '../utils/security-helpers.js';
+import {rateLimitMiddleware} from '../api/utils/rate-limiter.js';
+import {setCORSHeaders, setSecurityHeaders} from '../api/utils/security-helpers.js';
 
 // Fonction pour vérifier l'authentification et les droits admin
 async function verifyAuth(req: VercelRequest, supabaseAdmin: SupabaseClient): Promise<{authenticated: boolean; isAdmin?: boolean; user?: any; error?: string}> {

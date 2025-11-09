@@ -1,9 +1,8 @@
 import {createClient} from '@supabase/supabase-js';
 import type {VercelRequest, VercelResponse} from '@vercel/node';
-import {rateLimitMiddleware} from '../utils/rate-limiter.js';
-import {setCORSHeaders, setSecurityHeaders} from '../utils/security-helpers.js';
+import {applyRateLimit, setCORSHeaders, setSecurityHeaders} from '../api/utils/security-helpers.js';
 
-export async function handleBlockedDates(
+export async function handleFaqs(
   req: VercelRequest,
   res: VercelResponse
 ) {
@@ -22,7 +21,7 @@ export async function handleBlockedDates(
   const supabaseKey = process.env['SUPABASE_SERVICE_ROLE_KEY'];
   
   if (!supabaseUrl || !supabaseKey) {
-    console.error('[BLOCKED-DATES] Missing env vars:', {
+    console.error('[FAQS] Missing env vars:', {
       hasUrl: !!supabaseUrl,
       hasKey: !!supabaseKey,
       nodeEnv: process.env['NODE_ENV']
@@ -35,58 +34,42 @@ export async function handleBlockedDates(
   }
 
   // Créer le client maintenant que nous savons que les variables existent
-  const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
+  const supabase = createClient(supabaseUrl, supabaseKey);
   
   // Rate limiting : 100 requêtes GET par minute
-  const rateLimit = rateLimitMiddleware(req, 100, 60000);
-  
-  // Ajouter les headers de rate limiting
-  Object.entries(rateLimit.headers).forEach(([key, value]) => {
-    res.setHeader(key, value);
-  });
-  
-  // Vérifier si la requête est autorisée
-  if (!rateLimit.allowed) {
-    const resetTimeStr = rateLimit.headers['X-RateLimit-Reset'];
-    const resetTime = new Date(resetTimeStr).getTime();
-    const retryAfter = Math.ceil((resetTime - Date.now()) / 1000);
-    res.setHeader('Retry-After', Math.max(1, retryAfter).toString());
-    return res.status(429).json({
-      error: 'Trop de requêtes',
-      message: 'Limite de 100 requêtes par minute dépassée',
-      retryAfter: Math.max(1, retryAfter)
-    });
+  if (!applyRateLimit(req, res, 100)) {
+    return;
   }
   
   setSecurityHeaders(res, origin);
 
   if (req.method === 'GET') {
     try {
-      const { data, error } = await supabaseAdmin
-        .from('blocked_dates')
+      const { data, error } = await supabase
+        .from('faqs')
         .select('*')
-        .gte('blocked_date', new Date().toISOString().split('T')[0])
-        .order('blocked_date', { ascending: true });
-
+        .eq('is_active', true)
+        .order('display_order', { ascending: true });
+      
       if (error) {
-        console.error('[BLOCKED-DATES] Supabase error:', error);
+        console.error('[FAQS] Supabase error:', error);
         return res.status(500).json({ 
-          error: 'Erreur lors de la récupération des dates bloquées',
+          error: 'Erreur lors de la récupération des FAQs',
           details: error.message,
           code: error.code
         });
       }
-
-      return res.status(200).json(data);
+      
+      return res.json(data);
     } catch (error: any) {
-      console.error('[BLOCKED-DATES] Handler error:', error);
+      console.error('[FAQS] Handler error:', error);
       return res.status(500).json({ 
         error: 'Erreur interne du serveur',
         details: error.message
       });
     }
   }
-
+  
   return res.status(405).json({ error: 'Method not allowed' });
 }
 
