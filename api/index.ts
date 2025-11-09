@@ -9,6 +9,7 @@ import {handleFaqs} from '../handlers/faqs.js';
 import {handleOpeningHours} from '../handlers/opening-hours.js';
 import {handlePrestations} from '../handlers/prestations.js';
 import {handleTestimonials} from '../handlers/testimonials.js';
+import {setCORSHeaders, setSecurityHeaders} from './utils/security-helpers.js';
 
 /**
  * Routeur principal pour toutes les routes API
@@ -20,6 +21,18 @@ export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ) {
+  const origin = req.headers.origin as string;
+  
+  // ⚠️ IMPORTANT : Définir les headers CORS EN PREMIER, avant toute vérification
+  // Cela permet de gérer les requêtes OPTIONS (preflight) et les erreurs CORS
+  setCORSHeaders(res, origin, 'GET, POST, PATCH, OPTIONS', 'Content-Type, Authorization');
+  
+  // Gérer les requêtes OPTIONS (preflight) immédiatement
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
+  setSecurityHeaders(res, origin);
   // Extraire le chemin de la requête
   // Avec le rewrite /api/(.*) -> /api/index?path=$1, le chemin original est dans req.query.path
   let path = req.url || '';

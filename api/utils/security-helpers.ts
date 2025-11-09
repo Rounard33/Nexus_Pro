@@ -99,17 +99,8 @@ export function setSecurityHeaders(res: VercelResponse, origin?: string): void {
   
   res.setHeader('Content-Security-Policy', csp);
   
-  // CORS sécurisé
-  const allowedOrigins = getAllowedOrigins();
-  const requestOrigin = origin || '';
-  
-  if (allowedOrigins.includes(requestOrigin) || process.env['NODE_ENV'] === 'development') {
-    res.setHeader('Access-Control-Allow-Origin', requestOrigin);
-  }
-  
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  // Note: Les headers CORS sont gérés par setCORSHeaders() qui doit être appelé avant setSecurityHeaders()
+  // On ne redéfinit pas les headers CORS ici pour éviter d'écraser ceux définis par setCORSHeaders()
 }
 
 export function applyRateLimit(req: any, res: VercelResponse, maxRequests: number = 100): boolean {
