@@ -44,9 +44,11 @@ export default async function handler(
   
   // Extraire le chemin depuis req.query.path (catch-all route)
   // req.query.path sera un tableau : ['prestations'], ['opening-hours'], etc.
-  const pathArray = req.query['path'] as string | string[] | undefined;
+  // OU depuis req.url directement si le catch-all ne fonctionne pas
   let path = '/api/';
   
+  // Essayer d'abord avec req.query.path (catch-all)
+  const pathArray = req.query['path'] as string | string[] | undefined;
   if (pathArray) {
     if (Array.isArray(pathArray)) {
       path = `/api/${pathArray.join('/')}`;
@@ -54,19 +56,27 @@ export default async function handler(
       path = `/api/${pathArray}`;
     }
   } else {
-    // Fallback : utiliser req.url
+    // Fallback : utiliser req.url directement
+    // Cela devrait fonctionner même si le catch-all n'est pas reconnu
     const url = req.url || '';
     path = url.split('?')[0];
+    
+    // Si le chemin ne commence pas par /api/, l'ajouter
     if (!path.startsWith('/api/')) {
-      path = `/api${path}`;
+      // Si c'est juste /api, garder tel quel
+      if (path === '/api') {
+        path = '/api/';
+      } else {
+        path = `/api${path.startsWith('/') ? '' : '/'}${path}`;
+      }
     }
   }
   
   // Enlever les query params du chemin final
   path = path.split('?')[0];
   
-  // Log pour déboguer
-  console.log(`[API Router] Method: ${req.method}, Path: ${path}, Origin: ${origin}, URL: ${req.url}, Query:`, req.query);
+  // Log pour déboguer (toujours activé pour voir ce qui se passe)
+  console.log(`[API Router] Method: ${req.method}, Path: ${path}, Origin: ${origin}, URL: ${req.url}, Query:`, JSON.stringify(req.query));
   
   // Router vers le handler approprié
   if (path.includes('/api/appointments') || path === '/api/appointments') {
