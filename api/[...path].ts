@@ -12,17 +12,17 @@ import {handleTestimonials} from '../handlers/testimonials.js';
 import {setCORSHeaders, setSecurityHeaders} from './utils/security-helpers.js';
 
 /**
- * Routeur principal pour toutes les routes API
+ * Routeur principal pour toutes les routes API (catch-all)
  * Consolide toutes les fonctions API en une seule Serverless Function
  * 
- * Toutes les routes /api/* sont redirigées vers cette fonction via vercel.json
+ * Le nom de fichier [...path].ts indique à Vercel qu'il s'agit d'un catch-all
+ * qui capture toutes les routes /api/*
  */
 export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ) {
   // ⚠️ CRITIQUE : Définir les headers CORS IMMÉDIATEMENT, avant TOUTE autre opération
-  // Utiliser une approche simple et directe pour garantir que les headers sont toujours présents
   const origin = req.headers.origin as string || '*';
   
   // Définir les headers CORS de manière explicite et simple
@@ -32,7 +32,7 @@ export default async function handler(
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Max-Age', '86400');
   
-  // Appeler aussi setCORSHeaders pour la logique avancée (mais on a déjà défini les headers de base)
+  // Appeler aussi setCORSHeaders pour la logique avancée
   setCORSHeaders(res, origin, 'GET, POST, PATCH, OPTIONS', 'Content-Type, Authorization');
   
   // Gérer les requêtes OPTIONS (preflight) immédiatement
@@ -42,29 +42,31 @@ export default async function handler(
   
   setSecurityHeaders(res, origin);
   
-  // Extraire le chemin de la requête
-  // Avec le rewrite /api/(.*) -> /api/index?path=$1, le chemin original est dans req.query.path
-  let path = req.url || '';
+  // Extraire le chemin depuis req.query.path (catch-all route)
+  // req.query.path sera un tableau : ['prestations'], ['opening-hours'], etc.
+  const pathArray = req.query['path'] as string | string[] | undefined;
+  let path = '/api/';
   
-  // Récupérer le chemin original depuis le query param (passé par le rewrite)
-  const pathParam = req.query['path'] as string;
-  if (pathParam) {
-    path = `/api/${pathParam}`;
+  if (pathArray) {
+    if (Array.isArray(pathArray)) {
+      path = `/api/${pathArray.join('/')}`;
+    } else {
+      path = `/api/${pathArray}`;
+    }
   } else {
-    // Fallback : utiliser req.url directement si pas de rewrite
-    path = path.split('?')[0];
-  }
-  
-  // S'assurer que le chemin commence par /api/
-  if (!path.startsWith('/api/')) {
-    path = `/api${path}`;
+    // Fallback : utiliser req.url
+    const url = req.url || '';
+    path = url.split('?')[0];
+    if (!path.startsWith('/api/')) {
+      path = `/api${path}`;
+    }
   }
   
   // Enlever les query params du chemin final
   path = path.split('?')[0];
   
-  // Log pour déboguer (en production aussi pour voir ce qui se passe)
-  console.log(`[API Router] Method: ${req.method}, Path: ${path}, Origin: ${origin}, URL: ${req.url}`);
+  // Log pour déboguer
+  console.log(`[API Router] Method: ${req.method}, Path: ${path}, Origin: ${origin}, URL: ${req.url}, Query:`, req.query);
   
   // Router vers le handler approprié
   if (path.includes('/api/appointments') || path === '/api/appointments') {
