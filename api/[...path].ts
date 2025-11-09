@@ -11,14 +11,18 @@ import {handlePrestations} from './handlers/prestations.js';
 import {handleTestimonials} from './handlers/testimonials.js';
 
 /**
- * Routeur principal pour toutes les routes API
+ * Routeur principal pour toutes les routes API (catch-all)
  * Consolide toutes les fonctions API en une seule Serverless Function
+ * 
+ * Le nom de fichier [...path].ts indique à Vercel qu'il s'agit d'un catch-all
+ * qui capture toutes les routes /api/*
  */
 export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ) {
   // Extraire le chemin de la requête
+  // Avec catch-all [...path], req.url contient le chemin complet
   const url = req.url || '';
   const path = url.split('?')[0]; // Enlever les query params
   
