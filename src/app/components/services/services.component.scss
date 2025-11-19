@@ -49,10 +49,7 @@
   transition: transform 0.4s ease;
   opacity: 0.7;
   
-  // Amélioration du cadrage sur mobile
   @media (max-width: 768px) {
-    // Meilleur cadrage pour les images portrait/personnes
-    // Centre horizontalement mais privilégie le haut (30%) pour voir les visages et sujets principaux
     background-position: center 30%;
     background-size: cover;
   }
