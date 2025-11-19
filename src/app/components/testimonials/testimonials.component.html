@@ -8,7 +8,11 @@
     </app-section-header>
     
     <div class="carousel-container" *ngIf="testimonials.length > 0">
-      <div class="carousel-wrapper">
+      <div 
+        class="carousel-wrapper"
+        #carouselWrapper
+        (touchstart)="onTouchStart($event)"
+        (touchend)="onTouchEnd($event)">
         <div class="testimonial-card" [class.transitioning]="isTransitioning">
           <div class="testimonial-content">
             <div class="quote-icon">"</div>

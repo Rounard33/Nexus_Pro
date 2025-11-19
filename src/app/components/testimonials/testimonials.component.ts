@@ -1,5 +1,5 @@
 import {CommonModule} from '@angular/common';
-import {Component, Input, OnInit, OnDestroy} from '@angular/core';
+import {Component, Input, OnInit, OnDestroy, ElementRef, ViewChild} from '@angular/core';
 import {SectionHeaderComponent} from '../section-header/section-header.component';
 
 export interface Testimonial {
@@ -18,11 +18,17 @@ export interface Testimonial {
 })
 export class TestimonialsComponent implements OnInit, OnDestroy {
   @Input() testimonials: Testimonial[] = [];
+  @ViewChild('carouselWrapper', { static: false }) carouselWrapper!: ElementRef;
   
   currentIndex = 0;
   isTransitioning = false;
   private autoSlideInterval: any;
   private readonly autoSlideDelay = 5000; // 5 secondes
+  
+  // Touch events pour le swipe
+  private touchStartX = 0;
+  private touchEndX = 0;
+  private readonly swipeThreshold = 50; // Minimum distance pour déclencher un swipe
 
   ngOnInit(): void {
     this.startAutoSlide();
@@ -97,5 +103,31 @@ export class TestimonialsComponent implements OnInit, OnDestroy {
 
   onImageError(event: any, name: string): void {
     event.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=f5f1e8&color=6f5f4e&size=150`;
+  }
+
+  // Gestion du swipe tactile
+  onTouchStart(event: TouchEvent): void {
+    this.touchStartX = event.changedTouches[0].screenX;
+    this.stopAutoSlide(); // Pause le défilement automatique pendant le swipe
+  }
+
+  onTouchEnd(event: TouchEvent): void {
+    this.touchEndX = event.changedTouches[0].screenX;
+    this.handleSwipe();
+    this.startAutoSlide(); // Reprend le défilement automatique
+  }
+
+  private handleSwipe(): void {
+    const swipeDistance = this.touchStartX - this.touchEndX;
+    
+    if (Math.abs(swipeDistance) > this.swipeThreshold) {
+      if (swipeDistance > 0) {
+        // Swipe vers la gauche = suivant
+        this.next();
+      } else {
+        // Swipe vers la droite = précédent
+        this.previous();
+      }
+    }
   }
 }
