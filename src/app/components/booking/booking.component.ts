@@ -60,9 +60,28 @@ export class BookingComponent implements OnInit, OnChanges {
         Validators.pattern(/^(?:(?:\+|00)33|0)[1-9](?:[\s.-]?[0-9]{2}){4}$/), // Format français
         Validators.maxLength(20)
       ]],
+      referral_source: [''], // Source de référence
+      referral_friend_name: [''], // Nom de l'ami (conditionnel)
       notes: ['', [
         Validators.maxLength(500)
       ]]
+    });
+
+    // Ajouter une validation conditionnelle pour referral_friend_name
+    this.bookingForm.get('referral_source')?.valueChanges.subscribe(value => {
+      const friendNameControl = this.bookingForm.get('referral_friend_name');
+      if (value === 'friend') {
+        friendNameControl?.setValidators([
+          Validators.required,
+          Validators.minLength(2),
+          Validators.maxLength(100),
+          Validators.pattern(/^[a-zA-ZÀ-ÿ\s'-]+$/)
+        ]);
+      } else {
+        friendNameControl?.clearValidators();
+        friendNameControl?.setValue(''); // Réinitialiser le champ
+      }
+      friendNameControl?.updateValueAndValidity();
     });
   }
 
@@ -461,16 +480,35 @@ export class BookingComponent implements OnInit, OnChanges {
     const formValue = this.bookingForm.value;
 
     // Nettoyer les données avant envoi (Angular gère déjà la protection XSS côté affichage)
-    const appointment: Partial<Appointment> = {
+    const appointment: any = {
       client_name: formValue.client_name.trim(),
       client_email: formValue.client_email.trim().toLowerCase(),
-      client_phone: formValue.client_phone ? formValue.client_phone.trim() : undefined,
       prestation_id: this.prestation.id, // ID vérifié ci-dessus
       appointment_date: this.formatDateLocal(this.selectedDate),
       appointment_time: this.selectedTime,
-      status: 'pending',
-      notes: formValue.notes ? formValue.notes.trim() : undefined
+      status: 'pending'
     };
+
+    // Ajouter les champs optionnels seulement s'ils ont une valeur
+    if (formValue.client_phone && formValue.client_phone.trim() !== '') {
+      appointment.client_phone = formValue.client_phone.trim();
+    }
+
+    if (formValue.notes && formValue.notes.trim() !== '') {
+      appointment.notes = formValue.notes.trim();
+    }
+
+    if (formValue.referral_source && formValue.referral_source.trim() !== '') {
+      appointment.referral_source = formValue.referral_source.trim();
+    }
+
+    if (formValue.referral_source === 'friend' && formValue.referral_friend_name && formValue.referral_friend_name.trim() !== '') {
+      appointment.referral_friend_name = formValue.referral_friend_name.trim();
+    }
+
+    console.log('�� referral_source:', appointment.referral_source);
+    console.log('�� formValue.referral_source:', formValue.referral_source);
+    console.log('�� formValue.referral_friend_name:', formValue.referral_friend_name);
 
     this.contentService.createAppointment(appointment).subscribe({
       next: (createdAppointment) => {
@@ -709,6 +747,24 @@ export class BookingComponent implements OnInit, OnChanges {
     const control = this.bookingForm.get('client_phone');
     if (control?.hasError('pattern') && control?.touched) {
       return 'Veuillez entrer un numéro de téléphone valide (format français).';
+    }
+    return '';
+  }
+
+  get showFriendNameField(): boolean {
+    return this.bookingForm.get('referral_source')?.value === 'friend';
+  }
+
+  get referralFriendNameError(): string {
+    const control = this.bookingForm.get('referral_friend_name');
+    if (control?.hasError('required') && control?.touched) {
+      return 'Le nom de la personne est obligatoire.';
+    }
+    if (control?.hasError('minlength') && control?.touched) {
+      return 'Le nom doit contenir au moins 2 caractères.';
+    }
+    if (control?.hasError('pattern') && control?.touched) {
+      return 'Le nom ne peut contenir que des lettres, espaces, tirets et apostrophes.';
     }
     return '';
   }

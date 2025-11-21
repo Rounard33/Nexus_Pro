@@ -98,6 +98,8 @@ export interface Appointment {
   status: 'pending' | 'accepted' | 'rejected' | 'cancelled';
   payment_method?: 'espèces' | 'carte' | 'virement' | 'chèque' | null;
   notes?: string;
+  referral_source?: string; // Source de référence : search, social, friend, advertisement, other
+  referral_friend_name?: string; // Nom de la personne qui a recommandé (si referral_source = friend)
   created_at?: string;
   updated_at?: string;
   prestations?: {

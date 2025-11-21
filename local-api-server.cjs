@@ -628,7 +628,20 @@ const server = http.createServer(async (req, res) => {
           .from('appointments')
           .insert([sanitizedData])
           .select(`
-            *,
+            id,
+            client_name,
+            client_email,
+            client_phone,
+            prestation_id,
+            appointment_date,
+            appointment_time,
+            status,
+            payment_method,
+            notes,
+            referral_source,
+            referral_friend_name,
+            created_at,
+            updated_at,
             prestations (
               name
             )

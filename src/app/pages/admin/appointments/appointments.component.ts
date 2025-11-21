@@ -238,6 +238,18 @@ export class AppointmentsComponent implements OnInit, OnDestroy {
     return APPOINTMENT_STATUS_LABELS[status as AppointmentStatus] || status;
   }
 
+  getReferralSourceLabel(source: string | undefined): string {
+    if (!source) return '';
+    const labels: Record<string, string> = {
+      'search': 'Recherche sur Internet',
+      'social': 'Réseaux sociaux',
+      'friend': 'Par un ami / une connaissance',
+      'advertisement': 'Publicité',
+      'other': 'Autre'
+    };
+    return labels[source] || source;
+  }
+
   /**
    * Obtient le nom d'affichage d'une prestation
    */

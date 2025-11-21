@@ -309,6 +309,14 @@
           <strong>Notes:</strong>
           <span>{{ selectedAppointment.notes }}</span>
         </div>
+        <div class="detail-row" *ngIf="selectedAppointment.referral_source">
+          <strong>Comment avez-vous connu le site ?</strong>
+          <span>{{ getReferralSourceLabel(selectedAppointment.referral_source) }}</span>
+        </div>
+        <div class="detail-row" *ngIf="selectedAppointment.referral_source === 'friend' && selectedAppointment.referral_friend_name">
+          <strong>Nom de la personne qui a recommandé:</strong>
+          <span>{{ selectedAppointment.referral_friend_name }}</span>
+        </div>
       </div>
 
       <div class="modal-actions">

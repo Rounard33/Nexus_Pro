@@ -148,6 +148,16 @@ function sanitizeAppointment(data) {
   if (data.notes !== undefined && data.notes !== null) {
     sanitized.notes = data.notes.trim();
   }
+
+  // Sanitize referral_source (même logique que notes)
+  if (data.referral_source !== undefined && data.referral_source !== null && data.referral_source.trim() !== '') {
+    sanitized.referral_source = data.referral_source.trim();
+  }
+
+  // Sanitize referral_friend_name (même logique que notes, seulement si referral_source = 'friend')
+  if (data.referral_source === 'friend' && data.referral_friend_name !== undefined && data.referral_friend_name !== null && data.referral_friend_name.trim() !== '') {
+    sanitized.referral_friend_name = data.referral_friend_name.trim();
+  }
   
   // Status doit être pending pour une création
   sanitized.status = 'pending';

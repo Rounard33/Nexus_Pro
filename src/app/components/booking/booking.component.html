@@ -155,6 +155,42 @@
             <span class="error-text" *ngIf="clientPhoneError">{{ clientPhoneError }}</span>
           </div>
 
+          <!-- Comment avez-vous connu le site ? -->
+          <div class="form-group">
+            <label for="referral_source" class="form-label">
+              Comment avez-vous connu le site ?
+            </label>
+            <select
+              id="referral_source"
+              formControlName="referral_source"
+              class="form-input"
+              [class.error]="bookingForm.get('referral_source')?.invalid && bookingForm.get('referral_source')?.touched">
+              <option value="">Sélectionnez une option</option>
+              <option value="search">Recherche sur Internet</option>
+              <option value="social">Réseaux sociaux</option>
+              <option value="friend">Par un ami / une connaissance</option>
+              <option value="advertisement">Publicité</option>
+              <option value="other">Autre</option>
+            </select>
+          </div>
+
+          <!-- Nom de l'ami (conditionnel) -->
+          <div class="form-group" *ngIf="showFriendNameField">
+            <label for="referral_friend_name" class="form-label">
+              Nom de la personne <span class="required">*</span>
+            </label>
+            <input
+              type="text"
+              id="referral_friend_name"
+              formControlName="referral_friend_name"
+              class="form-input"
+              [class.error]="bookingForm.get('referral_friend_name')?.invalid && bookingForm.get('referral_friend_name')?.touched"
+              placeholder="Nom de la personne qui vous a recommandé"
+              maxlength="100"
+              autocomplete="off">
+            <span class="error-text" *ngIf="referralFriendNameError">{{ referralFriendNameError }}</span>
+          </div>
+
           <!-- Notes -->
           <div class="form-group">
             <label for="notes" class="form-label">

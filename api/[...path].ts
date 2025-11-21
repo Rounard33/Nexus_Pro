@@ -613,25 +613,29 @@ async function handleAppointments(req: VercelRequest, res: VercelResponse, supab
       .from('appointments')
       .insert([sanitizedData])
       .select(`
-        *,
+        id,
+        client_name,
+        client_email,
+        client_phone,
+        prestation_id,
+        appointment_date,
+        appointment_time,
+        status,
+        payment_method,
+        notes,
+        referral_source,
+        referral_friend_name,
+        created_at,
+        updated_at,
         prestations (
           name
         )
       `)
       .single();
-
+    
     if (error) {
       return res.status(500).json({ error: 'Erreur lors de la création du rendez-vous', details: error.message });
     }
-
-    // DEBUG: Logger les données retournées
-    console.log('[Appointments POST] ========== DEBUG ==========');
-    console.log('[Appointments POST] Data reçue:', JSON.stringify(data, null, 2));
-    console.log('[Appointments POST] data existe?', !!data);
-    console.log('[Appointments POST] data.client_email existe?', !!data?.client_email);
-    console.log('[Appointments POST] data.client_email valeur:', data?.client_email);
-    console.log('[Appointments POST] Toutes les clés de data:', data ? Object.keys(data) : 'data est null');
-    console.log('[Appointments POST] ============================');
 
     // Créer automatiquement le client dans la table clients s'il n'existe pas
     // Utiliser sanitizedData au cas où data n'a pas client_email
