@@ -63,6 +63,7 @@
             <th>Date</th>
             <th>Heure</th>
             <th>Statut</th>
+            <th>Paiement</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -85,6 +86,12 @@
               <span class="status-badge" [ngClass]="getStatusClass(appointment.status)">
                 {{ getStatusLabel(appointment.status) }}
               </span>
+            </td>
+            <td class="payment-cell">
+              <span *ngIf="appointment.payment_method" class="payment-badge">
+                {{ getPaymentMethodLabel(appointment.payment_method) }}
+              </span>
+              <span *ngIf="!appointment.payment_method" class="text-muted">-</span>
             </td>
             <td class="actions-cell">
               <div class="actions-buttons">
@@ -174,6 +181,15 @@
         <div class="appointment-card-row">
           <span class="appointment-card-label">Heure:</span>
           <span class="appointment-card-value">{{ appointment.appointment_time }}</span>
+        </div>
+        <div class="appointment-card-row">
+          <span class="appointment-card-label">Paiement:</span>
+          <span class="appointment-card-value">
+            <span *ngIf="appointment.payment_method" class="payment-badge-small">
+              {{ getPaymentMethodLabel(appointment.payment_method) }}
+            </span>
+            <span *ngIf="!appointment.payment_method" class="text-muted">Non renseigné</span>
+          </span>
         </div>
       </div>
       <div class="appointment-card-actions">
@@ -269,6 +285,24 @@
           <strong>Statut:</strong>
           <span class="status-badge" [ngClass]="getStatusClass(selectedAppointment.status)">
             {{ getStatusLabel(selectedAppointment.status) }}
+          </span>
+        </div>
+        <div class="detail-row detail-row-editable">
+          <strong>Mode de paiement:</strong>
+          <select 
+            [(ngModel)]="selectedAppointment.payment_method"
+            (change)="updatePaymentMethod(selectedAppointment)"
+            [disabled]="isUpdating(selectedAppointment)"
+            class="payment-select"
+            aria-label="Mode de paiement">
+            <option [value]="null">Non renseigné</option>
+            <option value="espèces">Espèces</option>
+            <option value="carte">Carte bancaire</option>
+            <option value="virement">Virement</option>
+            <option value="chèque">Chèque</option>
+          </select>
+          <span *ngIf="isUpdating(selectedAppointment)" class="updating-indicator">
+            <span class="spinner-small" aria-hidden="true"></span>
           </span>
         </div>
         <div class="detail-row" *ngIf="selectedAppointment.notes">

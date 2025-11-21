@@ -264,5 +264,58 @@ export class AppointmentsComponent implements OnInit, OnDestroy {
   isUpdating(appointment: Appointment): boolean {
     return this.updatingAppointmentId === appointment.id;
   }
+
+  /**
+   * Met à jour le mode de paiement d'un rendez-vous
+   */
+  updatePaymentMethod(appointment: Appointment): void {
+    if (!appointment.id) {
+      this.notificationService.error('Erreur: Rendez-vous invalide (ID manquant)');
+      return;
+    }
+
+    this.updatingAppointmentId = appointment.id;
+
+    this.contentService.updateAppointment(appointment.id, {payment_method: appointment.payment_method})
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (updated) => {
+          // Mettre à jour l'appointment dans la liste
+          const index = this.appointments.findIndex(a => a.id === appointment.id);
+          if (index !== -1) {
+            this.appointments[index].payment_method = updated.payment_method;
+          }
+          this.applyFilters();
+          this.updatingAppointmentId = null;
+          
+          this.notificationService.success('Mode de paiement mis à jour avec succès');
+        },
+        error: (error) => {
+          console.error('Erreur lors de la mise à jour du mode de paiement:', error);
+          this.updatingAppointmentId = null;
+          
+          const errorMessage = error.error?.error || error.error?.details || error.message || 
+            'Erreur lors de la mise à jour du mode de paiement';
+          this.notificationService.error(`Erreur: ${errorMessage}`);
+          
+          // Recharger les rendez-vous pour restaurer l'état précédent
+          this.loadAppointments();
+        }
+      });
+  }
+
+  /**
+   * Obtient le libellé du mode de paiement
+   */
+  getPaymentMethodLabel(method: string | null | undefined): string {
+    if (!method) return 'Non renseigné';
+    const labels: {[key: string]: string} = {
+      'espèces': 'Espèces',
+      'carte': 'Carte bancaire',
+      'virement': 'Virement',
+      'chèque': 'Chèque'
+    };
+    return labels[method] || method;
+  }
 }
 

@@ -582,19 +582,30 @@ async function handleAppointments(req: VercelRequest, res: VercelResponse, supab
     if (existingAppointments && existingAppointments.length > 0) {
       const [newHour, newMin] = appointment_time.split(':').map(Number);
       const newTime = newHour * 60 + newMin;
+      const newEndTime = newTime + 90; // Fin du nouveau rendez-vous (+1h30)
       
       for (const apt of existingAppointments) {
         const [aptHour, aptMin] = apt.appointment_time.split(':').map(Number);
         const aptTime = aptHour * 60 + aptMin;
-        const blockStart = aptTime;
-        const blockEnd = aptTime + 90;
         
-        if (newTime >= blockStart && newTime < blockEnd) {
+        // Plage bloquée : de 1h30 avant le rendez-vous jusqu'à 1h30 après
+        // Exemple: rendez-vous à 11h30 (690 min) → bloque de 10h00 (600 min) à 13h00 (780 min)
+        const blockStart = Math.max(0, aptTime - 90); // Ne pas aller avant minuit
+        const blockEnd = aptTime + 90; // +1h30 après
+        
+        // Bloquer si :
+        // 1. Le créneau commence dans la plage bloquée (inclus le début, exclu la fin)
+        // 2. OU le créneau se termine moins de 1h30 avant le début du rendez-vous
+        //    (créneaux qui commencent avant blockStart mais se terminent après blockStart)
+        const startsInBlockedRange = newTime >= blockStart && newTime < blockEnd;
+        const endsTooCloseBefore = newTime < blockStart && newEndTime > blockStart;
+        
+        if (startsInBlockedRange || endsTooCloseBefore) {
           return res.status(409).json({ 
             error: 'Ce créneau est déjà réservé',
-            message: `Un rendez-vous existe à ${apt.appointment_time} et bloque les créneaux jusqu'à ${formatTimeMinutes(blockEnd)}`
+            message: `Un rendez-vous existe à ${apt.appointment_time} et bloque les créneaux de ${formatTimeMinutes(blockStart)} à ${formatTimeMinutes(blockEnd)}`
           });
-  }
+        }
       }
     }
 
@@ -722,18 +733,39 @@ async function handleAppointments(req: VercelRequest, res: VercelResponse, supab
       });
     }
 
-    const updateData: any = {
-      status: req.body.status?.toLowerCase()?.trim()
-    };
+    const updateData: any = {};
     
+    // Gérer le statut si fourni
+    if (req.body.status !== undefined) {
+      updateData.status = req.body.status?.toLowerCase()?.trim();
+      const validStatuses = ['pending', 'accepted', 'rejected', 'cancelled'];
+      if (!updateData.status || !validStatuses.includes(updateData.status)) {
+        return res.status(400).json({ 
+          error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` 
+        });
+      }
+    }
+    
+    // Gérer les notes si fournies
     if (req.body.notes !== undefined && req.body.notes !== null) {
       updateData.notes = req.body.notes;
-  }
-  
-    const validStatuses = ['pending', 'accepted', 'rejected', 'cancelled'];
-    if (!updateData.status || !validStatuses.includes(updateData.status)) {
+    }
+    
+    // Gérer le mode de paiement si fourni
+    if (req.body.payment_method !== undefined) {
+      const validPaymentMethods = ['espèces', 'carte', 'virement', 'chèque', null];
+      if (req.body.payment_method !== null && !validPaymentMethods.includes(req.body.payment_method)) {
+        return res.status(400).json({ 
+          error: `Invalid payment_method. Must be one of: ${validPaymentMethods.filter(m => m !== null).join(', ')}, or null` 
+        });
+      }
+      updateData.payment_method = req.body.payment_method;
+    }
+    
+    // Vérifier qu'au moins un champ est fourni
+    if (Object.keys(updateData).length === 0) {
       return res.status(400).json({ 
-        error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` 
+        error: 'No valid fields to update' 
       });
     }
 

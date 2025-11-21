@@ -583,7 +583,7 @@ const server = http.createServer(async (req, res) => {
           return;
         }
 
-        // Vérifier si le créneau demandé chevauche avec une plage bloquée de 1h30
+        // Vérifier si le créneau demandé chevauche avec une plage bloquée de ±1h30
         if (existingAppointments && existingAppointments.length > 0) {
           // Fonction pour formater les minutes en HH:MM
           function formatTimeMinutes(minutes) {
@@ -593,23 +593,30 @@ const server = http.createServer(async (req, res) => {
           }
 
           const [newHour, newMin] = appointment_time.split(':').map(Number);
-          const newTime = newHour * 60 + newMin; // Convertir en minutes depuis minuit
+          const newTime = newHour * 60 + newMin;
+          const newEndTime = newTime + 90; // Fin du nouveau rendez-vous (+1h30)
           
           for (const apt of existingAppointments) {
             const [aptHour, aptMin] = apt.appointment_time.split(':').map(Number);
-            const aptTime = aptHour * 60 + aptMin; // Convertir en minutes depuis minuit
+            const aptTime = aptHour * 60 + aptMin;
             
-            // Plage bloquée : de l'heure du rendez-vous jusqu'à 1h30 après (90 minutes)
-            // Exemple: rendez-vous à 9h30 (570 min) → bloque de 570 à 660 minutes (11h00)
-            const blockStart = aptTime;
-            const blockEnd = aptTime + 90; // +1h30
+            // Plage bloquée : de 1h30 avant le rendez-vous jusqu'à 1h30 après
+            // Exemple: rendez-vous à 11h30 (690 min) → bloque de 10h00 (600 min) à 13h00 (780 min)
+            const blockStart = Math.max(0, aptTime - 90); // Ne pas aller avant minuit
+            const blockEnd = aptTime + 90; // +1h30 après
             
-            // Vérifier si le créneau demandé est dans cette plage bloquée
-            if (newTime >= blockStart && newTime < blockEnd) {
+            // Bloquer si :
+            // 1. Le créneau commence dans la plage bloquée (inclus le début, exclu la fin)
+            // 2. OU le créneau se termine moins de 1h30 avant le début du rendez-vous
+            //    (créneaux qui commencent avant blockStart mais se terminent après blockStart)
+            const startsInBlockedRange = newTime >= blockStart && newTime < blockEnd;
+            const endsTooCloseBefore = newTime < blockStart && newEndTime > blockStart;
+            
+            if (startsInBlockedRange || endsTooCloseBefore) {
               res.writeHead(409, { 'Content-Type': 'application/json' });
               res.end(JSON.stringify({ 
                 error: 'Ce créneau est déjà réservé',
-                message: `Un rendez-vous existe à ${apt.appointment_time} et bloque les créneaux jusqu'à ${formatTimeMinutes(blockEnd)}`
+                message: `Un rendez-vous existe à ${apt.appointment_time} et bloque les créneaux de ${formatTimeMinutes(blockStart)} à ${formatTimeMinutes(blockEnd)}`
               }));
               return;
             }
@@ -780,42 +787,49 @@ const server = http.createServer(async (req, res) => {
         }
 
         // Nettoyer le body pour ne garder que les champs autorisés
-        const updateData = {
-          status: body.status, // Le statut doit être en minuscules
-          ...(body.notes !== undefined && { notes: body.notes })
-        };
-
-        // Vérifier que le statut est valide
-        const validStatuses = ['pending', 'accepted', 'rejected', 'cancelled'];
-        if (!updateData.status || !validStatuses.includes(updateData.status.toLowerCase())) {
+        const updateData = {};
+        
+        // Gérer le statut si fourni
+        if (body.status !== undefined) {
+          const validStatuses = ['pending', 'accepted', 'rejected', 'cancelled'];
+          const status = body.status?.toLowerCase()?.trim();
+          if (!status || !validStatuses.includes(status)) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` }));
+            return;
+          }
+          updateData.status = status;
+        }
+        
+        // Gérer les notes si fournies
+        if (body.notes !== undefined && body.notes !== null) {
+          updateData.notes = body.notes;
+        }
+        
+        // Gérer le mode de paiement si fourni
+        if (body.payment_method !== undefined) {
+          const validPaymentMethods = ['espèces', 'carte', 'virement', 'chèque', null];
+          if (body.payment_method !== null && !validPaymentMethods.includes(body.payment_method)) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ 
+              error: `Invalid payment_method. Must be one of: ${validPaymentMethods.filter(m => m !== null).join(', ')}, or null` 
+            }));
+            return;
+          }
+          updateData.payment_method = body.payment_method;
+        }
+        
+        // Vérifier qu'au moins un champ est fourni
+        if (Object.keys(updateData).length === 0) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` }));
+          res.end(JSON.stringify({ error: 'No valid fields to update' }));
           return;
         }
-
-        // S'assurer que le statut est en minuscules
-        updateData.status = updateData.status.toLowerCase().trim();
 
         console.log('Updating appointment:', id, 'with data:', updateData);
-        console.log('Status value:', updateData.status, 'Type:', typeof updateData.status);
 
-        // Vérifier à nouveau juste avant l'update
-        if (!validStatuses.includes(updateData.status)) {
-          console.error('❌ Status validation failed before update:', updateData.status);
-          res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ 
-            error: `Invalid status value: "${updateData.status}". Must be one of: ${validStatuses.join(', ')}` 
-          }));
-          return;
-        }
-
-        // Nettoyer complètement l'objet - ne garder QUE status et notes si défini
-        const cleanUpdateData = {
-          status: updateData.status
-        };
-        if (updateData.notes !== undefined && updateData.notes !== null) {
-          cleanUpdateData.notes = updateData.notes;
-        }
+        // Nettoyer complètement l'objet
+        const cleanUpdateData = { ...updateData };
 
         if (isDevelopment) {
           console.log('Clean update data:', JSON.stringify(cleanUpdateData));

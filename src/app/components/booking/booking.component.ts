@@ -323,17 +323,21 @@ export class BookingComponent implements OnInit, OnChanges {
         const endTime = new Date();
         endTime.setHours(endHour, endMin, 0, 0);
         
-        // Déterminer le dernier créneau possible
-        let lastAppointmentTime = endTime;
+        // Déterminer le dernier créneau possible : 1h30 avant l'heure de fermeture
+        let lastAppointmentTime = new Date(endTime);
+        lastAppointmentTime.setMinutes(lastAppointmentTime.getMinutes() - 90); // -1h30
+
+        // Si last_appointment est défini et plus restrictif, l'utiliser
         if (dayHours.last_appointment) {
           const lastMatch = dayHours.last_appointment.match(/(\d{1,2})h(?:(\d{2}))?/);
           if (lastMatch) {
             const lastHour = parseInt(lastMatch[1]);
             const lastMin = lastMatch[2] ? parseInt(lastMatch[2]) : 0;
-            lastAppointmentTime = new Date();
-            lastAppointmentTime.setHours(lastHour, lastMin, 0, 0);
-            if (lastAppointmentTime > endTime) {
-              lastAppointmentTime = endTime;
+            const customLastTime = new Date();
+            customLastTime.setHours(lastHour, lastMin, 0, 0);
+            // Utiliser le plus restrictif entre (endTime - 1h30) et last_appointment
+            if (customLastTime < lastAppointmentTime) {
+              lastAppointmentTime = customLastTime;
             }
           }
         }
@@ -389,7 +393,7 @@ export class BookingComponent implements OnInit, OnChanges {
     return `${year}-${month}-${day}`;
   }
 
-  // Vérifier si un créneau est dans une plage bloquée de 1h30 (du début du rendez-vous jusqu'à 1h30 après)
+  // Vérifier si un créneau est dans une plage bloquée de ±1h30 autour d'un rendez-vous
   private isTimeInBlockedSlot(dateStr: string, timeStr: string): boolean {
     // Seuls les rendez-vous pending ou accepted bloquent les créneaux
     const blockingAppointments = this.existingAppointments.filter(apt => 
@@ -401,24 +405,29 @@ export class BookingComponent implements OnInit, OnChanges {
       return false;
     }
 
+    // Convertir le créneau à vérifier en minutes depuis minuit
     const [checkHour, checkMin] = timeStr.split(':').map(Number);
-    const checkTime = new Date();
-    checkTime.setHours(checkHour, checkMin, 0, 0);
+    const checkTime = checkHour * 60 + checkMin;
+    const checkEndTime = checkTime + 90; // Fin du créneau (+1h30)
 
-    // Pour chaque rendez-vous bloquant, vérifier si le créneau est dans la plage de 1h30
+    // Pour chaque rendez-vous bloquant, vérifier si le créneau doit être bloqué
     for (const apt of blockingAppointments) {
       const [aptHour, aptMin] = apt.appointment_time.split(':').map(Number);
-      const aptTime = new Date();
-      aptTime.setHours(aptHour, aptMin, 0, 0);
+      const aptTime = aptHour * 60 + aptMin;
 
-      // Plage bloquée : du début du rendez-vous jusqu'à 1h30 après
-      // Exemple: rendez-vous à 9h30 → bloque de 9h30 à 11h00
-      const blockStart = new Date(aptTime);
-      const blockEnd = new Date(aptTime);
-      blockEnd.setMinutes(blockEnd.getMinutes() + 90); // +1h30
+      // Plage bloquée : de 1h30 avant le rendez-vous jusqu'à 1h30 après
+      // Exemple: rendez-vous à 11h30 (690 min) → bloque de 10h00 (600 min) à 13h00 (780 min)
+      const blockStart = Math.max(0, aptTime - 90); // Ne pas aller avant minuit
+      const blockEnd = aptTime + 90; // +1h30 après
 
-      // Si le créneau est dans la plage bloquée (inclus le début, exclu la fin)
-      if (checkTime >= blockStart && checkTime < blockEnd) {
+      // Bloquer si :
+      // 1. Le créneau commence dans la plage bloquée (inclus le début, exclu la fin)
+      // 2. OU le créneau se termine moins de 1h30 avant le début du rendez-vous
+      //    (créneaux qui commencent avant blockStart mais se terminent après blockStart)
+      const startsInBlockedRange = checkTime >= blockStart && checkTime < blockEnd;
+      const endsTooCloseBefore = checkTime < blockStart && checkEndTime > blockStart;
+
+      if (startsInBlockedRange || endsTooCloseBefore) {
         return true;
       }
     }
