@@ -43,6 +43,10 @@ export class ClientDetailComponent implements OnInit {
   giftCardAmount: number = 0;
   saleNotes: string = '';
 
+  // Modal de confirmation de suppression
+  showDeleteConfirmModal = false;
+  saleToDelete: AdditionalSale | null = null;
+
   // Statistiques client
   prestations: Prestation[] = [];
   clientAverageBasket: number = 0;
@@ -373,13 +377,14 @@ export class ClientDetailComponent implements OnInit {
 
   deleteSale(sale: AdditionalSale): void {
     if (!this.client || !this.client.additionalSales) return;
+    this.saleToDelete = sale;
+    this.showDeleteConfirmModal = true;
+  }
 
-    // Demander confirmation
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cette vente additionnelle ?')) {
-      return;
-    }
+  confirmDeleteSale(): void {
+    if (!this.client || !this.client.additionalSales || !this.saleToDelete) return;
 
-    const updatedSales = this.client.additionalSales.filter(s => s !== sale);
+    const updatedSales = this.client.additionalSales.filter(s => s !== this.saleToDelete);
     
     // Préserver les récompenses de fidélité lors de la mise à jour
     const currentRewards = this.client.loyaltyRewards || [];
@@ -394,6 +399,7 @@ export class ClientDetailComponent implements OnInit {
           this.client.additionalSales = updatedSales;
         }
         this.isSaving = false;
+        this.closeDeleteConfirmModal();
         this.notificationService.success('Vente additionnelle supprimée avec succès');
       },
       error: (error) => {
@@ -402,5 +408,16 @@ export class ClientDetailComponent implements OnInit {
         this.notificationService.error('Erreur lors de la suppression de la vente');
       }
     });
+  }
+
+  closeDeleteConfirmModal(): void {
+    this.showDeleteConfirmModal = false;
+    this.saleToDelete = null;
+  }
+
+  onDeleteModalOverlayClick(event: MouseEvent): void {
+    if ((event.target as HTMLElement).classList.contains('modal-overlay')) {
+      this.closeDeleteConfirmModal();
+    }
   }
 }
