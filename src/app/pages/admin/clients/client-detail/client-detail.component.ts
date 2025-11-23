@@ -9,9 +9,10 @@ import {
     APPOINTMENT_STATUS_LABELS,
     AppointmentStatus
 } from '../../../../models/appointment-status.enum';
-import {ClientDetail, LoyaltyReward} from '../../../../models/clients.model';
+import {AdditionalSale, ClientDetail, LoyaltyReward} from '../../../../models/clients.model';
+import {AdditionalSalesService} from '../../../../services/additional-sales.service';
 import {ClientService} from '../../../../services/client.service';
-import {Appointment, Client, ContentService} from '../../../../services/content.service';
+import {Appointment, Client, ContentService, Creation} from '../../../../services/content.service';
 import {LoyaltyService} from '../../../../services/loyalty.service';
 import {NotificationService} from '../../../../services/notification.service';
 import {BirthdayUtils} from '../../../../utils/birthday.utils';
@@ -32,11 +33,20 @@ export class ClientDetailComponent implements OnInit {
   isEditingBirthdate = false;
   clientId: string = '';
   birthdateInput: string = '';
+  
+  // Ventes additionnelles
+  creations: Creation[] = [];
+  isAddingSale = false;
+  saleType: 'creation' | 'gift_card' = 'creation';
+  selectedCreationId: string = '';
+  giftCardAmount: number = 0;
+  saleNotes: string = '';
 
   constructor(
     private contentService: ContentService,
     private clientService: ClientService,
     private loyaltyService: LoyaltyService,
+    private additionalSalesService: AdditionalSalesService,
     private notificationService: NotificationService,
     private route: ActivatedRoute,
     private router: Router
@@ -46,6 +56,20 @@ export class ClientDetailComponent implements OnInit {
     this.route.params.subscribe(params => {
       this.clientId = params['id'];
       this.loadClientDetails();
+    });
+    
+    // Charger les créations pour le formulaire de vente
+    this.loadCreations();
+  }
+
+  loadCreations(): void {
+    this.contentService.getCreations().subscribe({
+      next: (creations) => {
+        this.creations = creations;
+      },
+      error: (error) => {
+        console.error('Erreur lors du chargement des créations:', error);
+      }
     });
   }
 
@@ -87,6 +111,9 @@ export class ClientDetailComponent implements OnInit {
             this.client.lastRewardDate = this.client.loyaltyRewards.length > 0 
               ? this.client.loyaltyRewards.sort((a: LoyaltyReward, b: LoyaltyReward) => b.date.localeCompare(a.date))[0].date 
               : null;
+
+            // Ajouter les ventes additionnelles
+            this.client.additionalSales = this.additionalSalesService.parseAdditionalSales(clientData?.notes);
 
             // Initialiser le champ d'édition
             this.birthdateInput = clientData?.birthdate || '';
@@ -204,7 +231,11 @@ export class ClientDetailComponent implements OnInit {
 
     const newReward = this.loyaltyService.createReward(type, description);
     const updatedRewards = [...(this.client.loyaltyRewards || []), newReward];
-    const updatedNotes = this.loyaltyService.formatNotesWithRewards(this.client.notes, updatedRewards);
+    
+    // Préserver les ventes additionnelles lors de la mise à jour
+    const currentSales = this.client.additionalSales || [];
+    let updatedNotes = this.loyaltyService.formatNotesWithRewards(this.client.notes, updatedRewards);
+    updatedNotes = this.additionalSalesService.formatNotesWithSales(updatedNotes, currentSales);
 
     this.isSaving = true;
     this.contentService.updateClient(this.client.email, { notes: updatedNotes }).subscribe({
@@ -221,6 +252,114 @@ export class ClientDetailComponent implements OnInit {
         console.error('Erreur lors de l\'enregistrement de la récompense:', error);
         this.isSaving = false;
         this.notificationService.error('Erreur lors de l\'enregistrement de la récompense');
+      }
+    });
+  }
+
+  // Ventes additionnelles
+  openAddSaleForm(): void {
+    this.isAddingSale = true;
+    this.saleType = 'creation';
+    this.selectedCreationId = '';
+    this.giftCardAmount = 0;
+    this.saleNotes = '';
+  }
+
+  cancelAddSale(): void {
+    this.isAddingSale = false;
+    this.saleType = 'creation';
+    this.selectedCreationId = '';
+    this.giftCardAmount = 0;
+    this.saleNotes = '';
+  }
+
+  saveSale(): void {
+    if (!this.client) return;
+
+    // Validation
+    if (this.saleType === 'creation' && !this.selectedCreationId) {
+      this.notificationService.error('Veuillez sélectionner une création');
+      return;
+    }
+
+    if (this.saleType === 'gift_card' && (!this.giftCardAmount || this.giftCardAmount <= 0)) {
+      this.notificationService.error('Veuillez saisir un montant valide pour la carte cadeau');
+      return;
+    }
+
+    const selectedCreation = this.creations.find(c => c.id === this.selectedCreationId);
+    const newSale = this.additionalSalesService.createSale(
+      this.saleType,
+      this.saleType === 'creation' ? this.selectedCreationId : undefined,
+      this.saleType === 'creation' ? selectedCreation?.name : undefined,
+      this.saleType === 'gift_card' ? this.giftCardAmount : undefined,
+      this.saleNotes || undefined
+    );
+
+    const updatedSales = [...(this.client.additionalSales || []), newSale];
+    
+    // Préserver les récompenses de fidélité lors de la mise à jour
+    const currentRewards = this.client.loyaltyRewards || [];
+    let updatedNotes = this.additionalSalesService.formatNotesWithSales(this.client.notes, updatedSales);
+    updatedNotes = this.loyaltyService.formatNotesWithRewards(updatedNotes, currentRewards);
+
+    this.isSaving = true;
+    this.contentService.updateClient(this.client.email, { notes: updatedNotes }).subscribe({
+      next: (updatedClient) => {
+        if (this.client) {
+          this.client.notes = updatedClient.notes;
+          this.client.additionalSales = updatedSales;
+        }
+        this.isSaving = false;
+        this.isAddingSale = false;
+        this.notificationService.success('Vente additionnelle enregistrée avec succès');
+        this.cancelAddSale();
+      },
+      error: (error) => {
+        console.error('Erreur lors de l\'enregistrement de la vente:', error);
+        this.isSaving = false;
+        this.notificationService.error('Erreur lors de l\'enregistrement de la vente');
+      }
+    });
+  }
+
+  getSaleDescription(sale: AdditionalSale): string {
+    if (sale.type === 'creation') {
+      return sale.creationName || 'Création';
+    } else {
+      return `Carte cadeau - ${sale.giftCardAmount}€`;
+    }
+  }
+
+  deleteSale(sale: AdditionalSale): void {
+    if (!this.client || !this.client.additionalSales) return;
+
+    // Demander confirmation
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cette vente additionnelle ?')) {
+      return;
+    }
+
+    const updatedSales = this.client.additionalSales.filter(s => s !== sale);
+    
+    // Préserver les récompenses de fidélité lors de la mise à jour
+    const currentRewards = this.client.loyaltyRewards || [];
+    let updatedNotes = this.additionalSalesService.formatNotesWithSales(this.client.notes, updatedSales);
+    updatedNotes = this.loyaltyService.formatNotesWithRewards(updatedNotes, currentRewards);
+
+    this.isSaving = true;
+    this.contentService.updateClient(this.client.email, { notes: updatedNotes }).subscribe({
+      next: (updatedClient) => {
+        if (this.client) {
+          this.client.notes = updatedClient.notes;
+          this.client.additionalSales = updatedSales;
+        }
+        this.isSaving = false;
+        this.notificationService.success('Vente additionnelle supprimée avec succès');
+      },
+      error: (error) => {
+        console.error('Erreur lors de la suppression de la vente:', error);
+        this.isSaving = false;
+        this.notificationService.error('Erreur lors de la suppression de la vente');
       }
     });
   }

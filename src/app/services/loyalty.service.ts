@@ -35,19 +35,19 @@ export class LoyaltyService {
    * Formate les notes avec les récompenses de fidélité
    * @param originalNotes Notes originales du client
    * @param rewards Liste des récompenses à inclure
-   * @returns Notes formatées avec les récompenses
+   * @returns Notes formatées avec les récompenses (préserve les autres blocs comme les ventes additionnelles)
    */
   formatNotesWithRewards(originalNotes: string | undefined, rewards: LoyaltyReward[]): string {
     let notes = originalNotes || '';
     
-    // Supprimer l'ancien bloc de récompenses s'il existe
+    // Supprimer uniquement l'ancien bloc de récompenses s'il existe
     const regex = new RegExp(
       `\\${this.LOYALTY_TAG_START}.*?\\${this.LOYALTY_TAG_END}`,
       's'
     );
     notes = notes.replace(regex, '').trim();
     
-    // Ajouter le nouveau bloc
+    // Ajouter le nouveau bloc de récompenses
     if (rewards.length > 0) {
       const rewardsJson = JSON.stringify(rewards);
       const rewardsBlock = `${this.LOYALTY_TAG_START}${rewardsJson}${this.LOYALTY_TAG_END}`;

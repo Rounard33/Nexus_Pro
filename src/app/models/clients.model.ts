@@ -6,6 +6,15 @@ export interface LoyaltyReward {
   description: string;
 }
 
+export interface AdditionalSale {
+  date: string;
+  type: 'creation' | 'gift_card';
+  creationId?: string; // ID de la création si type = 'creation'
+  creationName?: string; // Nom de la création
+  giftCardAmount?: number; // Montant de la carte cadeau si type = 'gift_card'
+  notes?: string; // Notes optionnelles
+}
+
 export interface ClientProfile {
   id?: string; // UUID de la base (pour référence interne)
   clientId?: string; // Identifiant opaque pour les URLs
@@ -24,6 +33,7 @@ export interface ClientProfile {
   eligibleTreatments?: number;
   loyaltyRewards?: LoyaltyReward[];
   lastRewardDate?: string | null;
+  additionalSales?: AdditionalSale[];
   notes?: string;
 }
 

@@ -248,6 +248,136 @@
       </div>
     </div>
 
+    <!-- Ventes additionnelles -->
+    <div class="additional-sales-section">
+      <div class="sales-header">
+        <h3 class="sales-title">Ventes additionnelles</h3>
+        <button 
+          class="add-sale-btn" 
+          (click)="openAddSaleForm()"
+          [disabled]="isSaving">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          <span>Ajouter une vente</span>
+        </button>
+      </div>
+
+      <!-- Formulaire d'ajout de vente -->
+      <div class="add-sale-form" *ngIf="isAddingSale">
+        <div class="form-group">
+          <label class="form-label">Type de vente</label>
+          <div class="sale-type-selector">
+            <button 
+              class="type-btn" 
+              [class.active]="saleType === 'creation'"
+              (click)="saleType = 'creation'">
+              Création
+            </button>
+            <button 
+              class="type-btn" 
+              [class.active]="saleType === 'gift_card'"
+              (click)="saleType = 'gift_card'">
+              Carte cadeau
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group" *ngIf="saleType === 'creation'">
+          <label for="creation-select" class="form-label">Création vendue *</label>
+          <select 
+            id="creation-select"
+            [(ngModel)]="selectedCreationId"
+            class="form-select"
+            [disabled]="isSaving">
+            <option value="">Sélectionner une création</option>
+            <option *ngFor="let creation of creations" [value]="creation.id">
+              {{ creation.name }} - {{ creation.price }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group" *ngIf="saleType === 'gift_card'">
+          <label for="gift-card-amount" class="form-label">Montant de la carte cadeau (€) *</label>
+          <input 
+            type="number"
+            id="gift-card-amount"
+            [(ngModel)]="giftCardAmount"
+            class="form-input"
+            min="0"
+            step="0.01"
+            placeholder="0.00"
+            [disabled]="isSaving">
+        </div>
+
+        <div class="form-group">
+          <label for="sale-notes" class="form-label">Notes (optionnel)</label>
+          <textarea 
+            id="sale-notes"
+            [(ngModel)]="saleNotes"
+            class="form-textarea"
+            rows="3"
+            placeholder="Notes supplémentaires..."
+            [disabled]="isSaving"></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button 
+            class="save-btn" 
+            (click)="saveSale()"
+            [disabled]="isSaving || (saleType === 'creation' && !selectedCreationId) || (saleType === 'gift_card' && (!giftCardAmount || giftCardAmount <= 0))">
+            <span *ngIf="!isSaving">Enregistrer</span>
+            <span *ngIf="isSaving">Enregistrement...</span>
+          </button>
+          <button 
+            class="cancel-btn" 
+            (click)="cancelAddSale()"
+            [disabled]="isSaving">
+            Annuler
+          </button>
+        </div>
+      </div>
+
+      <!-- Liste des ventes -->
+      <div class="sales-list" *ngIf="client.additionalSales && client.additionalSales.length > 0">
+        <div class="sale-item" *ngFor="let sale of client.additionalSales">
+          <div class="sale-icon" [class.sale-creation]="sale.type === 'creation'" [class.sale-gift-card]="sale.type === 'gift_card'">
+            <svg *ngIf="sale.type === 'creation'" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+              <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+              <line x1="12" y1="22.08" x2="12" y2="12"/>
+            </svg>
+            <svg *ngIf="sale.type === 'gift_card'" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+              <line x1="1" y1="10" x2="23" y2="10"/>
+            </svg>
+          </div>
+          <div class="sale-details">
+            <span class="sale-description">{{ getSaleDescription(sale) }}</span>
+            <span class="sale-date">{{ formatDate(sale.date) }}</span>
+            <span class="sale-notes" *ngIf="sale.notes">{{ sale.notes }}</span>
+          </div>
+          <button 
+            class="delete-sale-btn" 
+            (click)="deleteSale(sale)"
+            [disabled]="isSaving"
+            title="Supprimer cette vente">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+              <line x1="10" y1="11" x2="10" y2="17"/>
+              <line x1="14" y1="11" x2="14" y2="17"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="empty-state" *ngIf="!client.additionalSales || client.additionalSales.length === 0">
+        <p>Aucune vente additionnelle enregistrée</p>
+      </div>
+    </div>
+
     <!-- Historique des rendez-vous -->
     <div class="appointments-history">
       <h2 class="section-title">Historique des rendez-vous</h2>
