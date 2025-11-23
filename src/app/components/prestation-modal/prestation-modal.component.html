@@ -26,7 +26,7 @@
       </div>
       <div class="modal-actions">
         <button class="btn btn-primary btn-lg" (click)="onBook()">
-          Réserver
+          {{ prestation.requiresContact ? 'Contacter' : 'Réserver' }}
         </button>
       </div>
     </div>

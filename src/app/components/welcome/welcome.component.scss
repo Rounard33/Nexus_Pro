@@ -18,7 +18,7 @@
   z-index: 1;
   overflow: hidden;
   // Fixer la hauteur pour qu'elle ne soit pas affectée par le contenu
-  height: 100vh;
+  height: auto;
   min-height: 100vh;
 
   img {
@@ -204,7 +204,7 @@
 
 .description-welcome {
   font-size: 1.25rem;
-  color: var(--primary-900);
+  color: var(--gray-200);
   line-height: 1.8;
   margin-bottom: 3rem;
   font-weight: 300;

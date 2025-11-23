@@ -1,6 +1,6 @@
 import {Injectable} from '@angular/core';
 import {AppointmentStats} from '../models/statistics.model';
-import {Appointment} from './content.service';
+import {Appointment, Prestation} from './content.service';
 
 @Injectable({ providedIn: 'root' })
 export class StatisticsService {
@@ -56,5 +56,109 @@ export class StatisticsService {
     return Object.entries(prestationCounts)
       .map(([prestation, count]) => ({prestation, count}))
       .sort((a, b) => b.count - a.count);
+  }
+
+  /**
+   * Calcule la répartition des méthodes de paiement
+   * @param appointments Liste des rendez-vous acceptés
+   * @returns Objet avec le nombre pour chaque méthode de paiement
+   */
+  calculatePaymentMethods(appointments: Appointment[]): {
+    espèces: number;
+    carte: number;
+    virement: number;
+    chèque: number;
+  } {
+    const accepted = appointments.filter(a => a.status === 'accepted');
+    const stats = {
+      espèces: 0,
+      carte: 0,
+      virement: 0,
+      chèque: 0,
+    };
+
+    accepted.forEach(appointment => {
+      const method = appointment.payment_method;
+      if (method === 'espèces') {
+        stats.espèces++;
+      } else if (method === 'carte') {
+        stats.carte++;
+      } else if (method === 'virement') {
+        stats.virement++;
+      } else if (method === 'chèque') {
+        stats.chèque++;
+      }
+    });
+
+    return stats;
+  }
+
+  /**
+   * Calcule le nombre moyen de visites par client dans l'année en cours
+   * @param appointments Liste des rendez-vous acceptés
+   * @returns Nombre moyen de visites par client
+   */
+  calculateAverageClientVisits(appointments: Appointment[]): number {
+    const currentYear = new Date().getFullYear();
+    const accepted = appointments.filter(a => {
+      if (a.status !== 'accepted' || !a.appointment_date) return false;
+      const appointmentYear = new Date(a.appointment_date).getFullYear();
+      return appointmentYear === currentYear;
+    });
+
+    // Compter les visites par client (par email)
+    const clientVisits: {[email: string]: number} = {};
+    accepted.forEach(appointment => {
+      const email = appointment.client_email.toLowerCase();
+      clientVisits[email] = (clientVisits[email] || 0) + 1;
+    });
+
+    const totalClients = Object.keys(clientVisits).length;
+    if (totalClients === 0) return 0;
+
+    const totalVisits = Object.values(clientVisits).reduce((sum, count) => sum + count, 0);
+    return Math.round((totalVisits / totalClients) * 10) / 10; // Arrondir à 1 décimale
+  }
+
+  /**
+   * Calcule le panier moyen (montant moyen par rendez-vous)
+   * @param appointments Liste des rendez-vous acceptés
+   * @param prestations Liste des prestations avec leurs prix
+   * @returns Panier moyen en euros
+   */
+  calculateAverageBasket(appointments: Appointment[], prestations: Prestation[]): number {
+    const accepted = appointments.filter(a => a.status === 'accepted' && a.prestation_id);
+    
+    if (accepted.length === 0) return 0;
+
+    // Créer un map des prestations par ID pour accès rapide
+    const prestationMap = new Map<string, Prestation>();
+    prestations.forEach(p => {
+      if (p.id) {
+        prestationMap.set(p.id, p);
+      }
+    });
+
+    let totalAmount = 0;
+    let countWithPrice = 0;
+
+    accepted.forEach(appointment => {
+      if (!appointment.prestation_id) return;
+      
+      const prestation = prestationMap.get(appointment.prestation_id);
+      if (!prestation || !prestation.price) return;
+
+      // Extraire le prix numérique de la chaîne (ex: "50€" -> 50)
+      const priceStr = prestation.price.replace(/[^\d,.]/g, '').replace(',', '.');
+      const price = parseFloat(priceStr);
+      
+      if (!isNaN(price)) {
+        totalAmount += price;
+        countWithPrice++;
+      }
+    });
+
+    if (countWithPrice === 0) return 0;
+    return Math.round((totalAmount / countWithPrice) * 100) / 100; // Arrondir à 2 décimales
   }
 }

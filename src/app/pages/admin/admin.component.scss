@@ -257,11 +257,11 @@
   }
 
   .sidebar-nav {
-    padding: 0.75rem 0;
-    overflow-y: auto;
-    // top: 150px;
-    // position: absolute;
-  }
+  flex: 1;
+  padding: 1rem 0;
+  overflow-y: auto;
+  min-height: 0;
+}
 
   .nav-item {
     padding: 0.75rem 1rem;
@@ -283,7 +283,10 @@
   }
 
   .sidebar-footer {
-    padding: 1rem;
+    padding: 1.5rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    flex-shrink: 0;
+    margin-top: auto;
   }
 
   .logout-btn {

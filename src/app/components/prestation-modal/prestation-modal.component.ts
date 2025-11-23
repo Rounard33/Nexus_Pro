@@ -1,5 +1,6 @@
 import {CommonModule} from '@angular/common';
-import {Component, EventEmitter, HostListener, Input, Output} from '@angular/core';
+import {Component, EventEmitter, HostListener, inject, Input, Output} from '@angular/core';
+import {Router} from '@angular/router';
 import {Prestation} from '../services/services.component';
 
 @Component({
@@ -14,6 +15,8 @@ export class PrestationModalComponent {
   @Output() close = new EventEmitter<void>();
   @Output() book = new EventEmitter<Prestation>();
 
+  private router = inject(Router);
+
   @HostListener('document:keydown.escape', ['$event'])
   onEscapeKey(event: KeyboardEvent): void {
     this.closeModal();
@@ -25,8 +28,13 @@ export class PrestationModalComponent {
 
   onBook(): void {
     if (this.prestation) {
-      this.book.emit(this.prestation);
-      this.closeModal();
+      if (this.prestation.requiresContact) {
+        this.closeModal();
+        this.router.navigate(['/contact']);
+      } else {
+        this.book.emit(this.prestation);
+        this.closeModal();
+      }
     }
   }
 

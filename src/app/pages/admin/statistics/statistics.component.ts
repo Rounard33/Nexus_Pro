@@ -1,9 +1,8 @@
 import {CommonModule} from '@angular/common';
 import {Component, OnInit} from '@angular/core';
 import {PrestationStats, StatCard} from '../../../models/statistics.model';
-import {Appointment, ContentService} from '../../../services/content.service';
+import {Appointment, ContentService, Prestation} from '../../../services/content.service';
 import {StatisticsService} from '../../../services/statistics.service';
-import {DateUtils} from '../../../utils/date.utils';
 
 @Component({
   selector: 'app-statistics',
@@ -15,6 +14,9 @@ import {DateUtils} from '../../../utils/date.utils';
 export class StatisticsComponent implements OnInit {
   stats: StatCard[] = [];
   topPrestations: PrestationStats[] = [];
+  paymentMethods: {[key: string]: number} = {};
+  averageClientVisits: number = 0;
+  averageBasket: number = 0;
   isLoading = true;
 
   constructor(
@@ -27,16 +29,28 @@ export class StatisticsComponent implements OnInit {
   }
 
   private loadStatistics(): void {
-    // Charger tous les rendez-vous du mois
-    this.contentService.getAppointments(
-      undefined,
-      DateUtils.getFirstDayOfMonth(),
-      DateUtils.getLastDayOfMonth()
-    ).subscribe({
+    // Charger tous les rendez-vous de l'année en cours
+    const currentYear = new Date().getFullYear();
+    const startOfYear = `${currentYear}-01-01`;
+    const endOfYear = `${currentYear}-12-31`;
+
+    // Charger les rendez-vous et les prestations en parallèle
+    this.contentService.getAppointments(undefined, startOfYear, endOfYear).subscribe({
       next: (appointments) => {
-        this.calculateStats(appointments);
-        this.calculateTopPrestations(appointments);
-        this.isLoading = false;
+        this.contentService.getPrestations().subscribe({
+          next: (prestations) => {
+            this.calculateStats(appointments);
+            this.calculateTopPrestations(appointments);
+            this.calculatePaymentMethods(appointments);
+            this.calculateAverageClientVisits(appointments);
+            this.calculateAverageBasket(appointments, prestations);
+            this.isLoading = false;
+          },
+          error: (error) => {
+            console.error('Erreur lors du chargement des prestations:', error);
+            this.isLoading = false;
+          }
+        });
       },
       error: (error) => {
         console.error('Erreur lors du chargement des statistiques:', error);
@@ -91,5 +105,55 @@ export class StatisticsComponent implements OnInit {
     this.topPrestations = this.statisticsService
       .calculatePrestationStats(appointments)
       .slice(0, 5);
+  }
+
+  private calculatePaymentMethods(appointments: Appointment[]): void {
+    const paymentStats = this.statisticsService.calculatePaymentMethods(appointments);
+    this.paymentMethods = paymentStats;
+  }
+
+  private calculateAverageClientVisits(appointments: Appointment[]): void {
+    this.averageClientVisits = this.statisticsService.calculateAverageClientVisits(appointments);
+  }
+
+  private calculateAverageBasket(appointments: Appointment[], prestations: Prestation[]): void {
+    this.averageBasket = this.statisticsService.calculateAverageBasket(appointments, prestations);
+  }
+
+  getPaymentMethodLabel(method: string): string {
+    const labels: {[key: string]: string} = {
+      'espèces': 'Espèces',
+      'carte': 'Carte bancaire',
+      'virement': 'Virement',
+      'chèque': 'Chèque'
+    };
+    return labels[method] || method;
+  }
+
+  getPaymentMethodPercentage(method: string): number {
+    const total = Object.values(this.paymentMethods).reduce((sum, count) => sum + count, 0);
+    if (total === 0) return 0;
+    const count = this.paymentMethods[method] || 0;
+    return (count / total) * 100;
+  }
+
+  getPaymentMethodsSorted(): Array<{key: string; count: number; percentage: number}> {
+    if (!this.paymentMethods) return [];
+    
+    const total = this.getTotalPayments();
+    const methods = ['espèces', 'carte', 'virement', 'chèque'];
+    
+    return methods
+      .map(key => ({
+        key,
+        count: this.paymentMethods[key] || 0,
+        percentage: total > 0 ? (this.paymentMethods[key] || 0) / total * 100 : 0
+      }))
+      .sort((a, b) => b.count - a.count); // Trier par nombre décroissant
+  } 
+
+  getTotalPayments(): number {
+    if (!this.paymentMethods) return 0;
+    return Object.values(this.paymentMethods).reduce((sum, count) => sum + count, 0);
   }
 }

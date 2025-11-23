@@ -1,5 +1,6 @@
 import {CommonModule} from '@angular/common';
-import {Component, EventEmitter, Input, Output} from '@angular/core';
+import {Component, EventEmitter, inject, Input, Output} from '@angular/core';
+import {Router} from '@angular/router';
 import {SectionHeaderComponent} from '../section-header/section-header.component';
 
 export interface Prestation {
@@ -12,6 +13,7 @@ export interface Prestation {
   shortDescription?: string;
   description: string;
   image: string;
+  requiresContact?: boolean;
 }
 
 @Component({
@@ -25,4 +27,14 @@ export class ServicesComponent {
   @Input() prestations: Prestation[] = [];
   @Output() openDetails = new EventEmitter<Prestation>();
   @Output() openBooking = new EventEmitter<Prestation>();
+
+  private router = inject(Router);
+
+  onBookingClick(prestation: Prestation): void {
+    if (prestation.requiresContact) {
+      this.router.navigate(['/contact']);
+    } else {
+      this.openBooking.emit(prestation);
+    }
+  }
 }

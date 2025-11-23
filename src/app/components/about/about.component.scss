@@ -125,5 +125,15 @@
     clip-path: polygon(0% 0%, 100% 0%, 90% 100%, 0% 100%);
     transform: translateY(-8px);
   }
+
+  legend {
+    font-size: 1.125rem;
+    color: var(--primary-800);
+    line-height: 1.9;
+    margin-bottom: 1.5rem;
+    font-weight: 300;
+    text-align: justify;
+    margin: 0 auto;
+  }
 }
 

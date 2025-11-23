@@ -17,6 +17,7 @@ export interface Prestation {
   short_description?: string;
   description: string;
   image_url?: string;
+  requires_contact?: boolean;
 }
 
 export interface OpeningHours {
@@ -43,6 +44,7 @@ export interface Testimonial {
   role?: string;
   text: string;
   avatar_url?: string;
+  age?: number;
 }
 
 export interface FaqItem {

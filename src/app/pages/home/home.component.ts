@@ -55,24 +55,18 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   constructor(private contentService: ContentService) {}
 
   ngOnInit() {
-    // Écouter la touche Escape pour fermer la modal
     document.addEventListener('keydown', this.handleEscapeKey.bind(this));
     
-    // Charger les données depuis l'API
     this.loadContent();
   }
 
-  // Charger tout le contenu depuis l'API
   private loadContent() {
     this.isLoading = true;
     
-    // Charger les prestations
     this.contentService.getPrestations().subscribe({
       next: (data) => {
-        // Transformer les données de la DB vers le format attendu
-        // IMPORTANT : Conserver l'id pour la réservation
         this.prestations = data.map(p => ({
-          id: p.id, // Conserver l'ID pour la réservation
+          id: p.id,
           name: p.name,
           price: p.price || '',
           atHome: p.at_home,
@@ -80,7 +74,8 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
           duration: p.duration,
           shortDescription: p.short_description,
           description: p.description,
-          image: getPrestationImageUrl(p.image_url) // Utiliser la fonction utilitaire pour construire l'URL Supabase Storage
+          image: getPrestationImageUrl(p.image_url),
+          requiresContact: p.requires_contact || false
         }));
       },
       error: (error) => {
@@ -112,7 +107,8 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
           name: t.name,
           role: t.role || '',
           text: t.text,
-          avatar: t.avatar_url ? getTestimonialAvatarUrl(t.avatar_url) : `https://ui-avatars.com/api/?name=${encodeURIComponent(t.name)}&background=f5f1e8&color=6f5f4e&size=150`
+          avatar: t.avatar_url ? getTestimonialAvatarUrl(t.avatar_url) : `https://ui-avatars.com/api/?name=${encodeURIComponent(t.name)}&background=f5f1e8&color=6f5f4e&size=150`,
+          age: t.age,
         }));
       },
       error: (error) => {

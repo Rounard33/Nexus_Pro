@@ -7,12 +7,10 @@
       description="Découvrez l'expérience de ceux qui m'ont fait confiance">
     </app-section-header>
     
-    <div class="carousel-container" *ngIf="testimonials.length > 0">
+    <div class="carousel-container" *ngIf="testimonials.length > 0" (mouseenter)="onMouseEnter()" (mouseleave)="onMouseLeave()">
       <div 
         class="carousel-wrapper"
-        #carouselWrapper
-        (touchstart)="onTouchStart($event)"
-        (touchend)="onTouchEnd($event)">
+        #carouselWrapper>
         <div class="testimonial-card" [class.transitioning]="isTransitioning">
           <div class="testimonial-content">
             <div class="quote-icon">"</div>
@@ -26,45 +24,12 @@
                 (error)="onImageError($event, currentTestimonial?.name || '')">
             </div>
             <div class="author-info">
-              <div class="author-name">{{ currentTestimonial?.name }}</div>
-              <div class="author-role">{{ currentTestimonial?.role }}</div>
+              <div class="author-name">{{ currentTestimonial?.name }} ({{currentTestimonial?.age}} ans)</div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Navigation Controls -->
-      <div class="carousel-controls" *ngIf="testimonials.length > 1">
-        <button 
-          class="control-btn prev-btn" 
-          (click)="previous()"
-          [disabled]="isTransitioning"
-          aria-label="Témoignage précédent">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M15 18l-6-6 6-6"/>
-          </svg>
-        </button>
-        
-        <div class="dots-container">
-          <button 
-            *ngFor="let testimonial of testimonials; let i = index"
-            class="dot" 
-            [class.active]="i === currentIndex"
-            (click)="goToSlide(i)"
-            [attr.aria-label]="'Aller au témoignage ' + (i + 1)">
-          </button>
-        </div>
-        
-        <button 
-          class="control-btn next-btn" 
-          (click)="next()"
-          [disabled]="isTransitioning"
-          aria-label="Témoignage suivant">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 18l6-6-6-6"/>
-          </svg>
-        </button>
-      </div>
     </div>
   </div>
 </section>
