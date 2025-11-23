@@ -654,6 +654,8 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .sales-title {
@@ -661,6 +663,8 @@
   font-weight: 600;
   color: var(--text-primary, #1a1a1a);
   margin: 0;
+  flex: 1;
+  min-width: 0;
 }
 
 .add-sale-btn {
@@ -676,6 +680,8 @@
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
 
   &:hover:not(:disabled) {
     background: var(--primary-700, #6f5f4e);
@@ -777,6 +783,13 @@
   display: flex;
   gap: 0.75rem;
   margin-top: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.save-btn,
+.cancel-btn {
+  flex: 1;
+  min-width: 120px;
 }
 
 .save-btn,
@@ -1091,6 +1104,70 @@
 
   .appointment-status {
     justify-content: flex-start;
+  }
+
+  // Ventes additionnelles - Mobile
+  .additional-sales-section {
+    padding: 1.25rem;
+  }
+
+  .sales-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+
+  .sales-title {
+    font-size: 1.25rem;
+    text-align: center;
+  }
+
+  .add-sale-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 0.875rem 1.25rem;
+    font-size: 0.9rem;
+  }
+
+  .add-sale-form {
+    padding: 1.25rem;
+  }
+
+  .sale-type-selector {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .type-btn {
+    width: 100%;
+    padding: 0.875rem;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .save-btn,
+  .cancel-btn {
+    width: 100%;
+    min-width: unset;
+  }
+
+  .sale-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1rem;
+  }
+
+  .sale-icon {
+    align-self: flex-start;
+  }
+
+  .delete-sale-btn {
+    align-self: flex-end;
+    margin-left: 0;
+    margin-top: 0.5rem;
   }
 }
 
