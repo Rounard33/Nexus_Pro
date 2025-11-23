@@ -41,54 +41,92 @@
       </div>
 
       <!-- Statistiques -->
-      <div class="client-stats-grid">
-        <div class="stat-card">
-          <div class="stat-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/>
-              <path d="M12 6v6l4 2"/>
-            </svg>
-          </div>
-          <div class="stat-content">
-            <span class="stat-value">{{ client.totalAppointments }}</span>
-            <span class="stat-label">Rendez-vous total</span>
+      <div class="client-stats-container">
+        <!-- Statistiques des rendez-vous -->
+        <div class="stats-section">
+          <h3 class="stats-section-title">Rendez-vous</h3>
+          <div class="client-stats-grid appointments-stats">
+            <div class="stat-card">
+              <div class="stat-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M12 6v6l4 2"/>
+                </svg>
+              </div>
+              <div class="stat-content">
+                <span class="stat-value">{{ client.totalAppointments }}</span>
+                <span class="stat-label">Rendez-vous total</span>
+              </div>
+            </div>
+            <div class="stat-card stat-accepted">
+              <div class="stat-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              </div>
+              <div class="stat-content">
+                <span class="stat-value">{{ client.acceptedAppointments }}</span>
+                <span class="stat-label">Acceptés</span>
+              </div>
+            </div>
+            <div class="stat-card stat-pending" *ngIf="client.pendingAppointments > 0">
+              <div class="stat-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="8" x2="12" y2="12"/>
+                  <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+              </div>
+              <div class="stat-content">
+                <span class="stat-value">{{ client.pendingAppointments }}</span>
+                <span class="stat-label">En attente</span>
+              </div>
+            </div>
+            <div class="stat-card stat-rejected" *ngIf="client.rejectedAppointments > 0">
+              <div class="stat-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="15" y1="9" x2="9" y2="15"/>
+                  <line x1="9" y1="9" x2="15" y2="15"/>
+                </svg>
+              </div>
+              <div class="stat-content">
+                <span class="stat-value">{{ client.rejectedAppointments }}</span>
+                <span class="stat-label">Refusés</span>
+              </div>
+            </div>
           </div>
         </div>
-        <div class="stat-card stat-accepted">
-          <div class="stat-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="20 6 9 17 4 12"/>
-            </svg>
-          </div>
-          <div class="stat-content">
-            <span class="stat-value">{{ client.acceptedAppointments }}</span>
-            <span class="stat-label">Acceptés</span>
-          </div>
-        </div>
-        <div class="stat-card stat-pending" *ngIf="client.pendingAppointments > 0">
-          <div class="stat-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="12" y1="8" x2="12" y2="12"/>
-              <line x1="12" y1="16" x2="12.01" y2="16"/>
-            </svg>
-          </div>
-          <div class="stat-content">
-            <span class="stat-value">{{ client.pendingAppointments }}</span>
-            <span class="stat-label">En attente</span>
-          </div>
-        </div>
-        <div class="stat-card stat-rejected" *ngIf="client.rejectedAppointments > 0">
-          <div class="stat-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="15" y1="9" x2="9" y2="15"/>
-              <line x1="9" y1="9" x2="15" y2="15"/>
-            </svg>
-          </div>
-          <div class="stat-content">
-            <span class="stat-value">{{ client.rejectedAppointments }}</span>
-            <span class="stat-label">Refusés</span>
+
+        <!-- Statistiques de performance -->
+        <div class="stats-section">
+          <h3 class="stats-section-title">Performance</h3>
+          <div class="client-stats-grid performance-stats">
+            <div class="stat-card stat-info">
+              <div class="stat-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+              </div>
+              <div class="stat-content">
+                <span class="stat-value">{{ getClientVisitsCount() }}</span>
+                <span class="stat-label">Nombre de venues</span>
+              </div>
+            </div>
+            <div class="stat-card stat-success">
+              <div class="stat-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+                  <line x1="3" y1="6" x2="21" y2="6"/>
+                  <path d="M16 10a4 4 0 0 1-8 0"/>
+                </svg>
+              </div>
+              <div class="stat-content">
+                <span class="stat-value">{{ clientAverageBasket }}€</span>
+                <span class="stat-label">Panier moyen</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>

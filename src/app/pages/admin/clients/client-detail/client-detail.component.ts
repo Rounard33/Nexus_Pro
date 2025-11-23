@@ -12,9 +12,10 @@ import {
 import {AdditionalSale, ClientDetail, LoyaltyReward} from '../../../../models/clients.model';
 import {AdditionalSalesService} from '../../../../services/additional-sales.service';
 import {ClientService} from '../../../../services/client.service';
-import {Appointment, Client, ContentService, Creation} from '../../../../services/content.service';
+import {Appointment, Client, ContentService, Creation, Prestation} from '../../../../services/content.service';
 import {LoyaltyService} from '../../../../services/loyalty.service';
 import {NotificationService} from '../../../../services/notification.service';
+import {StatisticsService} from '../../../../services/statistics.service';
 import {BirthdayUtils} from '../../../../utils/birthday.utils';
 import {FormatUtils} from '../../../../utils/format.utils';
 
@@ -42,11 +43,16 @@ export class ClientDetailComponent implements OnInit {
   giftCardAmount: number = 0;
   saleNotes: string = '';
 
+  // Statistiques client
+  prestations: Prestation[] = [];
+  clientAverageBasket: number = 0;
+
   constructor(
     private contentService: ContentService,
     private clientService: ClientService,
     private loyaltyService: LoyaltyService,
     private additionalSalesService: AdditionalSalesService,
+    private statisticsService: StatisticsService,
     private notificationService: NotificationService,
     private route: ActivatedRoute,
     private router: Router
@@ -60,6 +66,9 @@ export class ClientDetailComponent implements OnInit {
     
     // Charger les créations pour le formulaire de vente
     this.loadCreations();
+    
+    // Charger les prestations pour calculer le panier moyen
+    this.loadPrestations();
   }
 
   loadCreations(): void {
@@ -69,6 +78,21 @@ export class ClientDetailComponent implements OnInit {
       },
       error: (error) => {
         console.error('Erreur lors du chargement des créations:', error);
+      }
+    });
+  }
+
+  loadPrestations(): void {
+    this.contentService.getPrestations().subscribe({
+      next: (prestations) => {
+        this.prestations = prestations;
+        // Recalculer les stats si le client est déjà chargé
+        if (this.client) {
+          this.calculateClientStats();
+        }
+      },
+      error: (error) => {
+        console.error('Erreur lors du chargement des prestations:', error);
       }
     });
   }
@@ -114,6 +138,9 @@ export class ClientDetailComponent implements OnInit {
 
             // Ajouter les ventes additionnelles
             this.client.additionalSales = this.additionalSalesService.parseAdditionalSales(clientData?.notes);
+
+            // Calculer les statistiques client
+            this.calculateClientStats();
 
             // Initialiser le champ d'édition
             this.birthdateInput = clientData?.birthdate || '';
@@ -329,6 +356,19 @@ export class ClientDetailComponent implements OnInit {
     } else {
       return `Carte cadeau - ${sale.giftCardAmount}€`;
     }
+  }
+
+  // Statistiques client
+  calculateClientStats(): void {
+    if (!this.client || !this.prestations.length) return;
+
+    // Calculer le panier moyen pour ce client
+    const clientAppointments = this.client.appointments.filter(a => a.status === 'accepted');
+    this.clientAverageBasket = this.statisticsService.calculateAverageBasket(clientAppointments, this.prestations);
+  }
+
+  getClientVisitsCount(): number {
+    return this.client?.acceptedAppointments || 0;
   }
 
   deleteSale(sale: AdditionalSale): void {

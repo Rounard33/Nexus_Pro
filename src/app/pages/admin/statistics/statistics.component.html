@@ -8,45 +8,81 @@
   </div>
 
   <div *ngIf="!isLoading">
-    <!-- Cartes statistiques -->
-    <div class="stats-grid">
-      <div class="stat-card" *ngFor="let stat of stats" [ngClass]="'stat-' + stat.color">
-        <!-- ... icônes existantes ... -->
-        <div class="stat-content">
-          <h3 class="stat-value">{{ stat.value }}</h3>
-          <p class="stat-title">{{ stat.title }}</p>
-          <p class="stat-label">{{ stat.label }}</p>
+    <!-- Statistiques des rendez-vous -->
+    <div class="stats-card">
+      <div class="stats-header">
+        <h2 class="section-title">Rendez-vous</h2>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card" *ngFor="let stat of stats" [ngClass]="'stat-' + stat.color">
+          <div class="stat-icon">
+            <svg *ngIf="stat.color === 'success'" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            <svg *ngIf="stat.color === 'warning'" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <svg *ngIf="stat.color === 'danger'" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="15" y1="9" x2="9" y2="15"/>
+              <line x1="9" y1="9" x2="15" y2="15"/>
+            </svg>
+            <svg *ngIf="stat.color === 'primary'" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            <svg *ngIf="stat.color === 'info'" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="16" x2="12" y2="12"/>
+              <line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
+          </div>
+          <div class="stat-content">
+            <h3 class="stat-value">{{ stat.value }}</h3>
+            <p class="stat-title">{{ stat.title }}</p>
+            <p class="stat-label">{{ stat.label }}</p>
+          </div>
         </div>
       </div>
+    </div>
 
-      <!-- ✅ Nouvelle stat : Panier moyen -->
-      <div class="stat-card stat-info">
-        <div class="stat-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
-            <line x1="3" y1="6" x2="21" y2="6"/>
-            <path d="M16 10a4 4 0 0 1-8 0"/>
-          </svg>
-        </div>
-        <div class="stat-content">
-          <h3 class="stat-value">{{ averageBasket }}€</h3>
-          <p class="stat-title">Panier moyen</p>
-          <p class="stat-label">par rendez-vous</p>
-        </div>
+    <!-- Statistiques de performance -->
+    <div class="stats-card">
+      <div class="stats-header">
+        <h2 class="section-title">Performance</h2>
       </div>
-
-      <!-- ✅ Nouvelle stat : Visites moyennes par client -->
-      <div class="stat-card stat-primary">
-        <div class="stat-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-            <circle cx="12" cy="7" r="4"/>
-          </svg>
+      <div class="stats-grid">
+        <div class="stat-card stat-info">
+          <div class="stat-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+              <line x1="3" y1="6" x2="21" y2="6"/>
+              <path d="M16 10a4 4 0 0 1-8 0"/>
+            </svg>
+          </div>
+          <div class="stat-content">
+            <h3 class="stat-value">{{ averageBasket }}€</h3>
+            <p class="stat-title">Panier moyen</p>
+            <p class="stat-label">par rendez-vous</p>
+          </div>
         </div>
-        <div class="stat-content">
-          <h3 class="stat-value">{{ averageClientVisits }}</h3>
-          <p class="stat-title">Visites moyennes</p>
-          <p class="stat-label">par client (année)</p>
+
+        <div class="stat-card stat-primary">
+          <div class="stat-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+          </div>
+          <div class="stat-content">
+            <h3 class="stat-value">{{ averageClientVisits }}</h3>
+            <p class="stat-title">Visites moyennes</p>
+            <p class="stat-label">par client (année)</p>
+          </div>
         </div>
       </div>
     </div>
