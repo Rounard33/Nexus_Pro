@@ -721,6 +721,33 @@ async function handleAppointments(req: VercelRequest, res: VercelResponse, supab
       console.log('[Appointments POST] ⚠️ Pas de client_email dans les données');
     }
 
+        // Envoyer les emails (non bloquant)
+    try {
+      const { 
+        sendAppointmentRequestConfirmation, 
+        sendNewAppointmentNotificationToAdmin 
+      } = await import('./utils/email.js');
+      
+      const appointmentData = {
+        client_name: data.client_name,
+        client_email: data.client_email,
+        client_phone: data.client_phone || undefined,
+        appointment_date: data.appointment_date,
+        appointment_time: data.appointment_time,
+        prestation_name: data.prestations?.name || undefined,
+        notes: data.notes || undefined,
+      };
+      
+      // Envoyer en parallèle (non bloquant)
+      Promise.all([
+        sendAppointmentRequestConfirmation(appointmentData),
+        sendNewAppointmentNotificationToAdmin(appointmentData)
+      ]).catch(err => console.error('[Email] Erreur envoi emails:', err));
+      
+    } catch (emailError: any) {
+      console.error('[Appointments POST] Erreur import email (non bloquant):', emailError.message);
+    }
+
     return res.status(201).json(data);
   }
 
@@ -787,6 +814,30 @@ async function handleAppointments(req: VercelRequest, res: VercelResponse, supab
 
     if (error) {
       return res.status(500).json({ error: 'Erreur lors de la mise à jour', details: error.message });
+    }
+
+        // Envoyer l'email de notification si le statut a changé
+    if (updateData.status && (updateData.status === 'accepted' || updateData.status === 'rejected')) {
+      try {
+        const { sendAppointmentStatusUpdate } = await import('./utils/email.js');
+        
+        const appointmentData = {
+          client_name: data.client_name,
+          client_email: data.client_email,
+          client_phone: data.client_phone || undefined,
+          appointment_date: data.appointment_date,
+          appointment_time: data.appointment_time,
+          prestation_name: data.prestations?.name || undefined,
+          notes: data.notes || undefined,
+        };
+        
+        // Envoyer l'email (non bloquant)
+        sendAppointmentStatusUpdate(appointmentData, updateData.status)
+          .catch(err => console.error('[Email] Erreur envoi email statut:', err));
+        
+      } catch (emailError: any) {
+        console.error('[Appointments PATCH] Erreur import email (non bloquant):', emailError.message);
+      }
     }
 
     return res.json(data);

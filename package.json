@@ -50,6 +50,7 @@
     "@angular/router": "^17.3.0",
     "@supabase/supabase-js": "^2.78.0",
     "gsap": "^3.13.0",
+    "resend": "^6.5.2",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.14.3"
