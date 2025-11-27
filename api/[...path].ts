@@ -734,7 +734,7 @@ async function handleAppointments(req: VercelRequest, res: VercelResponse, supab
       console.log('[Appointments POST] ⚠️ Pas de client_email dans les données');
     }
 
-    // Envoyer les emails (non bloquant mais avec logging détaillé)
+    // Envoyer les emails (BLOQUANT - on attend avant de répondre)
     try {
       const { 
         sendAppointmentRequestConfirmation, 
@@ -753,23 +753,23 @@ async function handleAppointments(req: VercelRequest, res: VercelResponse, supab
       
       console.log('[Email] 📧 Envoi des emails pour le nouveau RDV...');
       
-      // Envoyer en parallèle avec logging détaillé des résultats
-      Promise.allSettled([
+      // Envoyer en parallèle ET ATTENDRE les résultats
+      const results = await Promise.allSettled([
         sendAppointmentRequestConfirmation(appointmentData),
         sendNewAppointmentNotificationToAdmin(appointmentData)
-      ]).then(results => {
-        const emailTypes = ['client (confirmation)', 'admin (notification)'];
-        results.forEach((result, index) => {
-          if (result.status === 'fulfilled') {
-            if (result.value) {
-              console.log(`[Email] ✅ Email ${emailTypes[index]}: envoyé avec succès`);
-            } else {
-              console.warn(`[Email] ⚠️ Email ${emailTypes[index]}: échec (voir logs Resend)`);
-            }
+      ]);
+      
+      const emailTypes = ['client (confirmation)', 'admin (notification)'];
+      results.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
+          if (result.value) {
+            console.log(`[Email] ✅ Email ${emailTypes[index]}: envoyé avec succès`);
           } else {
-            console.error(`[Email] ❌ Email ${emailTypes[index]} erreur:`, result.reason);
+            console.warn(`[Email] ⚠️ Email ${emailTypes[index]}: échec (voir logs Resend)`);
           }
-        });
+        } else {
+          console.error(`[Email] ❌ Email ${emailTypes[index]} erreur:`, result.reason);
+        }
       });
       
     } catch (emailError: any) {
@@ -844,7 +844,7 @@ async function handleAppointments(req: VercelRequest, res: VercelResponse, supab
       return res.status(500).json({ error: 'Erreur lors de la mise à jour', details: error.message });
     }
 
-        // Envoyer l'email de notification si le statut a changé
+    // Envoyer l'email de notification si le statut a changé (BLOQUANT)
     if (updateData.status && (updateData.status === 'accepted' || updateData.status === 'rejected')) {
       try {
         const { sendAppointmentStatusUpdate } = await import('./utils/email.js');
@@ -859,12 +859,19 @@ async function handleAppointments(req: VercelRequest, res: VercelResponse, supab
           notes: data.notes || undefined,
         };
         
-        // Envoyer l'email (non bloquant)
-        sendAppointmentStatusUpdate(appointmentData, updateData.status)
-          .catch(err => console.error('[Email] Erreur envoi email statut:', err));
+        console.log(`[Email] 📧 Envoi email de ${updateData.status === 'accepted' ? 'confirmation' : 'refus'}...`);
+        
+        // Envoyer l'email ET ATTENDRE le résultat
+        const emailSent = await sendAppointmentStatusUpdate(appointmentData, updateData.status);
+        
+        if (emailSent) {
+          console.log(`[Email] ✅ Email de ${updateData.status === 'accepted' ? 'confirmation' : 'refus'} envoyé à ${data.client_email}`);
+        } else {
+          console.warn(`[Email] ⚠️ Email de ${updateData.status === 'accepted' ? 'confirmation' : 'refus'} non envoyé (voir logs Resend)`);
+        }
         
       } catch (emailError: any) {
-        console.error('[Appointments PATCH] Erreur import email (non bloquant):', emailError.message);
+        console.error('[Appointments PATCH] Erreur envoi email:', emailError.message);
       }
     }
 
