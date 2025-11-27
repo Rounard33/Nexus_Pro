@@ -8,13 +8,14 @@ import {ScrollTrigger} from 'gsap/ScrollTrigger';
 import {filter} from 'rxjs/operators';
 import {ContentService, OpeningHours} from '../../services/content.service';
 import {environment} from '../../../environments/environment';
+import {CaptchaComponent} from '../../components/captcha/captcha.component';
 
 gsap.registerPlugin(ScrollTrigger);
 
 @Component({
   selector: 'app-contact',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, CaptchaComponent],
   templateUrl: './contact.component.html',
   styleUrl: './contact.component.scss'
 })
@@ -25,6 +26,10 @@ export class ContactComponent implements OnInit, AfterViewInit, OnDestroy {
   isSubmitting = false;
   openingHours: OpeningHours[] = [];
   isLoadingHours = true;
+  
+  // Captcha
+  captchaToken: string | null = null;
+  captchaValid = false;
 
   constructor(
     private cdr: ChangeDetectorRef,
@@ -115,15 +120,39 @@ export class ContactComponent implements OnInit, AfterViewInit, OnDestroy {
     message: ''
   };
 
+  // Gestion du captcha
+  onCaptchaValidated(token: string): void {
+    this.captchaToken = token;
+  }
+
+  onCaptchaValidationChange(isValid: boolean): void {
+    this.captchaValid = isValid;
+    if (!isValid) {
+      this.captchaToken = null;
+    }
+  }
+
   onSubmit(): void {
     if (this.isSubmitting) return;
+    
+    // Vérifier le captcha
+    if (!this.captchaValid || !this.captchaToken) {
+      this.showErrorMessage('Veuillez résoudre le captcha avant d\'envoyer le message.');
+      return;
+    }
     
     this.isSubmitting = true;
     this.cdr.detectChanges();
     
     const apiUrl = `${environment.apiUrl}/contact`;
     
-    this.http.post<{ success: boolean; message: string }>(apiUrl, this.contactForm)
+    // Inclure le token captcha dans la requête
+    const payload = {
+      ...this.contactForm,
+      captcha_token: this.captchaToken
+    };
+    
+    this.http.post<{ success: boolean; message: string }>(apiUrl, payload)
       .subscribe({
         next: (response) => {
           this.showSuccessMessage();
@@ -136,6 +165,10 @@ export class ContactComponent implements OnInit, AfterViewInit, OnDestroy {
             subject: '',
             message: ''
           };
+          
+          // Reset captcha
+          this.captchaToken = null;
+          this.captchaValid = false;
           
           this.isSubmitting = false;
           this.cdr.detectChanges();

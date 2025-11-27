@@ -1358,7 +1358,7 @@ const server = http.createServer(async (req, res) => {
       }
       
       const body = await readBody(req);
-      const { name, email, phone, subject, message } = body;
+      const { name, email, phone, subject, message, captcha_token } = body;
       
       // Validation des champs obligatoires
       const errors = [];
@@ -1377,6 +1377,29 @@ const server = http.createServer(async (req, res) => {
       
       if (!message || typeof message !== 'string' || message.trim().length < 10) {
         errors.push('Le message est requis (minimum 10 caractères)');
+      }
+      
+      // Validation du captcha
+      if (!captcha_token || typeof captcha_token !== 'string') {
+        errors.push('Le captcha est requis');
+      } else {
+        try {
+          // Décoder le token base64
+          const decoded = Buffer.from(captcha_token, 'base64').toString('utf-8');
+          const tokenParts = decoded.split(':');
+          if (tokenParts.length < 2) {
+            errors.push('Format de captcha invalide');
+          } else {
+            const timestamp = parseInt(tokenParts[0], 10);
+            const now = Date.now();
+            // Token valide pour 10 minutes
+            if (isNaN(timestamp) || (now - timestamp) > 10 * 60 * 1000) {
+              errors.push('Captcha expiré, veuillez le résoudre à nouveau');
+            }
+          }
+        } catch (e) {
+          errors.push('Erreur de validation du captcha');
+        }
       }
       
       // Vérification anti-spam basique (longueur max)

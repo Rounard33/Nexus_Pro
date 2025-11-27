@@ -107,7 +107,13 @@
             ></textarea>
           </div>
           
-          <button type="submit" class="btn btn-primary btn-lg" [disabled]="!contactFormRef.form.valid || isSubmitting">
+          <!-- Captcha anti-spam -->
+          <app-captcha
+            (captchaToken)="onCaptchaValidated($event)"
+            (validationChange)="onCaptchaValidationChange($event)">
+          </app-captcha>
+          
+          <button type="submit" class="btn btn-primary btn-lg" [disabled]="!contactFormRef.form.valid || !captchaValid || isSubmitting">
             <span class="btn-text">{{ isSubmitting ? 'Envoi en cours...' : 'Envoyer le message' }}</span>
           </button>
         </form>
