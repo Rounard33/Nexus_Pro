@@ -8,6 +8,56 @@ export interface ValidationResult {
 }
 
 /**
+ * Valide le token captcha
+ * Le token est au format base64: timestamp:random:answer
+ * Vérifie que le token est récent (moins de 10 minutes)
+ */
+export function validateCaptchaToken(token: string | undefined | null): boolean {
+  if (!token || typeof token !== 'string') {
+    return false;
+  }
+  
+  try {
+    // Décoder le token base64
+    const decoded = Buffer.from(token, 'base64').toString('utf-8');
+    const parts = decoded.split(':');
+    
+    if (parts.length !== 3) {
+      console.warn('[Captcha] Token invalide: format incorrect');
+      return false;
+    }
+    
+    const timestamp = parseInt(parts[0], 10);
+    
+    if (isNaN(timestamp)) {
+      console.warn('[Captcha] Token invalide: timestamp non numérique');
+      return false;
+    }
+    
+    // Vérifier que le token n'est pas trop vieux (10 minutes max)
+    const now = Date.now();
+    const maxAge = 10 * 60 * 1000; // 10 minutes en millisecondes
+    
+    if (now - timestamp > maxAge) {
+      console.warn('[Captcha] Token expiré');
+      return false;
+    }
+    
+    // Vérifier que le token n'est pas dans le futur (+ 1 minute de tolérance)
+    if (timestamp > now + 60000) {
+      console.warn('[Captcha] Token invalide: timestamp dans le futur');
+      return false;
+    }
+    
+    console.log('[Captcha] ✅ Token valide');
+    return true;
+  } catch (error) {
+    console.error('[Captcha] Erreur validation token:', error);
+    return false;
+  }
+}
+
+/**
  * Valide les données d'un rendez-vous
  */
 export function validateAppointment(data: any): ValidationResult {

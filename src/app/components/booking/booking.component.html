@@ -209,6 +209,15 @@
           </div>
         </div>
 
+        <!-- Captcha anti-spam -->
+        <div class="booking-section captcha-section" *ngIf="selectedDate && selectedTime">
+          <h3 class="section-title">4. Vérification</h3>
+          <app-captcha
+            (validationChange)="onCaptchaValidationChange($event)"
+            (captchaToken)="onCaptchaTokenReceived($event)">
+          </app-captcha>
+        </div>
+
         <!-- Actions -->
         <div class="modal-actions" *ngIf="selectedDate && selectedTime">
           <button
@@ -221,7 +230,7 @@
           <button
             type="submit"
             class="btn btn-primary btn-lg"
-            [disabled]="bookingForm.invalid || isSubmitting">
+            [disabled]="bookingForm.invalid || isSubmitting || !isCaptchaValid">
             <span *ngIf="!isSubmitting">Confirmer la réservation</span>
             <span *ngIf="isSubmitting">Envoi en cours...</span>
           </button>

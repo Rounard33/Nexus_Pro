@@ -1,12 +1,13 @@
 import {CommonModule} from '@angular/common';
-import {Component, EventEmitter, HostListener, Input, OnChanges, OnInit, Output, SimpleChanges} from '@angular/core';
+import {Component, EventEmitter, HostListener, Input, OnChanges, OnInit, Output, SimpleChanges, ViewChild} from '@angular/core';
 import {FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
 import {Appointment, ContentService, OpeningHours, Prestation} from '../../services/content.service';
+import {CaptchaComponent} from '../captcha/captcha.component';
 
 @Component({
   selector: 'app-booking',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, CaptchaComponent],
   templateUrl: './booking.component.html',
   styleUrl: './booking.component.scss'
 })
@@ -14,10 +15,15 @@ export class BookingComponent implements OnInit, OnChanges {
   @Input() prestation: Prestation | null = null;
   @Output() close = new EventEmitter<void>();
   @Output() success = new EventEmitter<Appointment>();
+  @ViewChild(CaptchaComponent) captchaComponent!: CaptchaComponent;
 
   bookingForm: FormGroup;
   isLoading = false;
   isSubmitting = false;
+  
+  // Captcha anti-spam
+  isCaptchaValid = false;
+  captchaToken: string = '';
   errorMessage: string | null = null;
 
   // Calendrier
@@ -106,6 +112,21 @@ export class BookingComponent implements OnInit, OnChanges {
     this.availableTimes = [];
     this.isSubmitting = false;
     this.bookingForm.reset();
+    // Réinitialiser le captcha
+    this.isCaptchaValid = false;
+    this.captchaToken = '';
+    if (this.captchaComponent) {
+      this.captchaComponent.refresh();
+    }
+  }
+
+  // Gestion du captcha
+  onCaptchaValidationChange(isValid: boolean): void {
+    this.isCaptchaValid = isValid;
+  }
+
+  onCaptchaTokenReceived(token: string): void {
+    this.captchaToken = token;
   }
 
   @HostListener('document:keydown.escape', ['$event'])
@@ -462,6 +483,12 @@ export class BookingComponent implements OnInit, OnChanges {
       return;
     }
 
+    // Vérifier le captcha anti-spam
+    if (!this.isCaptchaValid) {
+      this.errorMessage = 'Veuillez compléter la vérification anti-spam.';
+      return;
+    }
+
     // Vérifier que la prestation a un ID
     if (!this.prestation.id) {
       console.error('Erreur: La prestation n\'a pas d\'ID', this.prestation);
@@ -506,9 +533,10 @@ export class BookingComponent implements OnInit, OnChanges {
       appointment.referral_friend_name = formValue.referral_friend_name.trim();
     }
 
-    console.log('�� referral_source:', appointment.referral_source);
-    console.log('�� formValue.referral_source:', formValue.referral_source);
-    console.log('�� formValue.referral_friend_name:', formValue.referral_friend_name);
+    // Ajouter le token captcha pour la validation côté serveur
+    if (this.captchaToken) {
+      appointment.captcha_token = this.captchaToken;
+    }
 
     this.contentService.createAppointment(appointment).subscribe({
       next: (createdAppointment) => {

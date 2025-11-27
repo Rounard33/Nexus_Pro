@@ -1,0 +1,74 @@
+<div class="captcha-container">
+  <div class="captcha-header">
+    <span class="captcha-icon">🔒</span>
+    <span class="captcha-title">Vérification anti-spam</span>
+  </div>
+  
+  <div class="captcha-challenge">
+    <div class="captcha-question">
+      <span class="question-text">{{ challenge?.question }}</span>
+      <button 
+        type="button" 
+        class="refresh-btn" 
+        (click)="refresh()" 
+        title="Nouvelle question"
+        aria-label="Générer une nouvelle question">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M23 4v6h-6"/>
+          <path d="M1 20v-6h6"/>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+        </svg>
+      </button>
+    </div>
+    
+    <div class="captcha-input-wrapper">
+      <input
+        type="text"
+        [(ngModel)]="userAnswer"
+        (ngModelChange)="onAnswerChange()"
+        (blur)="checkAnswer()"
+        class="captcha-input"
+        [class.valid]="isValid && hasAttempted"
+        [class.invalid]="!isValid && hasAttempted && userAnswer"
+        placeholder="Votre réponse"
+        maxlength="5"
+        autocomplete="off"
+        inputmode="numeric"
+        pattern="[0-9]*"
+        aria-label="Réponse au captcha">
+      
+      <span class="validation-icon" *ngIf="hasAttempted && userAnswer">
+        <svg *ngIf="isValid" class="icon-valid" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+          <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+        <svg *ngIf="!isValid" class="icon-invalid" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="15" y1="9" x2="9" y2="15"/>
+          <line x1="9" y1="9" x2="15" y2="15"/>
+        </svg>
+      </span>
+    </div>
+    
+    <p class="captcha-hint" *ngIf="!isValid && hasAttempted && userAnswer">
+      Réponse incorrecte. Veuillez réessayer.
+    </p>
+    
+    <p class="captcha-success" *ngIf="isValid">
+      ✓ Vérification réussie
+    </p>
+  </div>
+  
+  <!-- Honeypot : champ invisible pour piéger les bots -->
+  <div class="honeypot" aria-hidden="true">
+    <label for="website_url">Ne pas remplir ce champ</label>
+    <input 
+      type="text" 
+      id="website_url" 
+      name="website_url"
+      [(ngModel)]="honeypotValue"
+      tabindex="-1"
+      autocomplete="off">
+  </div>
+</div>
+

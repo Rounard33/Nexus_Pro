@@ -1,4 +1,5 @@
 import {CommonModule} from '@angular/common';
+import {HttpClient} from '@angular/common/http';
 import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {FormsModule} from '@angular/forms';
 import {ActivatedRoute, NavigationEnd, Router, RouterModule} from '@angular/router';
@@ -6,6 +7,7 @@ import {gsap} from 'gsap';
 import {ScrollTrigger} from 'gsap/ScrollTrigger';
 import {filter} from 'rxjs/operators';
 import {ContentService, OpeningHours} from '../../services/content.service';
+import {environment} from '../../../environments/environment';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -28,7 +30,8 @@ export class ContactComponent implements OnInit, AfterViewInit, OnDestroy {
     private cdr: ChangeDetectorRef,
     private route: ActivatedRoute,
     private router: Router,
-    private contentService: ContentService
+    private contentService: ContentService,
+    private http: HttpClient
   ) {}
 
   ngOnInit(): void {
@@ -118,22 +121,79 @@ export class ContactComponent implements OnInit, AfterViewInit, OnDestroy {
     this.isSubmitting = true;
     this.cdr.detectChanges();
     
-    // Simulate form submission
+    const apiUrl = `${environment.apiUrl}/contact`;
+    
+    this.http.post<{ success: boolean; message: string }>(apiUrl, this.contactForm)
+      .subscribe({
+        next: (response) => {
+          this.showSuccessMessage();
+          
+          // Reset form
+          this.contactForm = {
+            name: '',
+            email: '',
+            phone: '',
+            subject: '',
+            message: ''
+          };
+          
+          this.isSubmitting = false;
+          this.cdr.detectChanges();
+        },
+        error: (error) => {
+          console.error('Erreur lors de l\'envoi du message:', error);
+          this.showErrorMessage(
+            error.error?.message || 
+            'Une erreur est survenue lors de l\'envoi. Veuillez réessayer.'
+          );
+          this.isSubmitting = false;
+          this.cdr.detectChanges();
+        }
+      });
+  }
+  
+  private showErrorMessage(message: string): void {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: linear-gradient(135deg, #c0392b, #a93226);
+      color: white;
+      padding: 1.5rem 2rem;
+      border-radius: 50px;
+      box-shadow: 0 10px 40px rgba(192, 57, 43, 0.3);
+      z-index: 10000;
+      font-family: inherit;
+      font-size: 1rem;
+      max-width: 350px;
+      animation: slideIn 0.4s ease-out;
+    `;
+    
+    const contentDiv = document.createElement('div');
+    contentDiv.style.cssText = 'display: flex; align-items: center; gap: 0.75rem;';
+    
+    const iconSpan = document.createElement('span');
+    iconSpan.style.cssText = 'font-size: 1.5rem;';
+    iconSpan.textContent = '✗';
+    
+    const messageSpan = document.createElement('span');
+    messageSpan.textContent = message;
+    
+    contentDiv.appendChild(iconSpan);
+    contentDiv.appendChild(messageSpan);
+    notification.appendChild(contentDiv);
+    
+    document.body.appendChild(notification);
+    
     setTimeout(() => {
-      this.showSuccessMessage();
-      
-      // Reset form
-      this.contactForm = {
-        name: '',
-        email: '',
-        phone: '',
-        subject: '',
-        message: ''
-      };
-      
-      this.isSubmitting = false;
-      this.cdr.detectChanges();
-    }, 1500);
+      notification.style.animation = 'slideIn 0.4s ease-out reverse';
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.parentNode.removeChild(notification);
+        }
+      }, 400);
+    }, 5000);
   }
 
   private showSuccessMessage(): void {

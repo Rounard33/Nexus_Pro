@@ -3,7 +3,7 @@ import type {VercelRequest, VercelResponse} from '@vercel/node';
 import {findClientById, generateClientId, verifyClientId} from './utils/client-id.js';
 import {rateLimitMiddleware} from './utils/rate-limiter.js';
 import {applyRateLimit, getAllowedOrigins, setCORSHeaders, setSecurityHeaders} from './utils/security-helpers.js';
-import {sanitizeAppointment, validateAppointment, validateAppointmentQuery} from './utils/validation.js';
+import {sanitizeAppointment, validateAppointment, validateAppointmentQuery, validateCaptchaToken} from './utils/validation.js';
 
 /**
  * Détermine l'origine CORS à autoriser
@@ -212,6 +212,9 @@ export default async function handler(
       
       case 'clients':
         return await handleClients(req, res, supabase);
+      
+      case 'contact':
+        return await handleContact(req, res);
       
       default:
         console.error(`[API Router] Route not found: "${normalizedPath}" (original: "${path}")`);
@@ -566,6 +569,16 @@ async function handleAppointments(req: VercelRequest, res: VercelResponse, supab
       return res.status(400).json({ error: 'Données invalides', details: validation.errors });
     }
 
+    // Valider le token captcha anti-spam
+    const captchaToken = req.body.captcha_token;
+    if (!validateCaptchaToken(captchaToken)) {
+      console.warn('[Appointments POST] ⚠️ Captcha invalide ou manquant');
+      return res.status(400).json({ 
+        error: 'Vérification anti-spam échouée', 
+        details: ['Veuillez compléter la vérification anti-spam'] 
+      });
+    }
+
     const sanitizedData = sanitizeAppointment(req.body);
     const { appointment_date, appointment_time } = sanitizedData;
     
@@ -721,7 +734,7 @@ async function handleAppointments(req: VercelRequest, res: VercelResponse, supab
       console.log('[Appointments POST] ⚠️ Pas de client_email dans les données');
     }
 
-        // Envoyer les emails (non bloquant)
+    // Envoyer les emails (non bloquant mais avec logging détaillé)
     try {
       const { 
         sendAppointmentRequestConfirmation, 
@@ -738,14 +751,29 @@ async function handleAppointments(req: VercelRequest, res: VercelResponse, supab
         notes: data.notes || undefined,
       };
       
-      // Envoyer en parallèle (non bloquant)
-      Promise.all([
+      console.log('[Email] 📧 Envoi des emails pour le nouveau RDV...');
+      
+      // Envoyer en parallèle avec logging détaillé des résultats
+      Promise.allSettled([
         sendAppointmentRequestConfirmation(appointmentData),
         sendNewAppointmentNotificationToAdmin(appointmentData)
-      ]).catch(err => console.error('[Email] Erreur envoi emails:', err));
+      ]).then(results => {
+        const emailTypes = ['client (confirmation)', 'admin (notification)'];
+        results.forEach((result, index) => {
+          if (result.status === 'fulfilled') {
+            if (result.value) {
+              console.log(`[Email] ✅ Email ${emailTypes[index]}: envoyé avec succès`);
+            } else {
+              console.warn(`[Email] ⚠️ Email ${emailTypes[index]}: échec (voir logs Resend)`);
+            }
+          } else {
+            console.error(`[Email] ❌ Email ${emailTypes[index]} erreur:`, result.reason);
+          }
+        });
+      });
       
     } catch (emailError: any) {
-      console.error('[Appointments POST] Erreur import email (non bloquant):', emailError.message);
+      console.error('[Appointments POST] ❌ Erreur import email (non bloquant):', emailError.message);
     }
 
     return res.status(201).json(data);
@@ -1213,4 +1241,113 @@ async function handleClients(req: VercelRequest, res: VercelResponse, supabase: 
 }
 
   return res.status(405).json({ error: 'Méthode non autorisée' });
+}
+
+// ==================== HANDLER CONTACT ====================
+
+/**
+ * Handler pour le formulaire de contact
+ * Envoie un email à l'admin avec le message du visiteur
+ */
+async function handleContact(req: VercelRequest, res: VercelResponse) {
+  setCORSHeaders(res, req.headers.origin as string, 'POST, OPTIONS', 'Content-Type');
+  res.setHeader('Content-Type', 'application/json');
+  
+  // Rate limiting strict pour éviter les abus (5 messages par minute max)
+  const rateLimit = rateLimitMiddleware(req, 5, 60000);
+  
+  Object.entries(rateLimit.headers).forEach(([key, value]) => {
+    res.setHeader(key, value);
+  });
+  
+  if (!rateLimit.allowed) {
+    const resetTimeStr = rateLimit.headers['X-RateLimit-Reset'];
+    const resetTime = new Date(resetTimeStr).getTime();
+    const retryAfter = Math.ceil((resetTime - Date.now()) / 1000);
+    res.setHeader('Retry-After', Math.max(1, retryAfter).toString());
+    return res.status(429).json({
+      error: 'Trop de requêtes',
+      message: 'Vous avez envoyé trop de messages. Veuillez patienter quelques minutes.',
+      retryAfter: Math.max(1, retryAfter)
+    });
+  }
+  
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Méthode non autorisée' });
+  }
+  
+  const { name, email, phone, subject, message } = req.body;
+  
+  // Validation des champs obligatoires
+  const errors: string[] = [];
+  
+  if (!name || typeof name !== 'string' || name.trim().length < 2) {
+    errors.push('Le nom est requis (minimum 2 caractères)');
+  }
+  
+  if (!email || typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    errors.push('Une adresse email valide est requise');
+  }
+  
+  if (!subject || typeof subject !== 'string' || subject.trim().length < 3) {
+    errors.push('Le sujet est requis (minimum 3 caractères)');
+  }
+  
+  if (!message || typeof message !== 'string' || message.trim().length < 10) {
+    errors.push('Le message est requis (minimum 10 caractères)');
+  }
+  
+  // Vérification anti-spam basique (longueur max)
+  if (name && name.length > 100) {
+    errors.push('Le nom est trop long (max 100 caractères)');
+  }
+  if (subject && subject.length > 200) {
+    errors.push('Le sujet est trop long (max 200 caractères)');
+  }
+  if (message && message.length > 5000) {
+    errors.push('Le message est trop long (max 5000 caractères)');
+  }
+  if (phone && phone.length > 20) {
+    errors.push('Le téléphone est trop long (max 20 caractères)');
+  }
+  
+  if (errors.length > 0) {
+    return res.status(400).json({ 
+      error: 'Validation échouée', 
+      details: errors 
+    });
+  }
+  
+  // Envoyer l'email
+  try {
+    const { sendContactMessage } = await import('./utils/email.js');
+    
+    const result = await sendContactMessage({
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      phone: phone?.trim() || undefined,
+      subject: subject.trim(),
+      message: message.trim()
+    });
+    
+    if (result) {
+      console.log(`[Contact] ✅ Message envoyé de: ${email}`);
+      return res.status(200).json({ 
+        success: true, 
+        message: 'Votre message a bien été envoyé. Je vous répondrai dans les plus brefs délais.' 
+      });
+    } else {
+      console.error(`[Contact] ❌ Échec de l'envoi du message de: ${email}`);
+      return res.status(500).json({ 
+        error: 'Erreur lors de l\'envoi', 
+        message: 'Une erreur est survenue lors de l\'envoi de votre message. Veuillez réessayer.' 
+      });
+    }
+  } catch (error: any) {
+    console.error('[Contact] Erreur:', error.message);
+    return res.status(500).json({ 
+      error: 'Erreur serveur', 
+      message: 'Une erreur inattendue est survenue. Veuillez réessayer plus tard.' 
+    });
+  }
 }

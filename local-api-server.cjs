@@ -117,6 +117,116 @@ try {
 
 const PORT = 3000;
 
+// Fonction pour échapper le HTML (sécurité XSS)
+function escapeHtml(text) {
+  if (!text) return '';
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+// Fonction pour générer le HTML de l'email de contact
+function generateContactEmailHtml(data) {
+  const safeName = escapeHtml(data.name);
+  const safeEmail = escapeHtml(data.email);
+  const safePhone = escapeHtml(data.phone);
+  const safeSubject = escapeHtml(data.subject);
+  const safeMessage = escapeHtml(data.message).replace(/\n/g, '<br>');
+  const SITE_NAME = 'Reiki & Sens';
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="margin: 0; padding: 0; background-color: #f5f1e8; font-family: Arial, sans-serif;">
+      <table role="presentation" style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td align="center" style="padding: 20px 0;">
+            <table role="presentation" style="width: 100%; max-width: 600px; border-collapse: collapse; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 20px rgba(139, 122, 98, 0.15);">
+              
+              <!-- Header -->
+              <tr>
+                <td style="padding: 30px; background: linear-gradient(135deg, #8b7a62 0%, #6f5f4e 100%); text-align: center;">
+                  <h1 style="font-family: Georgia, serif; font-size: 22px; color: #ffffff; margin: 0; letter-spacing: 1px;">
+                    ✉️ Nouveau message de contact
+                  </h1>
+                </td>
+              </tr>
+              
+              <!-- Contenu -->
+              <tr>
+                <td style="padding: 30px;">
+                  
+                  <!-- Sujet -->
+                  <div style="background: linear-gradient(135deg, #faf8f3 0%, #f5f1e8 100%); border-radius: 8px; padding: 20px; margin: 0 0 20px 0; border-left: 4px solid #8b7a62;">
+                    <h2 style="font-family: Georgia, serif; font-size: 18px; color: #4a3f35; margin: 0;">
+                      ${safeSubject}
+                    </h2>
+                  </div>
+                  
+                  <!-- Infos expéditeur -->
+                  <div style="background: #faf8f3; border-radius: 8px; padding: 20px; margin: 0 0 20px 0;">
+                    <h3 style="font-family: Arial, sans-serif; font-size: 12px; color: #8b7a62; margin: 0 0 15px 0; text-transform: uppercase; letter-spacing: 1px;">
+                      👤 Expéditeur
+                    </h3>
+                    <p style="font-family: Arial, sans-serif; font-size: 16px; color: #4a3f35; margin: 0 0 8px 0; font-weight: bold;">
+                      ${safeName}
+                    </p>
+                    <p style="font-family: Arial, sans-serif; font-size: 14px; color: #6f5f4e; margin: 0 0 5px 0;">
+                      📧 <a href="mailto:${safeEmail}" style="color: #8b7a62; text-decoration: none;">${safeEmail}</a>
+                    </p>
+                    ${safePhone ? `
+                    <p style="font-family: Arial, sans-serif; font-size: 14px; color: #6f5f4e; margin: 0;">
+                      📱 <a href="tel:${safePhone}" style="color: #8b7a62; text-decoration: none;">${safePhone}</a>
+                    </p>
+                    ` : ''}
+                  </div>
+                  
+                  <!-- Message -->
+                  <div style="background: #ffffff; border: 1px solid #ebe5d5; border-radius: 8px; padding: 20px; margin: 0 0 20px 0;">
+                    <h3 style="font-family: Arial, sans-serif; font-size: 12px; color: #8b7a62; margin: 0 0 15px 0; text-transform: uppercase; letter-spacing: 1px;">
+                      💬 Message
+                    </h3>
+                    <p style="font-family: Arial, sans-serif; font-size: 15px; color: #4a3f35; margin: 0; line-height: 1.7;">
+                      ${safeMessage}
+                    </p>
+                  </div>
+                  
+                  <!-- Bouton répondre -->
+                  <div style="text-align: center; padding: 20px 0;">
+                    <a href="mailto:${safeEmail}?subject=Re: ${encodeURIComponent(data.subject)}" 
+                       style="display: inline-block; background: linear-gradient(135deg, #8b7a62 0%, #6f5f4e 100%); color: #ffffff; padding: 15px 30px; border-radius: 8px; text-decoration: none; font-family: Arial, sans-serif; font-size: 14px; font-weight: bold;">
+                      📧 Répondre à ${safeName}
+                    </a>
+                  </div>
+                  
+                </td>
+              </tr>
+              
+              <!-- Footer -->
+              <tr>
+                <td style="padding: 20px; background: #faf8f3; border-top: 1px solid #ebe5d5; text-align: center;">
+                  <p style="font-family: Arial, sans-serif; font-size: 12px; color: #a8967a; margin: 0;">
+                    Message reçu via le formulaire de contact de ${SITE_NAME}
+                  </p>
+                </td>
+              </tr>
+              
+            </table>
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+  `;
+}
+
 // Fonction utilitaire pour lire le body de la requête
 function readBody(req) {
   return new Promise((resolve, reject) => {
@@ -1234,6 +1344,128 @@ const server = http.createServer(async (req, res) => {
         res.end(JSON.stringify({ error: 'Method not allowed' }));
       }
     }
+    // ROUTE : Contact (envoi d'email)
+    else if (pathname === '/api/contact') {
+      if (req.method !== 'POST') {
+        res.writeHead(405, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Method not allowed' }));
+        return;
+      }
+      
+      // Rate limiting strict pour éviter les abus (5 messages par minute max)
+      if (!applyRateLimit(req, res, 5, 60000)) {
+        return;
+      }
+      
+      const body = await readBody(req);
+      const { name, email, phone, subject, message } = body;
+      
+      // Validation des champs obligatoires
+      const errors = [];
+      
+      if (!name || typeof name !== 'string' || name.trim().length < 2) {
+        errors.push('Le nom est requis (minimum 2 caractères)');
+      }
+      
+      if (!email || typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        errors.push('Une adresse email valide est requise');
+      }
+      
+      if (!subject || typeof subject !== 'string' || subject.trim().length < 3) {
+        errors.push('Le sujet est requis (minimum 3 caractères)');
+      }
+      
+      if (!message || typeof message !== 'string' || message.trim().length < 10) {
+        errors.push('Le message est requis (minimum 10 caractères)');
+      }
+      
+      // Vérification anti-spam basique (longueur max)
+      if (name && name.length > 100) {
+        errors.push('Le nom est trop long (max 100 caractères)');
+      }
+      if (subject && subject.length > 200) {
+        errors.push('Le sujet est trop long (max 200 caractères)');
+      }
+      if (message && message.length > 5000) {
+        errors.push('Le message est trop long (max 5000 caractères)');
+      }
+      if (phone && phone.length > 20) {
+        errors.push('Le téléphone est trop long (max 20 caractères)');
+      }
+      
+      if (errors.length > 0) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ 
+          error: 'Validation échouée', 
+          details: errors 
+        }));
+        return;
+      }
+      
+      // Vérifier que les variables d'environnement pour l'email sont configurées
+      const RESEND_API_KEY = process.env.RESEND_API_KEY;
+      const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+      const FROM_EMAIL = process.env.FROM_EMAIL;
+      
+      if (!RESEND_API_KEY) {
+        console.error('[Contact] ❌ RESEND_API_KEY non configuré');
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ 
+          error: 'Configuration email manquante',
+          message: 'Le service d\'envoi d\'email n\'est pas configuré. Contactez l\'administrateur.'
+        }));
+        return;
+      }
+      
+      // En mode local, simuler l'envoi ou utiliser l'API Resend directement
+      try {
+        // Utiliser l'API Resend via fetch (disponible dans Node 18+)
+        const response = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${RESEND_API_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            from: FROM_EMAIL || 'onboarding@resend.dev',
+            to: ADMIN_EMAIL || 'admin@example.com',
+            reply_to: email.trim().toLowerCase(),
+            subject: `✉️ Contact: ${subject.trim()} - de ${name.trim()}`,
+            html: generateContactEmailHtml({
+              name: name.trim(),
+              email: email.trim().toLowerCase(),
+              phone: phone?.trim() || '',
+              subject: subject.trim(),
+              message: message.trim()
+            })
+          })
+        });
+        
+        if (response.ok) {
+          console.log(`[Contact] ✅ Message envoyé de: ${email}`);
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ 
+            success: true, 
+            message: 'Votre message a bien été envoyé. Je vous répondrai dans les plus brefs délais.' 
+          }));
+        } else {
+          const errorData = await response.json();
+          console.error(`[Contact] ❌ Erreur Resend:`, errorData);
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ 
+            error: 'Erreur lors de l\'envoi', 
+            message: 'Une erreur est survenue lors de l\'envoi de votre message. Veuillez réessayer.' 
+          }));
+        }
+      } catch (error) {
+        console.error('[Contact] ❌ Erreur:', error.message);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ 
+          error: 'Erreur serveur', 
+          message: 'Une erreur inattendue est survenue. Veuillez réessayer plus tard.' 
+        }));
+      }
+    }
     else {
       res.writeHead(404, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'Not found' }));
@@ -1262,4 +1494,5 @@ server.listen(PORT, () => {
   console.log(`   - http://localhost:${PORT}/api/blocked-dates (GET)`);
   console.log(`   - http://localhost:${PORT}/api/appointments (GET, POST, PATCH)`);
   console.log(`   - http://localhost:${PORT}/api/clients (GET, POST, PATCH) - PROTÉGÉ`);
+  console.log(`   - http://localhost:${PORT}/api/contact (POST) - Formulaire de contact`);
 });
