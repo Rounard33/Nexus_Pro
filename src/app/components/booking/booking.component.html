@@ -191,6 +191,34 @@
             <span class="error-text" *ngIf="referralFriendNameError">{{ referralFriendNameError }}</span>
           </div>
 
+          <!-- Âge de l'enfant (obligatoire pour soins energetique maman bebe) -->
+          <div class="form-group" *ngIf="showChildAgeField">
+            <label for="child_age" class="form-label">
+              Âge de l'enfant <span class="required">*</span>
+            </label>
+            <div class="child-age-input-group">
+              <input
+                type="number"
+                id="child_age"
+                formControlName="child_age"
+                class="form-input child-age-input"
+                [class.error]="bookingForm.get('child_age')?.invalid && bookingForm.get('child_age')?.touched"
+                [placeholder]="bookingForm.get('child_age_unit')?.value === 'mois' ? 'Ex: 6' : 'Ex: 1.5'"
+                [min]="0"
+                [max]="bookingForm.get('child_age_unit')?.value === 'mois' ? 24 : 2"
+                step="0.5"
+                autocomplete="off">
+              <select
+                id="child_age_unit"
+                formControlName="child_age_unit"
+                class="form-input child-age-unit-select">
+                <option value="mois">mois</option>
+                <option value="années">années</option>
+              </select>
+            </div>
+            <span class="error-text" *ngIf="childAgeError">{{ childAgeError }}</span>
+          </div>
+
           <!-- Notes -->
           <div class="form-group">
             <label for="notes" class="form-label">

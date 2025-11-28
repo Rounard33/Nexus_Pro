@@ -401,6 +401,32 @@
   color: var(--primary-700);
 }
 
+// Styles pour l'âge de l'enfant
+.child-age-cell {
+  white-space: nowrap;
+}
+
+.child-age-badge {
+  display: inline-block;
+  padding: 0.375rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+.child-age-value {
+  font-weight: 500;
+  color: #1565c0;
+}
+
+.child-age-detail {
+  font-weight: 500;
+  color: #1565c0;
+  font-size: 1rem;
+}
+
 .modal-actions {
   display: flex;
   gap: 1rem;

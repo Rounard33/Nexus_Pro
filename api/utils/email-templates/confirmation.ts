@@ -116,3 +116,5 @@ export function getConfirmationSubject(): string {
   return `✨ Demande de rendez-vous reçue - ${SITE_NAME}`;
 }
 
+
+

@@ -329,5 +329,39 @@ export class AppointmentsComponent implements OnInit, OnDestroy {
     };
     return labels[method] || method;
   }
+
+  /**
+   * Formate l'âge de l'enfant pour l'affichage
+   * L'âge est stocké en mois dans la base de données
+   * Affiche intelligemment : en mois si < 12 mois, en années sinon
+   */
+  formatChildAge(ageInMonths: number | null | undefined): string {
+    if (ageInMonths === null || ageInMonths === undefined) {
+      return '-';
+    }
+
+    // Si moins de 12 mois, afficher en mois
+    if (ageInMonths < 12) {
+      return `${ageInMonths} mois`;
+    }
+
+    // Si 12 mois ou plus, convertir en années
+    const years = ageInMonths / 12;
+    
+    // Si c'est un nombre entier, afficher sans décimales
+    if (years % 1 === 0) {
+      return `${years} an${years > 1 ? 's' : ''}`;
+    }
+    
+    // Sinon, afficher avec une décimale
+    return `${years.toFixed(1)} an${years > 1 ? 's' : ''}`;
+  }
+
+  /**
+   * Vérifie si un rendez-vous a un âge d'enfant renseigné
+   */
+  hasChildAge(appointment: Appointment): boolean {
+    return appointment.child_age !== null && appointment.child_age !== undefined;
+  }
 }
 

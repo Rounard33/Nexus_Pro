@@ -674,7 +674,45 @@ const server = http.createServer(async (req, res) => {
 
         // Nettoyer et normaliser les données
         const sanitizedData = sanitizeAppointment(body);
-        const { appointment_date, appointment_time } = sanitizedData;
+        const { appointment_date, appointment_time, prestation_id } = sanitizedData;
+
+        // Vérifier si la prestation nécessite l'âge de l'enfant (soins energetique maman bebe)
+        if (prestation_id) {
+          const { data: prestation, error: prestationError } = await supabase
+            .from('prestations')
+            .select('name')
+            .eq('id', prestation_id)
+            .single();
+          
+          if (!prestationError && prestation) {
+            const prestationName = prestation.name.toLowerCase();
+            const isMamanBebe = (prestationName.includes('maman') && prestationName.includes('bebe')) ||
+                               (prestationName.includes('maman') && prestationName.includes('bébé')) ||
+                               (prestationName.includes('mère') && prestationName.includes('bébé')) ||
+                               (prestationName.includes('mere') && prestationName.includes('bebe'));
+            
+            if (isMamanBebe && (!sanitizedData.child_age || sanitizedData.child_age === null || sanitizedData.child_age === undefined)) {
+              res.writeHead(400, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ 
+                error: 'Données invalides',
+                details: ['L\'âge de l\'enfant est obligatoire pour cette prestation']
+              }));
+              return;
+            }
+            
+            // Vérifier que l'âge est dans la plage valide (0-24 mois)
+            if (isMamanBebe && sanitizedData.child_age !== undefined && sanitizedData.child_age !== null) {
+              if (sanitizedData.child_age < 0 || sanitizedData.child_age > 24) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ 
+                  error: 'Données invalides',
+                  details: ['L\'âge de l\'enfant doit être entre 0 et 24 mois (2 ans)']
+                }));
+                return;
+              }
+            }
+          }
+        }
 
         // Récupérer tous les rendez-vous pending ou accepted pour cette date
         const { data: existingAppointments, error: checkError } = await supabase
@@ -752,6 +790,7 @@ const server = http.createServer(async (req, res) => {
             referral_friend_name,
             created_at,
             updated_at,
+            child_age,
             prestations (
               name
             )

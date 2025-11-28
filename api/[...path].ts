@@ -580,7 +580,40 @@ async function handleAppointments(req: VercelRequest, res: VercelResponse, supab
     }
 
     const sanitizedData = sanitizeAppointment(req.body);
-    const { appointment_date, appointment_time } = sanitizedData;
+    const { appointment_date, appointment_time, prestation_id } = sanitizedData;
+    
+    // Vérifier si la prestation nécessite l'âge de l'enfant (soins energetique maman bebe)
+    if (prestation_id) {
+      const { data: prestation, error: prestationError } = await supabase
+        .from('prestations')
+        .select('name')
+        .eq('id', prestation_id)
+        .single();
+      
+      if (!prestationError && prestation) {
+        const prestationName = prestation.name.toLowerCase();
+        const isMamanBebe = (prestationName.includes('maman') && prestationName.includes('bebe')) ||
+                           (prestationName.includes('maman') && prestationName.includes('bébé')) ||
+                           (prestationName.includes('mère') && prestationName.includes('bébé')) ||
+                           (prestationName.includes('mere') && prestationName.includes('bebe'));
+        
+        if (isMamanBebe) {
+          if (!sanitizedData.child_age || sanitizedData.child_age === null || sanitizedData.child_age === undefined) {
+            return res.status(400).json({ 
+              error: 'Données invalides', 
+              details: ['L\'âge de l\'enfant est obligatoire pour cette prestation'] 
+            });
+          }
+          // Vérifier que l'âge est dans la plage valide (0-24 mois)
+          if (sanitizedData.child_age < 0 || sanitizedData.child_age > 24) {
+            return res.status(400).json({ 
+              error: 'Données invalides', 
+              details: ['L\'âge de l\'enfant doit être entre 0 et 24 mois (2 ans)'] 
+            });
+          }
+        }
+      }
+    }
     
     const { data: existingAppointments, error: checkError } = await supabase
       .from('appointments')
@@ -638,6 +671,7 @@ async function handleAppointments(req: VercelRequest, res: VercelResponse, supab
         notes,
         referral_source,
         referral_friend_name,
+        child_age,
         created_at,
         updated_at,
         prestations (

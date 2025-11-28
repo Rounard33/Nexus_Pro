@@ -137,3 +137,5 @@ export function getAdminNotificationSubject(clientName: string, date: string): s
   return `🔔 Nouvelle demande - ${safeName} - ${dateFormatted}`;
 }
 
+
+

@@ -166,6 +166,20 @@ export function validateAppointment(data: any): ValidationResult {
     }
   }
 
+  // Validation child_age (optionnel mais peut être requis selon la prestation)
+  // L'âge est stocké en mois dans la base de données
+  if (data.child_age !== undefined && data.child_age !== null) {
+    const age = typeof data.child_age === 'string' ? parseFloat(data.child_age) : data.child_age;
+    if (isNaN(age) || typeof age !== 'number') {
+      errors.push('L\'âge de l\'enfant doit être un nombre');
+    } else {
+      // Accepter jusqu'à 24 mois (2 ans) pour les bébés
+      if (age < 0 || age > 24) {
+        errors.push('L\'âge de l\'enfant doit être entre 0 et 24 mois (2 ans)');
+      }
+    }
+  }
+
   // Validation status (doit être pending pour création)
   if (data.status !== undefined && data.status !== null) {
     const validStatuses = ['pending', 'accepted', 'rejected', 'cancelled'];
@@ -222,6 +236,20 @@ export function sanitizeAppointment(data: any): any {
   // Sanitize referral_friend_name (même logique que notes, seulement si referral_source = 'friend')
   if (data.referral_source === 'friend' && data.referral_friend_name !== undefined && data.referral_friend_name !== null && data.referral_friend_name.trim() !== '') {
     sanitized.referral_friend_name = data.referral_friend_name.trim();
+  }
+
+  // Sanitize child_age (même logique que referral_friend_name : toujours ajouter si présent)
+  // Convertir en nombre si fourni, stocké en mois, max 24 mois
+  if (data.child_age !== undefined && data.child_age !== null) {
+    // Convertir en nombre si nécessaire (gérer string et number)
+    const age = typeof data.child_age === 'string' 
+      ? (data.child_age.trim() === '' ? null : parseInt(data.child_age.trim(), 10))
+      : Number(data.child_age);
+    
+    // Vérifier que c'est un nombre valide et dans la plage (0-24 mois)
+    if (age !== null && !isNaN(age) && typeof age === 'number' && age >= 0 && age <= 24) {
+      sanitized.child_age = Math.round(age); // S'assurer que c'est un entier
+    }
   }
   
   // Status doit être pending pour une création

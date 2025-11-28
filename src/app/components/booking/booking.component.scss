@@ -454,6 +454,25 @@ select.form-input {
   margin-top: 0.25rem;
 }
 
+// Groupe d'input pour l'âge de l'enfant (input + select unité)
+.child-age-input-group {
+  display: flex;
+  gap: 0.5rem;
+  align-items: stretch;
+
+  .child-age-input {
+    flex: 1;
+    min-width: 0; // Permet au flex de réduire la largeur si nécessaire
+  }
+
+  .child-age-unit-select {
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 100px;
+    padding-right: 2.5rem;
+  }
+}
+
 // Actions
 .modal-actions {
   display: flex;

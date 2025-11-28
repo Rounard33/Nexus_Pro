@@ -68,6 +68,8 @@ export class BookingComponent implements OnInit, OnChanges {
       ]],
       referral_source: [''], // Source de référence
       referral_friend_name: [''], // Nom de l'ami (conditionnel)
+      child_age: [''], // Âge de l'enfant (obligatoire pour soins energetique maman bebe)
+      child_age_unit: ['mois'], // Unité : 'mois' ou 'années'
       notes: ['', [
         Validators.maxLength(500)
       ]]
@@ -89,6 +91,10 @@ export class BookingComponent implements OnInit, OnChanges {
       }
       friendNameControl?.updateValueAndValidity();
     });
+
+    // Ajouter une validation conditionnelle pour child_age (obligatoire pour soins energetique maman bebe)
+    // Cette validation sera mise à jour quand la prestation change
+    this.updateChildAgeValidation();
   }
 
   ngOnInit(): void {
@@ -102,6 +108,10 @@ export class BookingComponent implements OnInit, OnChanges {
     if (changes['prestation'] && !changes['prestation'].firstChange) {
       this.resetFormState();
     }
+    // Mettre à jour la validation de child_age quand la prestation change
+    if (changes['prestation']) {
+      this.updateChildAgeValidation();
+    }
   }
 
   // Réinitialiser l'état du formulaire et des messages
@@ -112,12 +122,69 @@ export class BookingComponent implements OnInit, OnChanges {
     this.availableTimes = [];
     this.isSubmitting = false;
     this.bookingForm.reset();
+    // Réinitialiser l'unité d'âge à 'mois' par défaut
+    this.bookingForm.patchValue({ child_age_unit: 'mois' });
+    // Mettre à jour la validation de child_age après reset
+    this.updateChildAgeValidation();
     // Réinitialiser le captcha
     this.isCaptchaValid = false;
     this.captchaToken = '';
     if (this.captchaComponent) {
       this.captchaComponent.refresh();
     }
+  }
+
+  // Vérifier si la prestation nécessite l'âge de l'enfant
+  private isMamanBebePrestation(): boolean {
+    if (!this.prestation || !this.prestation.name) {
+      return false;
+    }
+    const name = this.prestation.name.toLowerCase();
+    return name.includes('maman') && name.includes('bebe') || 
+           name.includes('maman') && name.includes('bébé') ||
+           name.includes('mère') && name.includes('bébé') ||
+           name.includes('mere') && name.includes('bebe');
+  }
+
+  // Mettre à jour la validation du champ child_age selon la prestation
+  private updateChildAgeValidation(): void {
+    const childAgeControl = this.bookingForm.get('child_age');
+    const childAgeUnitControl = this.bookingForm.get('child_age_unit');
+    if (!childAgeControl || !childAgeUnitControl) return;
+
+    if (this.isMamanBebePrestation()) {
+      // Validation dynamique selon l'unité choisie
+      const updateValidation = () => {
+        const unit = childAgeUnitControl.value || 'mois';
+        if (unit === 'mois') {
+          childAgeControl.setValidators([
+            Validators.required,
+            Validators.min(0),
+            Validators.max(24) // Jusqu'à 24 mois (2 ans)
+          ]);
+        } else {
+          childAgeControl.setValidators([
+            Validators.required,
+            Validators.min(0),
+            Validators.max(2) // Jusqu'à 2 ans pour les bébés
+          ]);
+        }
+        childAgeControl.updateValueAndValidity();
+      };
+
+      // Mettre à jour la validation quand l'unité change
+      childAgeUnitControl.valueChanges.subscribe(() => {
+        updateValidation();
+        childAgeControl.setValue(''); // Réinitialiser l'âge quand on change d'unité
+      });
+
+      updateValidation();
+    } else {
+      childAgeControl.clearValidators();
+      childAgeControl.setValue(''); // Réinitialiser le champ
+      childAgeUnitControl.setValue('mois'); // Réinitialiser l'unité
+    }
+    childAgeControl.updateValueAndValidity();
   }
 
   // Gestion du captcha
@@ -533,6 +600,23 @@ export class BookingComponent implements OnInit, OnChanges {
       appointment.referral_friend_name = formValue.referral_friend_name.trim();
     }
 
+    // Ajouter l'âge de l'enfant si fourni (obligatoire pour soins energetique maman bebe)
+    // Convertir en mois pour le stockage (plus précis pour les bébés)
+    // Même logique que referral_friend_name : toujours ajouter si présent
+    if (formValue.child_age !== undefined && formValue.child_age !== null && formValue.child_age !== '') {
+      const age = parseFloat(formValue.child_age);
+      if (!isNaN(age) && age >= 0) {
+        const unit = formValue.child_age_unit || 'mois';
+        if (unit === 'années') {
+          // Convertir les années en mois (arrondi)
+          appointment.child_age = Math.round(age * 12);
+        } else {
+          // Déjà en mois
+          appointment.child_age = Math.round(age);
+        }
+      }
+    }
+
     // Ajouter le token captcha pour la validation côté serveur
     if (this.captchaToken) {
       appointment.captcha_token = this.captchaToken;
@@ -793,6 +877,29 @@ export class BookingComponent implements OnInit, OnChanges {
     }
     if (control?.hasError('pattern') && control?.touched) {
       return 'Le nom ne peut contenir que des lettres, espaces, tirets et apostrophes.';
+    }
+    return '';
+  }
+
+  get showChildAgeField(): boolean {
+    return this.isMamanBebePrestation();
+  }
+
+  get childAgeError(): string {
+    const control = this.bookingForm.get('child_age');
+    const unitControl = this.bookingForm.get('child_age_unit');
+    const unit = unitControl?.value || 'mois';
+    const maxValue = unit === 'mois' ? 24 : 2;
+    const unitLabel = unit === 'mois' ? 'mois' : 'années';
+
+    if (control?.hasError('required') && control?.touched) {
+      return `L'âge de l'enfant est obligatoire.`;
+    }
+    if (control?.hasError('min') && control?.touched) {
+      return `L'âge doit être supérieur ou égal à 0 ${unitLabel}.`;
+    }
+    if (control?.hasError('max') && control?.touched) {
+      return `L'âge doit être inférieur ou égal à ${maxValue} ${unitLabel}.`;
     }
     return '';
   }

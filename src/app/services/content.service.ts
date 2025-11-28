@@ -102,6 +102,7 @@ export interface Appointment {
   notes?: string;
   referral_source?: string; // Source de référence : search, social, friend, advertisement, other
   referral_friend_name?: string; // Nom de la personne qui a recommandé (si referral_source = friend)
+  child_age?: number; // Âge de l'enfant (obligatoire pour soins energetique maman bebe)
   created_at?: string;
   updated_at?: string;
   prestations?: {
