@@ -500,7 +500,34 @@ export class BookingComponent implements OnInit, OnChanges {
     return `${year}-${month}-${day}`;
   }
 
-  // Vérifier si un créneau est dans une plage bloquée de ±1h30 autour d'un rendez-vous
+  // Convertit une durée texte en minutes (ex: "1h30" → 90, "45min" → 45)
+  private parseDurationToMinutes(duration: string | null | undefined): number {
+    if (!duration) return 90; // Durée par défaut
+    
+    const normalized = duration.toLowerCase().trim();
+    let totalMinutes = 0;
+    
+    // Pattern pour "1h30", "1h", "2h15", etc.
+    const hourMatch = normalized.match(/(\d+)\s*h(?:(\d+))?/);
+    if (hourMatch) {
+      totalMinutes += parseInt(hourMatch[1]) * 60;
+      if (hourMatch[2]) {
+        totalMinutes += parseInt(hourMatch[2]);
+      }
+    }
+    
+    // Pattern pour "45min", "30 min", etc. (si pas déjà inclus dans heures)
+    if (!hourMatch) {
+      const minMatch = normalized.match(/(\d+)\s*min/);
+      if (minMatch) {
+        totalMinutes += parseInt(minMatch[1]);
+      }
+    }
+    
+    return totalMinutes > 0 ? totalMinutes : 90; // 90 min par défaut si parsing échoue
+  }
+
+  // Vérifier si un créneau est dans une plage bloquée (basée sur la durée réelle des soins)
   private isTimeInBlockedSlot(dateStr: string, timeStr: string): boolean {
     // Seuls les rendez-vous pending ou accepted bloquent les créneaux
     const blockingAppointments = this.existingAppointments.filter(apt => 
@@ -515,22 +542,26 @@ export class BookingComponent implements OnInit, OnChanges {
     // Convertir le créneau à vérifier en minutes depuis minuit
     const [checkHour, checkMin] = timeStr.split(':').map(Number);
     const checkTime = checkHour * 60 + checkMin;
-    const checkEndTime = checkTime + 90; // Fin du créneau (+1h30)
+    
+    // Durée de la prestation qu'on veut réserver
+    const newPrestationDuration = this.parseDurationToMinutes(this.prestation?.duration);
+    const checkEndTime = checkTime + newPrestationDuration;
 
     // Pour chaque rendez-vous bloquant, vérifier si le créneau doit être bloqué
     for (const apt of blockingAppointments) {
       const [aptHour, aptMin] = apt.appointment_time.split(':').map(Number);
       const aptTime = aptHour * 60 + aptMin;
 
-      // Plage bloquée : de 1h30 avant le rendez-vous jusqu'à 1h30 après
-      // Exemple: rendez-vous à 11h30 (690 min) → bloque de 10h00 (600 min) à 13h00 (780 min)
-      const blockStart = Math.max(0, aptTime - 90); // Ne pas aller avant minuit
-      const blockEnd = aptTime + 90; // +1h30 après
+      // Durée du rendez-vous existant (récupérée via la prestation liée)
+      const aptDuration = this.parseDurationToMinutes(apt.prestations?.duration);
+
+      // Plage bloquée : calculée en fonction des durées réelles
+      const blockStart = Math.max(0, aptTime - newPrestationDuration);
+      const blockEnd = aptTime + aptDuration;
 
       // Bloquer si :
       // 1. Le créneau commence dans la plage bloquée (inclus le début, exclu la fin)
-      // 2. OU le créneau se termine moins de 1h30 avant le début du rendez-vous
-      //    (créneaux qui commencent avant blockStart mais se terminent après blockStart)
+      // 2. OU le créneau se termine après le début du RDV existant
       const startsInBlockedRange = checkTime >= blockStart && checkTime < blockEnd;
       const endsTooCloseBefore = checkTime < blockStart && checkEndTime > blockStart;
 

@@ -12,3 +12,4 @@ import {SectionHeaderComponent} from '../section-header/section-header.component
 export class LoyaltyComponent {
 }
 
+

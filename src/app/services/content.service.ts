@@ -107,6 +107,7 @@ export interface Appointment {
   updated_at?: string;
   prestations?: {
     name: string;
+    duration?: string;
   } | null; // Peut être null si la relation n'est pas chargée ou si la prestation n'existe plus
 }
 
