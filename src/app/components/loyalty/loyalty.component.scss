@@ -1,0 +1,230 @@
+.loyalty {
+  padding: 6rem 0;
+  background: linear-gradient(135deg, var(--primary-50) 0%, var(--primary-100) 100%);
+}
+
+.loyalty-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2.5rem;
+  margin-top: 3rem;
+  
+  @media (max-width: 1024px) {
+    gap: 2rem;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  }
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+}
+
+.loyalty-card {
+  background: white;
+  border-radius: 20px;
+  padding: 2.5rem;
+  box-shadow: 0 5px 25px rgba(0, 0, 0, 0.08);
+  transition: all 0.4s ease;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border: 2px solid transparent;
+
+  &:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+    border-color: var(--primary-200);
+  }
+
+  &.loyalty-card-featured {
+    border-color: var(--primary-400);
+    background: linear-gradient(135deg, white 0%, var(--primary-50) 100%);
+    
+    &:hover {
+      border-color: var(--primary-500);
+    }
+  }
+}
+
+.loyalty-card-badge {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  background: linear-gradient(135deg, var(--primary-600), var(--primary-700));
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 12px rgba(139, 122, 98, 0.3);
+}
+
+.loyalty-card-icon {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, var(--primary-100), var(--primary-200));
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+  color: var(--primary-700);
+  
+  svg {
+    width: 48px;
+    height: 48px;
+  }
+}
+
+.loyalty-card-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--primary-900);
+  margin: 0 0 1rem 0;
+  letter-spacing: -0.01em;
+}
+
+.loyalty-card-description {
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  margin: 0 0 1.5rem 0;
+  
+  strong {
+    color: var(--primary-800);
+    font-weight: 600;
+  }
+}
+
+.loyalty-card-benefits {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  
+  li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--text-primary);
+    
+    svg {
+      flex-shrink: 0;
+      margin-top: 0.2rem;
+      color: var(--primary-600);
+    }
+    
+    strong {
+      color: var(--primary-800);
+      font-weight: 600;
+    }
+  }
+}
+
+.loyalty-card-price {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  margin: 1.5rem 0;
+  padding: 1.5rem;
+  background: var(--primary-50);
+  border-radius: 12px;
+  border-left: 4px solid var(--primary-600);
+}
+
+.price-old {
+  font-size: 1.25rem;
+  color: var(--text-secondary);
+  text-decoration: line-through;
+  font-weight: 400;
+}
+
+.price-new {
+  font-size: 2rem;
+  color: var(--primary-700);
+  font-weight: 700;
+  font-family: var(--font-display, inherit);
+}
+
+.loyalty-card-details {
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--text-primary);
+  margin: 0;
+  text-align: center;
+  
+  strong {
+    color: var(--primary-800);
+    font-weight: 600;
+  }
+}
+
+.loyalty-card-benefit {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: var(--primary-50);
+  border-radius: 12px;
+  border-left: 4px solid var(--primary-600);
+  margin-top: 1rem;
+  
+  svg {
+    flex-shrink: 0;
+    margin-top: 0.2rem;
+    color: var(--primary-600);
+  }
+  
+  p {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.7;
+    color: var(--text-primary);
+    
+    strong {
+      color: var(--primary-800);
+      font-weight: 600;
+    }
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .loyalty {
+    padding: 4rem 0;
+  }
+  
+  .loyalty-cards {
+    margin-top: 2rem;
+  }
+  
+  .loyalty-card {
+    padding: 2rem 1.5rem;
+  }
+  
+  .loyalty-card-icon {
+    width: 70px;
+    height: 70px;
+    
+    svg {
+      width: 40px;
+      height: 40px;
+    }
+  }
+  
+  .loyalty-card-title {
+    font-size: 1.35rem;
+  }
+  
+  .price-new {
+    font-size: 1.75rem;
+  }
+}
+

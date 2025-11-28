@@ -8,6 +8,7 @@ import {BookingComponent} from '../../components/booking/booking.component';
 import {CtaComponent} from '../../components/cta/cta.component';
 import {FaqComponent, FaqItem} from '../../components/faq/faq.component';
 import {LocationComponent} from '../../components/location/location.component';
+import {LoyaltyComponent} from '../../components/loyalty/loyalty.component';
 import {PrestationModalComponent} from '../../components/prestation-modal/prestation-modal.component';
 import {Creation, ProductsComponent} from '../../components/products/products.component';
 import {ScrollToTopComponent} from '../../components/scroll-to-top/scroll-to-top.component';
@@ -35,7 +36,8 @@ gsap.registerPlugin(ScrollTrigger);
     FaqComponent,
     CtaComponent,
     ScrollToTopComponent,
-    BookingComponent
+    BookingComponent,
+    LoyaltyComponent
   ],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss'
