@@ -1,0 +1,138 @@
+<div class="accounting-dashboard">
+  <!-- En-tête avec navigation mensuelle -->
+  <div class="dashboard-header">
+    <div class="month-navigation">
+      <button class="nav-btn" (click)="previousMonth()" aria-label="Mois précédent">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+      </button>
+      <h1 class="current-month">{{ currentMonth | date:'MMMM yyyy':'':'fr' | titlecase }}</h1>
+      <button 
+        class="nav-btn" 
+        (click)="nextMonth()" 
+        [disabled]="isCurrentMonth()"
+        aria-label="Mois suivant">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- État de chargement -->
+  <div class="loading-state" *ngIf="isLoading">
+    <div class="loading-spinner"></div>
+    <p>Chargement des statistiques...</p>
+  </div>
+
+  <!-- Contenu principal -->
+  <div class="dashboard-content" *ngIf="!isLoading">
+    <!-- Carte principale - Chiffre d'affaires -->
+    <div class="main-card revenue-card">
+      <div class="card-header">
+        <span class="card-icon">💰</span>
+        <span class="card-title">Chiffre d'affaires</span>
+      </div>
+      <div class="card-value-large">{{ stats.revenue | number:'1.0-0':'fr' }}€</div>
+      <div class="card-change" [class.positive]="stats.revenueChange >= 0" [class.negative]="stats.revenueChange < 0">
+        <svg *ngIf="stats.revenueChange >= 0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="18 15 12 9 6 15"/>
+        </svg>
+        <svg *ngIf="stats.revenueChange < 0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+        <span>{{ stats.revenueChange >= 0 ? '+' : '' }}{{ stats.revenueChange }}% vs mois dernier</span>
+      </div>
+    </div>
+
+    <!-- Grille de statistiques -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon">📅</div>
+        <div class="stat-info">
+          <span class="stat-value">{{ stats.completedAppointments }}</span>
+          <span class="stat-label">RDV terminés</span>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon">👤</div>
+        <div class="stat-info">
+          <span class="stat-value">{{ stats.newClients }}</span>
+          <span class="stat-label">Nouveaux clients</span>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon">🛒</div>
+        <div class="stat-info">
+          <span class="stat-value">{{ stats.averageBasket | number:'1.0-0':'fr' }}€</span>
+          <span class="stat-label">Panier moyen</span>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon">📉</div>
+        <div class="stat-info">
+          <span class="stat-value">{{ stats.cancellationRate }}%</span>
+          <span class="stat-label">Taux d'annulation</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section modes de paiement -->
+    <div class="section-card payment-section">
+      <h2 class="section-title">Modes de paiement</h2>
+      
+      <div class="payment-grid" *ngIf="stats.paymentMethods.length > 0">
+        <div class="payment-item" *ngFor="let payment of stats.paymentMethods">
+          <div class="payment-header">
+            <span class="payment-icon">{{ getPaymentIcon(payment.method) }}</span>
+            <span class="payment-label">{{ getPaymentLabel(payment.method) }}</span>
+          </div>
+          <div class="payment-value">{{ payment.amount | number:'1.0-0':'fr' }}€</div>
+          <div class="payment-bar-container">
+            <div class="payment-bar" [style.width.%]="payment.percentage"></div>
+          </div>
+          <div class="payment-percentage">{{ payment.percentage }}%</div>
+        </div>
+      </div>
+
+      <div class="empty-state" *ngIf="stats.paymentMethods.length === 0">
+        <p>Aucun paiement ce mois</p>
+      </div>
+    </div>
+
+    <!-- Section top prestation -->
+    <div class="section-card top-prestation-section" *ngIf="stats.topPrestation">
+      <h2 class="section-title">Top prestation</h2>
+      <div class="top-prestation">
+        <span class="trophy">🏆</span>
+        <div class="prestation-info">
+          <span class="prestation-name">{{ stats.topPrestation.name }}</span>
+          <span class="prestation-count">{{ stats.topPrestation.count }} RDV ce mois</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Résumé rapide -->
+    <div class="summary-card">
+      <div class="summary-header">
+        <span class="summary-icon">📊</span>
+        <span class="summary-title">Résumé</span>
+      </div>
+      <div class="summary-content">
+        <p *ngIf="stats.revenue > 0">
+          Ce mois, <strong>{{ stats.completedAppointments }} rendez-vous</strong> ont généré 
+          <strong>{{ stats.revenue | number:'1.0-0':'fr' }}€</strong> de chiffre d'affaires
+          <span *ngIf="stats.newClients > 0">, dont <strong>{{ stats.newClients }} nouveau{{ stats.newClients > 1 ? 'x' : '' }} client{{ stats.newClients > 1 ? 's' : '' }}</strong></span>.
+        </p>
+        <p *ngIf="stats.revenue === 0">
+          Aucun rendez-vous terminé ce mois.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+

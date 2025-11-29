@@ -831,8 +831,8 @@ export class BookingComponent implements OnInit, OnChanges {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    // Ne pas afficher les dates passées
-    if (date < today) return false;
+    // Ne pas permettre les RDV pour le jour même ou les dates passées
+    if (date <= today) return false;
     
     // Ne pas afficher les dates bloquées
     if (this.blockedDates.includes(dateStr)) return false;
