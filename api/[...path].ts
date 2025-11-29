@@ -1,9 +1,9 @@
-import {createClient, SupabaseClient} from '@supabase/supabase-js';
-import type {VercelRequest, VercelResponse} from '@vercel/node';
-import {findClientById, generateClientId, verifyClientId} from './utils/client-id.js';
-import {rateLimitMiddleware} from './utils/rate-limiter.js';
-import {applyRateLimit, getAllowedOrigins, setCORSHeaders, setSecurityHeaders} from './utils/security-helpers.js';
-import {sanitizeAppointment, validateAppointment, validateAppointmentQuery, validateCaptchaToken} from './utils/validation.js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { findClientById, generateClientId, verifyClientId } from './utils/client-id.js';
+import { rateLimitMiddleware } from './utils/rate-limiter.js';
+import { applyRateLimit, getAllowedOrigins, setCORSHeaders, setSecurityHeaders } from './utils/security-helpers.js';
+import { sanitizeAppointment, validateAppointment, validateAppointmentQuery, validateCaptchaToken } from './utils/validation.js';
 
 /**
  * Détermine l'origine CORS à autoriser
@@ -967,7 +967,7 @@ async function handleAppointments(req: VercelRequest, res: VercelResponse, supab
     // Gérer le statut si fourni
     if (req.body.status !== undefined) {
       updateData.status = req.body.status?.toLowerCase()?.trim();
-      const validStatuses = ['pending', 'accepted', 'rejected', 'cancelled'];
+      const validStatuses = ['pending', 'accepted', 'completed', 'rejected', 'cancelled'];
       if (!updateData.status || !validStatuses.includes(updateData.status)) {
         return res.status(400).json({ 
           error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` 

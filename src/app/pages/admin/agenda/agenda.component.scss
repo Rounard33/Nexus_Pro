@@ -150,6 +150,10 @@
     background: #10b981;
   }
 
+  &.status-completed {
+    background: #047857;
+  }
+
   &.status-rejected {
     background: #ef4444;
   }
@@ -397,6 +401,11 @@
     background: #ecfdf5;
   }
 
+  &.status-completed {
+    border-left-color: #047857;
+    background: #d1fae5;
+  }
+
   &.status-rejected {
     border-left-color: #ef4444;
     background: #fef2f2;
@@ -459,6 +468,12 @@
   &.status-accepted {
     background: #d1fae5;
     color: #065f46;
+  }
+
+  &.status-completed {
+    background: #a7f3d0;
+    color: #047857;
+    font-weight: 700;
   }
 
   &.status-rejected {

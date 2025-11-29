@@ -140,6 +140,20 @@
                   </svg>
                   <span *ngIf="isUpdating(appointment)" class="spinner" aria-hidden="true"></span>
                 </button>
+                <button 
+                  *ngIf="appointment.status === 'accepted' && isAppointmentPast(appointment)"
+                  class="btn-action btn-complete" 
+                  (click)="updateStatus(appointment, 'completed')"
+                  [disabled]="isUpdating(appointment)"
+                  [attr.aria-label]="'Marquer comme terminé le rendez-vous de ' + appointment.client_name"
+                  [title]="isUpdating(appointment) ? 'Mise à jour en cours...' : 'Marquer comme terminé'"
+                  type="button">
+                  <svg *ngIf="!isUpdating(appointment)" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                  </svg>
+                  <span *ngIf="isUpdating(appointment)" class="spinner" aria-hidden="true"></span>
+                </button>
               </div>
             </td>
           </tr>
@@ -244,6 +258,20 @@
           </svg>
           <span *ngIf="isUpdating(appointment)" class="spinner" aria-hidden="true"></span>
           <span *ngIf="!isUpdating(appointment)">Refuser</span>
+        </button>
+        <button 
+          *ngIf="appointment.status === 'accepted' && isAppointmentPast(appointment)"
+          class="appointment-card-action-btn appointment-card-action-btn-complete" 
+          (click)="updateStatus(appointment, 'completed')"
+          [disabled]="isUpdating(appointment)"
+          [attr.aria-label]="'Marquer comme terminé le rendez-vous de ' + appointment.client_name"
+          type="button">
+          <svg *ngIf="!isUpdating(appointment)" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+          <span *ngIf="isUpdating(appointment)" class="spinner" aria-hidden="true"></span>
+          <span *ngIf="!isUpdating(appointment)">Terminé</span>
         </button>
       </div>
     </div>
@@ -354,6 +382,15 @@
           aria-label="Refuser ce rendez-vous">
           <span *ngIf="isUpdating(selectedAppointment)">Mise à jour...</span>
           <span *ngIf="!isUpdating(selectedAppointment)">Refuser</span>
+        </button>
+        <button 
+          *ngIf="selectedAppointment.status === 'accepted' && isAppointmentPast(selectedAppointment)"
+          class="btn btn-complete" 
+          (click)="updateStatus(selectedAppointment, 'completed')"
+          [disabled]="isUpdating(selectedAppointment)"
+          aria-label="Marquer ce rendez-vous comme terminé">
+          <span *ngIf="isUpdating(selectedAppointment)">Mise à jour...</span>
+          <span *ngIf="!isUpdating(selectedAppointment)">✓ Marquer comme terminé</span>
         </button>
       </div>
     </div>

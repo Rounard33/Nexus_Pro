@@ -38,6 +38,10 @@ const colors: Record<string, { primary: string; secondary: string }> = {
     primary: '#10b981',
     secondary: '#d1fae5',
   },
+  completed: {
+    primary: '#047857',
+    secondary: '#a7f3d0',
+  },
   rejected: {
     primary: '#ef4444',
     secondary: '#fee2e2',
@@ -274,6 +278,7 @@ export class AgendaComponent implements OnInit {
     const labels: Record<string, string> = {
       pending: 'En attente',
       accepted: 'Accepté',
+      completed: 'Terminé',
       rejected: 'Refusé',
       cancelled: 'Annulé'
     };

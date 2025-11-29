@@ -14,6 +14,7 @@ export interface PrestationStats {
 export interface AppointmentStats {
   total: number;
   accepted: number;
+  completed?: number;
   pending: number;
   rejected: number;
   cancelled: number;

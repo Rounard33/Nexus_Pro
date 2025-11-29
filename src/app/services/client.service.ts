@@ -48,6 +48,9 @@ export class ClientService {
     if (clientAppointments.length === 0) return null;
 
     const acceptedAppointments = clientAppointments.filter(a => a.status === 'accepted');
+    const completedAppointments = clientAppointments.filter(a => a.status === 'completed');
+    // Les RDV confirmés incluent accepted + completed
+    const confirmedAppointments = clientAppointments.filter(a => a.status === 'accepted' || a.status === 'completed');
     const { nextBirthday, age } = BirthdayUtils.calculateBirthdayInfo(clientData?.birthdate);
 
     return {
@@ -59,16 +62,18 @@ export class ClientService {
       birthdate: clientData?.birthdate,
       notes: clientData?.notes,
       appointments: this.sortAppointments(clientAppointments),
-      totalAppointments: acceptedAppointments.length,
+      totalAppointments: confirmedAppointments.length,
       acceptedAppointments: acceptedAppointments.length,
+      completedAppointments: completedAppointments.length,
       pendingAppointments: clientAppointments.filter(a => a.status === 'pending').length,
       rejectedAppointments: clientAppointments.filter(a => a.status === 'rejected').length,
       cancelledAppointments: clientAppointments.filter(a => a.status === 'cancelled').length,
-      lastAppointmentDate: this.getLastAppointmentDate(acceptedAppointments),
-      firstAppointmentDate: this.getFirstAppointmentDate(acceptedAppointments),
+      lastAppointmentDate: this.getLastAppointmentDate(confirmedAppointments),
+      firstAppointmentDate: this.getFirstAppointmentDate(confirmedAppointments),
       nextBirthday,
       age,
-      eligibleTreatments: acceptedAppointments.length
+      // Seuls les RDV terminés comptent pour la fidélité
+      eligibleTreatments: completedAppointments.length
     };
   }
 

@@ -96,8 +96,9 @@ export class ClientsComponent implements OnInit, OnDestroy {
           const client = this.clients[index];
           if (client) {
             // Calculer eligibleTreatments en filtrant les tirages de cartes
+            // Seuls les RDV terminés (completed) comptent pour la fidélité
             const eligibleAppointments = client.appointments.filter(apt => {
-              if (apt.status !== 'accepted') return false;
+              if (apt.status !== 'completed') return false;
               const prestationName = apt.prestations?.name?.toLowerCase() || '';
               // Exclure les tirages de cartes
               return !prestationName.includes('tirage') && !prestationName.includes('carte');

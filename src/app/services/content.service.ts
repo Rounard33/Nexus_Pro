@@ -98,7 +98,7 @@ export interface Appointment {
   prestation_id: string | null; // Peut être null si non renseigné
   appointment_date: string;
   appointment_time: string;
-  status: 'pending' | 'accepted' | 'rejected' | 'cancelled';
+  status: 'pending' | 'accepted' | 'completed' | 'rejected' | 'cancelled';
   payment_method?: 'espèces' | 'carte' | 'virement' | 'chèque' | null;
   notes?: string;
   referral_source?: string; // Source de référence : search, social, friend, advertisement, other

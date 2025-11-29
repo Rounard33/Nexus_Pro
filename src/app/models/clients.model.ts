@@ -25,12 +25,13 @@ export interface ClientProfile {
   appointments: Appointment[];
   totalAppointments: number;
   acceptedAppointments: number;
+  completedAppointments?: number; // RDV terminés (comptent pour la fidélité)
   pendingAppointments: number;
   lastAppointmentDate: string | null;
   firstAppointmentDate: string | null;
   nextBirthday?: string | null;
   age?: number | null;
-  eligibleTreatments?: number;
+  eligibleTreatments?: number; // Nombre de séances pour la fidélité (= completed)
   referralsCount?: number; // Nombre de parrainages (personnes venues de sa part)
   loyaltyRewards?: LoyaltyReward[];
   lastRewardDate?: string | null;

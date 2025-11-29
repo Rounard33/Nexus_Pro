@@ -142,6 +142,12 @@
   color: #155724;
 }
 
+.status-completed {
+  background: #c3e6cb;
+  color: #0d5524;
+  font-weight: 600;
+}
+
 .status-rejected {
   background: #f8d7da;
   color: #721c24;
@@ -217,6 +223,15 @@
 
   &:hover {
     background: #f5c6cb;
+  }
+}
+
+.btn-complete {
+  background: #28a745;
+  color: white;
+
+  &:hover {
+    background: #218838;
   }
 }
 
@@ -463,6 +478,15 @@
   }
 }
 
+.btn-complete {
+  background: #28a745;
+  color: white;
+
+  &:hover {
+    background: #218838;
+  }
+}
+
 // Responsive
 @media (max-width: 768px) {
   .page-title {
@@ -654,6 +678,15 @@
 
     &:hover:not(:disabled) {
       background: #f5c6cb;
+    }
+  }
+
+  .appointment-card-action-btn-complete {
+    background: #28a745;
+    color: white;
+
+    &:hover:not(:disabled) {
+      background: #218838;
     }
   }
 

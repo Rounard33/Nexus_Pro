@@ -11,16 +11,19 @@ export class StatisticsService {
    */
   calculateStats(appointments: Appointment[]): AppointmentStats {
     const accepted = appointments.filter(a => a.status === 'accepted').length;
+    const completed = appointments.filter(a => a.status === 'completed').length;
     const pending = appointments.filter(a => a.status === 'pending').length;
     const rejected = appointments.filter(a => a.status === 'rejected').length;
     const cancelled = appointments.filter(a => a.status === 'cancelled').length;
-    const total = accepted; // Seulement les acceptés comptent
+    // Total = acceptés + terminés (RDV confirmés)
+    const total = accepted + completed;
     
-    const acceptanceRate = this.calculateAcceptanceRate(accepted, rejected);
+    const acceptanceRate = this.calculateAcceptanceRate(accepted + completed, rejected);
 
     return {
       total,
       accepted,
+      completed,
       pending,
       rejected,
       cancelled,
@@ -69,7 +72,8 @@ export class StatisticsService {
     virement: number;
     chèque: number;
   } {
-    const accepted = appointments.filter(a => a.status === 'accepted');
+    // Inclure accepted et completed pour les paiements
+    const confirmed = appointments.filter(a => a.status === 'accepted' || a.status === 'completed');
     const stats = {
       espèces: 0,
       carte: 0,
@@ -77,7 +81,7 @@ export class StatisticsService {
       chèque: 0,
     };
 
-    accepted.forEach(appointment => {
+    confirmed.forEach(appointment => {
       const method = appointment.payment_method;
       if (method === 'espèces') {
         stats.espèces++;

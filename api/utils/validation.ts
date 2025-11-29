@@ -182,7 +182,7 @@ export function validateAppointment(data: any): ValidationResult {
 
   // Validation status (doit être pending pour création)
   if (data.status !== undefined && data.status !== null) {
-    const validStatuses = ['pending', 'accepted', 'rejected', 'cancelled'];
+    const validStatuses = ['pending', 'accepted', 'completed', 'rejected', 'cancelled'];
     if (!validStatuses.includes(data.status)) {
       errors.push('Statut invalide');
     }
@@ -265,7 +265,7 @@ export function validateAppointmentQuery(params: any): ValidationResult {
   const errors: string[] = [];
 
   if (params.status && typeof params.status === 'string') {
-    const validStatuses = ['pending', 'accepted', 'rejected', 'cancelled'];
+    const validStatuses = ['pending', 'accepted', 'completed', 'rejected', 'cancelled'];
     if (!validStatuses.includes(params.status)) {
       errors.push('Statut invalide');
     }

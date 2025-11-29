@@ -1,16 +1,16 @@
-import {CommonModule} from '@angular/common';
-import {Component, OnDestroy, OnInit} from '@angular/core';
-import {FormsModule} from '@angular/forms';
-import {ActivatedRoute, Router} from '@angular/router';
-import {Subject, debounceTime, distinctUntilChanged, takeUntil} from 'rxjs';
+import { CommonModule } from '@angular/common';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 import {
-  APPOINTMENT_STATUS_CLASSES,
-  APPOINTMENT_STATUS_LABELS,
-  AppointmentStatus
+    APPOINTMENT_STATUS_CLASSES,
+    APPOINTMENT_STATUS_LABELS,
+    AppointmentStatus
 } from '../../../models/appointment-status.enum';
-import {Appointment, ContentService} from '../../../services/content.service';
-import {NotificationService} from '../../../services/notification.service';
-import {DateUtils} from '../../../utils/date.utils';
+import { Appointment, ContentService } from '../../../services/content.service';
+import { NotificationService } from '../../../services/notification.service';
+import { DateUtils } from '../../../utils/date.utils';
 
 @Component({
   selector: 'app-appointments',
@@ -185,7 +185,7 @@ export class AppointmentsComponent implements OnInit, OnDestroy {
     );
   }
 
-  updateStatus(appointment: Appointment, status: 'accepted' | 'rejected'): void {
+  updateStatus(appointment: Appointment, status: 'accepted' | 'completed' | 'rejected'): void {
     if (!appointment.id) {
       this.notificationService.error('Erreur: Rendez-vous invalide (ID manquant)');
       return;
@@ -268,6 +268,17 @@ export class AppointmentsComponent implements OnInit, OnDestroy {
    */
   hasPrestation(appointment: Appointment): boolean {
     return !!appointment.prestations?.name;
+  }
+
+  /**
+   * Vérifie si un rendez-vous est dans le passé (date + heure)
+   */
+  isAppointmentPast(appointment: Appointment): boolean {
+    const now = new Date();
+    const [hours, minutes] = appointment.appointment_time.split(':').map(Number);
+    const appointmentDate = new Date(appointment.appointment_date);
+    appointmentDate.setHours(hours, minutes, 0, 0);
+    return appointmentDate < now;
   }
 
   /**
