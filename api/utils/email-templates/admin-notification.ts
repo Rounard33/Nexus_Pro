@@ -3,10 +3,9 @@
  * Envoyé quand un client fait une demande de rendez-vous
  */
 
-import { 
-  escapeHtml, 
-  formatDateFr,
-  SITE_NAME 
+import {
+    escapeHtml,
+    formatDateFr
 } from './common.js';
 
 export interface AdminNotificationData {
@@ -18,7 +17,7 @@ export interface AdminNotificationData {
   prestation_name?: string;
   notes?: string;
   // Infos fidélité
-  loyalty_count?: number; // Nombre de séances de fidélité (hors tirages de cartes)
+  loyalty_count?: number; // Nombre de séances terminées (hors tirages de cartes)
   loyalty_threshold?: number; // Seuil pour la récompense (10 par défaut)
   // Infos parrainage
   referral_source?: string;
@@ -38,10 +37,10 @@ export function generateAdminNotificationEmail(data: AdminNotificationData): str
   const safeNotes = escapeHtml(data.notes);
   const dateFormatted = formatDateFr(data.appointment_date);
   
-  // Infos fidélité
+  // Infos fidélité (basé sur les RDV terminés uniquement)
   const loyaltyCount = data.loyalty_count || 0;
   const loyaltyThreshold = data.loyalty_threshold || 10;
-  const loyaltyAfterThis = loyaltyCount + 1; // +1 pour ce nouveau RDV
+  const loyaltyAfterThis = loyaltyCount + 1; // +1 quand ce RDV sera marqué comme terminé
   const isCloseToReward = loyaltyAfterThis >= loyaltyThreshold - 2 && loyaltyAfterThis < loyaltyThreshold;
   const hasReachedReward = loyaltyAfterThis >= loyaltyThreshold;
   
@@ -56,10 +55,10 @@ export function generateAdminNotificationEmail(data: AdminNotificationData): str
         💜 Carte fidélité
       </h3>
       <p style="font-family: Arial, sans-serif; font-size: 14px; color: #4a3f35; margin: 0 0 8px 0;">
-        <strong>${loyaltyCount}</strong> séance${loyaltyCount > 1 ? 's' : ''} effectuée${loyaltyCount > 1 ? 's' : ''} (hors tirages de cartes)
+        <strong>${loyaltyCount}</strong> séance${loyaltyCount > 1 ? 's' : ''} terminée${loyaltyCount > 1 ? 's' : ''} (hors tirages de cartes)
       </p>
       <p style="font-family: Arial, sans-serif; font-size: 14px; color: #4a3f35; margin: 0 0 8px 0;">
-        Après ce RDV : <strong>${loyaltyAfterThis}/${loyaltyThreshold}</strong> séances
+        Après ce RDV (si terminé) : <strong>${loyaltyAfterThis}/${loyaltyThreshold}</strong> séances
       </p>
       ${hasReachedReward ? `
       <p style="font-family: Arial, sans-serif; font-size: 14px; color: #2e7d32; margin: 8px 0 0 0; font-weight: bold;">

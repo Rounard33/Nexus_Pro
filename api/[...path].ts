@@ -826,14 +826,14 @@ async function handleAppointments(req: VercelRequest, res: VercelResponse, supab
     let loyaltyCount = 0;
     let referrerLoyaltyCount: number | undefined = undefined;
     
-    // Récupérer le nombre de RDV acceptés du client (pour la fidélité)
-    // On ne compte que les RDV acceptés (hors tirages de cartes - à filtrer par nom de prestation si besoin)
+    // Récupérer le nombre de RDV terminés du client (pour la fidélité)
+    // Seuls les RDV terminés comptent (hors tirages de cartes)
     try {
       const { data: clientAppointments } = await supabase
         .from('appointments')
         .select('id, prestation_id, prestations(name)')
         .eq('client_email', data.client_email.toLowerCase())
-        .eq('status', 'accepted');
+        .eq('status', 'completed');
       
       if (clientAppointments) {
         // Filtrer les tirages de cartes (ne comptent pas pour la fidélité)
@@ -843,7 +843,7 @@ async function handleAppointments(req: VercelRequest, res: VercelResponse, supab
           return !prestationName.includes('tirage') && !prestationName.includes('carte');
         });
         loyaltyCount = eligibleAppointments.length;
-        console.log(`[Fidélité] Client ${data.client_email}: ${loyaltyCount} séances éligibles`);
+        console.log(`[Fidélité] Client ${data.client_email}: ${loyaltyCount} séances terminées éligibles`);
       }
     } catch (loyaltyError: any) {
       console.warn('[Fidélité] Erreur récupération fidélité client:', loyaltyError.message);
