@@ -131,9 +131,12 @@ export class StatisticsService {
    * @returns Panier moyen en euros
    */
   calculateAverageBasket(appointments: Appointment[], prestations: Prestation[]): number {
-    const accepted = appointments.filter(a => a.status === 'accepted' && a.prestation_id);
+    // Filtrer les RDV confirmés (accepted ou completed) avec une prestation
+    const confirmed = appointments.filter(a => 
+      (a.status === 'accepted' || a.status === 'completed') && a.prestation_id
+    );
     
-    if (accepted.length === 0) return 0;
+    if (confirmed.length === 0) return 0;
 
     // Créer un map des prestations par ID pour accès rapide
     const prestationMap = new Map<string, Prestation>();
@@ -146,7 +149,7 @@ export class StatisticsService {
     let totalAmount = 0;
     let countWithPrice = 0;
 
-    accepted.forEach(appointment => {
+    confirmed.forEach(appointment => {
       if (!appointment.prestation_id) return;
       
       const prestation = prestationMap.get(appointment.prestation_id);

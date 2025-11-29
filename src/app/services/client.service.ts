@@ -51,6 +51,13 @@ export class ClientService {
     const completedAppointments = clientAppointments.filter(a => a.status === 'completed');
     // Les RDV confirmés incluent accepted + completed
     const confirmedAppointments = clientAppointments.filter(a => a.status === 'accepted' || a.status === 'completed');
+    
+    // Séances éligibles pour la fidélité : terminées ET hors tirages de cartes
+    const eligibleForLoyalty = completedAppointments.filter(apt => {
+      const prestationName = apt.prestations?.name?.toLowerCase() || '';
+      return !prestationName.includes('tirage') && !prestationName.includes('carte');
+    });
+    
     const { nextBirthday, age } = BirthdayUtils.calculateBirthdayInfo(clientData?.birthdate);
 
     return {
@@ -72,8 +79,8 @@ export class ClientService {
       firstAppointmentDate: this.getFirstAppointmentDate(confirmedAppointments),
       nextBirthday,
       age,
-      // Seuls les RDV terminés comptent pour la fidélité
-      eligibleTreatments: completedAppointments.length
+      // Seuls les RDV terminés (hors tirages) comptent pour la fidélité
+      eligibleTreatments: eligibleForLoyalty.length
     };
   }
 
@@ -100,9 +107,13 @@ export class ClientService {
    * Met à jour les statistiques d'un client avec un nouveau rendez-vous
    */
   private updateClientStats(client: ClientProfile, apt: Appointment): void {
-    if (apt.status === 'accepted') {
+    if (apt.status === 'accepted' || apt.status === 'completed') {
       client.totalAppointments++;
-      client.acceptedAppointments++;
+      if (apt.status === 'accepted') {
+        client.acceptedAppointments++;
+      } else {
+        client.completedAppointments = (client.completedAppointments || 0) + 1;
+      }
       this.updateAppointmentDates(client, apt);
     } else if (apt.status === 'pending') {
       client.pendingAppointments++;
