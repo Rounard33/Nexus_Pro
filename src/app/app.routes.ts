@@ -24,6 +24,10 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/admin/appointments/appointments.component').then(m => m.AppointmentsComponent) 
       },
       { 
+        path: 'agenda', 
+        loadComponent: () => import('./pages/admin/agenda/agenda.component').then(m => m.AgendaComponent) 
+      },
+      { 
         path: 'statistics', 
         loadComponent: () => import('./pages/admin/statistics/statistics.component').then(m => m.StatisticsComponent) 
       },

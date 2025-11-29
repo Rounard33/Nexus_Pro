@@ -1,0 +1,541 @@
+.agenda {
+  animation: fadeIn 0.3s ease-out;
+  padding: 2rem;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.agenda-header {
+  margin-bottom: 2rem;
+}
+
+.agenda-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary, #1a1a1a);
+  margin: 0 0 0.5rem 0;
+}
+
+.agenda-subtitle {
+  color: var(--text-secondary, #666);
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+// Contrôles du calendrier
+.calendar-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.calendar-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--primary-200, #e8e3d8);
+  background: white;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text-primary, #1a1a1a);
+
+  &:hover {
+    background: var(--primary-100, #f5f3ef);
+    border-color: var(--primary-300, #d4cfc3);
+  }
+}
+
+.today-btn {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--primary-500, #b8a889);
+  background: var(--primary-500, #b8a889);
+  color: white;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: var(--primary-600, #a8967a);
+    border-color: var(--primary-600, #a8967a);
+  }
+}
+
+.current-period {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary, #1a1a1a);
+  margin: 0;
+  text-transform: capitalize;
+}
+
+.view-buttons {
+  display: flex;
+  gap: 0.25rem;
+  background: var(--primary-100, #f5f3ef);
+  padding: 0.25rem;
+  border-radius: 8px;
+}
+
+.view-btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary, #666);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    color: var(--text-primary, #1a1a1a);
+  }
+
+  &.active {
+    background: white;
+    color: var(--text-primary, #1a1a1a);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+}
+
+// Légende
+.legend {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary, #666);
+}
+
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+
+  &.status-pending {
+    background: #f59e0b;
+  }
+
+  &.status-accepted {
+    background: #10b981;
+  }
+
+  &.status-rejected {
+    background: #ef4444;
+  }
+}
+
+// État de chargement
+.loading-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--text-secondary, #666);
+}
+
+// Conteneur du calendrier
+.calendar-container {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  border: 1px solid var(--primary-100, #f5f3ef);
+}
+
+// Styles pour angular-calendar
+:host ::ng-deep {
+  .cal-month-view {
+    background: white;
+    
+    .cal-header {
+      background: var(--primary-50, #faf9f7);
+      
+      .cal-cell {
+        padding: 1rem 0;
+        font-weight: 600;
+        color: var(--text-primary, #1a1a1a);
+        font-size: 0.875rem;
+      }
+    }
+    
+    .cal-days {
+      border-color: var(--primary-100, #f5f3ef);
+      
+      .cal-cell-row {
+        border-color: var(--primary-100, #f5f3ef);
+      }
+      
+      .cal-day-cell {
+        min-height: 100px;
+        border-color: var(--primary-100, #f5f3ef);
+        
+        &:hover {
+          background: var(--primary-50, #faf9f7);
+        }
+        
+        &.cal-today {
+          background: #fef3c7;
+        }
+        
+        &.cal-weekend {
+          background: var(--primary-50, #faf9f7);
+        }
+        
+        &.cal-out-month {
+          opacity: 0.4;
+        }
+        
+        .cal-day-number {
+          font-size: 0.875rem;
+          font-weight: 500;
+          color: var(--text-primary, #1a1a1a);
+          opacity: 1;
+          margin-top: 0.5rem;
+          margin-right: 0.5rem;
+        }
+      }
+    }
+    
+    .cal-events {
+      margin-top: 0.25rem;
+      
+      .cal-event {
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        margin-bottom: 0.25rem;
+        cursor: pointer;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        
+        &:hover {
+          opacity: 0.9;
+          transform: translateY(-1px);
+        }
+      }
+    }
+    
+    .cal-cell-top {
+      min-height: auto;
+    }
+    
+    .cal-open-day-events {
+      background: var(--primary-100, #f5f3ef);
+      box-shadow: none;
+      padding: 1rem;
+      
+      .cal-event {
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        margin-bottom: 0.5rem;
+      }
+    }
+  }
+  
+  .cal-week-view {
+    background: white;
+    
+    .cal-day-headers {
+      background: var(--primary-50, #faf9f7);
+      border-color: var(--primary-100, #f5f3ef);
+      
+      .cal-header {
+        padding: 1rem;
+        font-weight: 600;
+        color: var(--text-primary, #1a1a1a);
+        border-color: var(--primary-100, #f5f3ef);
+        
+        &.cal-today {
+          background: #fef3c7;
+        }
+        
+        &.cal-weekend {
+          background: var(--primary-100, #f5f3ef);
+        }
+      }
+    }
+    
+    .cal-time-events {
+      border-color: var(--primary-100, #f5f3ef);
+      
+      .cal-day-column {
+        border-color: var(--primary-100, #f5f3ef);
+      }
+      
+      .cal-hour-segment {
+        border-color: var(--primary-100, #f5f3ef);
+        
+        &:hover {
+          background: var(--primary-50, #faf9f7);
+        }
+      }
+      
+      .cal-event {
+        border-radius: 4px;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+        cursor: pointer;
+        
+        &:hover {
+          opacity: 0.9;
+        }
+      }
+    }
+    
+    .cal-time {
+      font-size: 0.75rem;
+      color: var(--text-secondary, #666);
+    }
+  }
+}
+
+// Détail du jour
+.day-detail {
+  margin-top: 2rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--primary-100, #f5f3ef);
+  overflow: hidden;
+}
+
+.day-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background: var(--primary-50, #faf9f7);
+  border-bottom: 1px solid var(--primary-100, #f5f3ef);
+  
+  h3 {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-primary, #1a1a1a);
+    text-transform: capitalize;
+  }
+}
+
+.close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-secondary, #666);
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: var(--primary-100, #f5f3ef);
+    color: var(--text-primary, #1a1a1a);
+  }
+}
+
+.day-appointments {
+  padding: 1rem;
+}
+
+.appointment-card {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--primary-50, #faf9f7);
+  border-radius: 8px;
+  margin-bottom: 0.75rem;
+  border-left: 4px solid;
+  transition: all 0.2s ease;
+
+  &:hover {
+    transform: translateX(4px);
+  }
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  &.status-pending {
+    border-left-color: #f59e0b;
+    background: #fffbeb;
+  }
+
+  &.status-accepted {
+    border-left-color: #10b981;
+    background: #ecfdf5;
+  }
+
+  &.status-rejected {
+    border-left-color: #ef4444;
+    background: #fef2f2;
+  }
+
+  &.status-cancelled {
+    border-left-color: #6b7280;
+    background: #f9fafb;
+    opacity: 0.7;
+  }
+}
+
+.appointment-time {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary, #1a1a1a);
+  min-width: 60px;
+}
+
+.appointment-info {
+  flex: 1;
+}
+
+.appointment-client {
+  font-weight: 600;
+  color: var(--text-primary, #1a1a1a);
+  margin-bottom: 0.25rem;
+}
+
+.appointment-prestation {
+  font-size: 0.875rem;
+  color: var(--text-secondary, #666);
+  margin-bottom: 0.5rem;
+}
+
+.appointment-contact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.75rem;
+  color: var(--text-secondary, #666);
+}
+
+.appointment-status {
+  display: flex;
+  align-items: flex-start;
+}
+
+.status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+
+  &.status-pending {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  &.status-accepted {
+    background: #d1fae5;
+    color: #065f46;
+  }
+
+  &.status-rejected {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  &.status-cancelled {
+    background: #f3f4f6;
+    color: #4b5563;
+  }
+}
+
+.no-appointments {
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-secondary, #666);
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .agenda {
+    padding: 1rem;
+  }
+
+  .calendar-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .calendar-nav {
+    justify-content: center;
+  }
+
+  .current-period {
+    text-align: center;
+    font-size: 1.25rem;
+  }
+
+  .view-buttons {
+    display: none; // Hide view switcher on mobile - only month view
+  }
+
+  .appointment-card {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .appointment-time {
+    font-size: 1rem;
+  }
+
+  :host ::ng-deep {
+    .cal-month-view .cal-days .cal-day-cell {
+      min-height: 60px;
+    }
+
+    .cal-month-view .cal-events .cal-event {
+      font-size: 0.65rem;
+      padding: 0.125rem 0.25rem;
+    }
+
+  }
+}
+
+// Extra small screens (phones in portrait)
+@media (max-width: 480px) {
+  .agenda-title {
+    font-size: 1.5rem;
+  }
+  
+  .legend {
+    gap: 1rem;
+  }
+  
+  .legend-item {
+    font-size: 0.75rem;
+  }
+}
+
