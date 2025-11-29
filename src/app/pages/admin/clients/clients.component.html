@@ -54,6 +54,19 @@
         </div>
       </div>
 
+      <!-- Badge fidélité -->
+      <div class="loyalty-indicator" *ngIf="client.eligibleTreatments !== undefined">
+        <div class="loyalty-bar">
+          <div class="loyalty-progress" [style.width.%]="getLoyaltyProgress(client)"></div>
+        </div>
+        <span class="loyalty-text" [class.loyalty-close]="isCloseToReward(client)" [class.loyalty-reached]="hasReachedReward(client)">
+          💜 {{ client.eligibleTreatments || 0 }}/10 séances
+          <span *ngIf="client.referralsCount && client.referralsCount > 0" class="referrals-badge">
+            +{{ client.referralsCount }} parr.
+          </span>
+        </span>
+      </div>
+
       <div class="client-footer">
         <div class="client-date">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

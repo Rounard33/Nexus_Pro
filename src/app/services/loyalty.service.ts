@@ -91,4 +91,47 @@ export class LoyaltyService {
       description
     };
   }
+
+  /**
+   * Compte le nombre de cycles de fidélité complétés
+   * Un cycle est complet quand les 2 récompenses (discount + gift) ont été données
+   * @param rewards Liste des récompenses
+   * @returns Nombre de cycles complétés
+   */
+  countCompletedCycles(rewards: LoyaltyReward[]): number {
+    const discountCount = rewards.filter(r => r.type === 'discount').length;
+    const giftCount = rewards.filter(r => r.type === 'gift').length;
+    // Un cycle complet = 1 discount + 1 gift
+    return Math.min(discountCount, giftCount);
+  }
+
+  /**
+   * Calcule les points de fidélité disponibles après déduction des cycles complétés
+   * @param totalPoints Total des points (séances + parrainages)
+   * @param rewards Liste des récompenses
+   * @param threshold Seuil pour un cycle (défaut: 10)
+   * @returns Points disponibles dans le cycle actuel
+   */
+  getAvailablePoints(totalPoints: number, rewards: LoyaltyReward[], threshold: number = 10): number {
+    const completedCycles = this.countCompletedCycles(rewards);
+    const usedPoints = completedCycles * threshold;
+    return Math.max(0, totalPoints - usedPoints);
+  }
+
+  /**
+   * Vérifie si le cycle actuel a une récompense en attente
+   * @param rewards Liste des récompenses
+   * @returns 'discount' si la réduction est en attente, 'gift' si le cadeau est en attente, null si rien
+   */
+  getPendingRewardInCurrentCycle(rewards: LoyaltyReward[]): 'discount' | 'gift' | null {
+    const discountCount = rewards.filter(r => r.type === 'discount').length;
+    const giftCount = rewards.filter(r => r.type === 'gift').length;
+    
+    // Si discount > gift, c'est le cadeau qui est en attente
+    if (discountCount > giftCount) return 'gift';
+    // Si gift > discount, c'est la réduction qui est en attente
+    if (giftCount > discountCount) return 'discount';
+    // Sinon, rien n'est en attente (soit les deux sont faits, soit aucun)
+    return null;
+  }
 }

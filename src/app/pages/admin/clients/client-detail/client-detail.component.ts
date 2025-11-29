@@ -244,16 +244,50 @@ export class ClientDetailComponent implements OnInit {
     return FormatUtils.getMaxDate();
   }
 
+  // Calcule le total brut des points de fidélité (séances + parrainages)
+  private getTotalRawPoints(): number {
+    const treatments = this.client?.eligibleTreatments || 0;
+    const referrals = this.client?.referralsCount || 0;
+    return treatments + referrals;
+  }
+
+  // Calcule les points disponibles dans le cycle actuel (après déduction des cycles complétés)
+  getTotalLoyaltyPoints(): number {
+    const totalRaw = this.getTotalRawPoints();
+    const rewards = this.client?.loyaltyRewards || [];
+    return this.loyaltyService.getAvailablePoints(totalRaw, rewards, 10);
+  }
+
   hasReachedLoyaltyThreshold(): boolean {
-    return this.loyaltyService.hasReachedThreshold(
-      this.client?.eligibleTreatments || 0
-    );
+    // Seuil de 10 points dans le cycle actuel
+    return this.getTotalLoyaltyPoints() >= 10;
   }
 
   getRemainingTreatments(): number {
-    return this.loyaltyService.getRemainingTreatments(
-      this.client?.eligibleTreatments || 0
-    );
+    const total = this.getTotalLoyaltyPoints();
+    return Math.max(0, 10 - total);
+  }
+
+  // Retourne le nombre de cycles de fidélité complétés
+  getCompletedCycles(): number {
+    return this.loyaltyService.countCompletedCycles(this.client?.loyaltyRewards || []);
+  }
+
+  // Vérifie si une récompense est en attente dans le cycle actuel
+  getPendingReward(): 'discount' | 'gift' | null {
+    return this.loyaltyService.getPendingRewardInCurrentCycle(this.client?.loyaltyRewards || []);
+  }
+
+  // Vérifie si une récompense spécifique a déjà été donnée dans le cycle actuel
+  isRewardGivenInCurrentCycle(type: 'discount' | 'gift'): boolean {
+    const pending = this.getPendingReward();
+    // Si rien n'est en attente, soit les deux sont faits, soit aucun n'est fait
+    if (pending === null) {
+      // Si on a atteint le seuil et qu'aucune récompense n'est en attente, aucune n'est encore donnée
+      return false;
+    }
+    // Si c'est l'autre type qui est en attente, alors ce type a été donné
+    return pending !== type;
   }
 
   // Enregistrer une récompense

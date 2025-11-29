@@ -85,6 +85,7 @@ export interface Client {
   phone?: string;
   birthdate?: string; // Format: YYYY-MM-DD
   notes?: string;
+  referrals_count?: number; // Nombre de parrainages (personnes venues de sa part)
   created_at?: string;
   updated_at?: string;
 }

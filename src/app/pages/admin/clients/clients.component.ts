@@ -95,10 +95,21 @@ export class ClientsComponent implements OnInit, OnDestroy {
         clientDataArray.forEach((clientData, index) => {
           const client = this.clients[index];
           if (client) {
+            // Calculer eligibleTreatments en filtrant les tirages de cartes
+            const eligibleAppointments = client.appointments.filter(apt => {
+              if (apt.status !== 'accepted') return false;
+              const prestationName = apt.prestations?.name?.toLowerCase() || '';
+              // Exclure les tirages de cartes
+              return !prestationName.includes('tirage') && !prestationName.includes('carte');
+            });
+            client.eligibleTreatments = eligibleAppointments.length;
+
             if (clientData) {
               // Stocker l'ID et le clientId (identifiant opaque) du client depuis l'API
               client.id = clientData.id;
               client.clientId = clientData.clientId;
+              // Récupérer le compteur de parrainages
+              client.referralsCount = clientData.referrals_count || 0;
               if (clientData.birthdate) {
                 client.birthdate = clientData.birthdate;
                 const {nextBirthday, age} = BirthdayUtils.calculateBirthdayInfo(clientData.birthdate);
@@ -113,6 +124,7 @@ export class ClientsComponent implements OnInit, OnDestroy {
               // ⚠️ IMPORTANT: Ce clientId temporaire ne fonctionnera pas avec l'API
               // Il faut créer le client dans la table d'abord
               client.clientId = generateTemporaryClientId(client.email);
+              client.referralsCount = 0;
             }
           }
         });
@@ -177,5 +189,23 @@ export class ClientsComponent implements OnInit, OnDestroy {
 
   formatDate(dateString: string | null): string {
     return FormatUtils.formatShortDate(dateString);
+  }
+
+  // Calcule le pourcentage de progression vers la récompense fidélité
+  getLoyaltyProgress(client: ClientProfile): number {
+    const total = (client.eligibleTreatments || 0) + (client.referralsCount || 0);
+    return Math.min((total / 10) * 100, 100);
+  }
+
+  // Vérifie si le client est proche de la récompense (8 ou 9 séances)
+  isCloseToReward(client: ClientProfile): boolean {
+    const total = (client.eligibleTreatments || 0) + (client.referralsCount || 0);
+    return total >= 8 && total < 10;
+  }
+
+  // Vérifie si le client a atteint la récompense
+  hasReachedReward(client: ClientProfile): boolean {
+    const total = (client.eligibleTreatments || 0) + (client.referralsCount || 0);
+    return total >= 10;
   }
 }

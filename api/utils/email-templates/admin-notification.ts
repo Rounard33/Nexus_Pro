@@ -17,6 +17,13 @@ export interface AdminNotificationData {
   appointment_time: string;
   prestation_name?: string;
   notes?: string;
+  // Infos fidélité
+  loyalty_count?: number; // Nombre de séances de fidélité (hors tirages de cartes)
+  loyalty_threshold?: number; // Seuil pour la récompense (10 par défaut)
+  // Infos parrainage
+  referral_source?: string;
+  referral_friend_name?: string; // Nom du parrain
+  referrer_loyalty_count?: number; // Séances fidélité du parrain après bonus
 }
 
 /**
@@ -30,6 +37,65 @@ export function generateAdminNotificationEmail(data: AdminNotificationData): str
   const safePrestation = escapeHtml(data.prestation_name);
   const safeNotes = escapeHtml(data.notes);
   const dateFormatted = formatDateFr(data.appointment_date);
+  
+  // Infos fidélité
+  const loyaltyCount = data.loyalty_count || 0;
+  const loyaltyThreshold = data.loyalty_threshold || 10;
+  const loyaltyAfterThis = loyaltyCount + 1; // +1 pour ce nouveau RDV
+  const isCloseToReward = loyaltyAfterThis >= loyaltyThreshold - 2 && loyaltyAfterThis < loyaltyThreshold;
+  const hasReachedReward = loyaltyAfterThis >= loyaltyThreshold;
+  
+  // Infos parrainage
+  const safeReferrerName = escapeHtml(data.referral_friend_name);
+  const isReferral = data.referral_source === 'friend' && safeReferrerName;
+
+  // Générer le bloc fidélité
+  const loyaltyBlock = `
+    <div style="background: ${hasReachedReward ? '#e8f5e9' : isCloseToReward ? '#fff3e0' : '#f3e5f5'}; border-radius: 8px; padding: 20px; margin: 0 0 20px 0; border-left: 4px solid ${hasReachedReward ? '#4caf50' : isCloseToReward ? '#ff9800' : '#9c27b0'};">
+      <h3 style="font-family: Arial, sans-serif; font-size: 12px; color: ${hasReachedReward ? '#2e7d32' : isCloseToReward ? '#e65100' : '#7b1fa2'}; margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 1px;">
+        💜 Carte fidélité
+      </h3>
+      <p style="font-family: Arial, sans-serif; font-size: 14px; color: #4a3f35; margin: 0 0 8px 0;">
+        <strong>${loyaltyCount}</strong> séance${loyaltyCount > 1 ? 's' : ''} effectuée${loyaltyCount > 1 ? 's' : ''} (hors tirages de cartes)
+      </p>
+      <p style="font-family: Arial, sans-serif; font-size: 14px; color: #4a3f35; margin: 0 0 8px 0;">
+        Après ce RDV : <strong>${loyaltyAfterThis}/${loyaltyThreshold}</strong> séances
+      </p>
+      ${hasReachedReward ? `
+      <p style="font-family: Arial, sans-serif; font-size: 14px; color: #2e7d32; margin: 8px 0 0 0; font-weight: bold;">
+        🎉 RÉCOMPENSE ATTEINTE ! 10€ de réduction + bracelet énergétique offert
+      </p>
+      ` : isCloseToReward ? `
+      <p style="font-family: Arial, sans-serif; font-size: 14px; color: #e65100; margin: 8px 0 0 0; font-weight: bold;">
+        ⚠️ Plus que ${loyaltyThreshold - loyaltyAfterThis} séance${loyaltyThreshold - loyaltyAfterThis > 1 ? 's' : ''} avant la récompense !
+      </p>
+      ` : `
+      <p style="font-family: Arial, sans-serif; font-size: 13px; color: #6f5f4e; margin: 8px 0 0 0;">
+        Encore ${loyaltyThreshold - loyaltyAfterThis} séance${loyaltyThreshold - loyaltyAfterThis > 1 ? 's' : ''} avant la récompense
+      </p>
+      `}
+    </div>
+  `;
+
+  // Générer le bloc parrainage si applicable
+  const referralBlock = isReferral ? `
+    <div style="background: #e3f2fd; border-radius: 8px; padding: 20px; margin: 0 0 20px 0; border-left: 4px solid #2196f3;">
+      <h3 style="font-family: Arial, sans-serif; font-size: 12px; color: #1565c0; margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 1px;">
+        🤝 Parrainage
+      </h3>
+      <p style="font-family: Arial, sans-serif; font-size: 14px; color: #4a3f35; margin: 0 0 8px 0;">
+        Ce client vient de la part de : <strong>${safeReferrerName}</strong>
+      </p>
+      <p style="font-family: Arial, sans-serif; font-size: 13px; color: #1565c0; margin: 0; font-weight: bold;">
+        ➕ 1 séance bonus ajoutée à la carte fidélité de ${safeReferrerName}
+      </p>
+      ${data.referrer_loyalty_count !== undefined ? `
+      <p style="font-family: Arial, sans-serif; font-size: 13px; color: #6f5f4e; margin: 5px 0 0 0;">
+        ${safeReferrerName} a maintenant ${data.referrer_loyalty_count} séance${data.referrer_loyalty_count > 1 ? 's' : ''} sur sa carte
+      </p>
+      ` : ''}
+    </div>
+  ` : '';
 
   return `
     <!DOCTYPE html>
@@ -77,6 +143,12 @@ export function generateAdminNotificationEmail(data: AdminNotificationData): str
                     </p>
                     ` : ''}
                   </div>
+                  
+                  <!-- Carte fidélité -->
+                  ${loyaltyBlock}
+                  
+                  <!-- Parrainage (si applicable) -->
+                  ${referralBlock}
                   
                   <!-- Infos RDV -->
                   <div style="background: #faf8f3; border-radius: 8px; padding: 20px; margin: 0 0 20px 0;">
@@ -136,6 +208,7 @@ export function getAdminNotificationSubject(clientName: string, date: string): s
   const dateFormatted = formatDateFr(date);
   return `🔔 Nouvelle demande - ${safeName} - ${dateFormatted}`;
 }
+
 
 
 

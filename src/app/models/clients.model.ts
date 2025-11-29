@@ -31,6 +31,7 @@ export interface ClientProfile {
   nextBirthday?: string | null;
   age?: number | null;
   eligibleTreatments?: number;
+  referralsCount?: number; // Nombre de parrainages (personnes venues de sa part)
   loyaltyRewards?: LoyaltyReward[];
   lastRewardDate?: string | null;
   additionalSales?: AdditionalSale[];

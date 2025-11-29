@@ -822,6 +822,81 @@ async function handleAppointments(req: VercelRequest, res: VercelResponse, supab
       console.log('[Appointments POST] ⚠️ Pas de client_email dans les données');
     }
 
+    // ===== GESTION FIDÉLITÉ ET PARRAINAGES =====
+    let loyaltyCount = 0;
+    let referrerLoyaltyCount: number | undefined = undefined;
+    
+    // Récupérer le nombre de RDV acceptés du client (pour la fidélité)
+    // On ne compte que les RDV acceptés (hors tirages de cartes - à filtrer par nom de prestation si besoin)
+    try {
+      const { data: clientAppointments } = await supabase
+        .from('appointments')
+        .select('id, prestation_id, prestations(name)')
+        .eq('client_email', data.client_email.toLowerCase())
+        .eq('status', 'accepted');
+      
+      if (clientAppointments) {
+        // Filtrer les tirages de cartes (ne comptent pas pour la fidélité)
+        const eligibleAppointments = clientAppointments.filter((apt: any) => {
+          const prestationName = apt.prestations?.name?.toLowerCase() || '';
+          // Exclure les tirages de cartes
+          return !prestationName.includes('tirage') && !prestationName.includes('carte');
+        });
+        loyaltyCount = eligibleAppointments.length;
+        console.log(`[Fidélité] Client ${data.client_email}: ${loyaltyCount} séances éligibles`);
+      }
+    } catch (loyaltyError: any) {
+      console.warn('[Fidélité] Erreur récupération fidélité client:', loyaltyError.message);
+    }
+    
+    // Gérer le parrainage : si quelqu'un vient de la part d'un client, +1 au parrain
+    if (data.referral_source === 'friend' && data.referral_friend_name) {
+      try {
+        console.log(`[Parrainage] Recherche du parrain: "${data.referral_friend_name}"`);
+        
+        // Chercher le parrain par nom (recherche approximative)
+        const referrerName = data.referral_friend_name.trim().toLowerCase();
+        const { data: referrerClients } = await supabase
+          .from('clients')
+          .select('id, email, name, referrals_count')
+          .ilike('name', `%${referrerName}%`);
+        
+        if (referrerClients && referrerClients.length > 0) {
+          // Prendre le premier match
+          const referrer = referrerClients[0];
+          const newReferralsCount = (referrer.referrals_count || 0) + 1;
+          
+          // Mettre à jour le compteur de parrainages du parrain
+          await supabase
+            .from('clients')
+            .update({ referrals_count: newReferralsCount })
+            .eq('id', referrer.id);
+          
+          // Compter les RDV du parrain pour sa fidélité
+          const { data: referrerAppointments } = await supabase
+            .from('appointments')
+            .select('id, prestations(name)')
+            .eq('client_email', referrer.email.toLowerCase())
+            .eq('status', 'accepted');
+          
+          if (referrerAppointments) {
+            const eligibleReferrerApts = referrerAppointments.filter((apt: any) => {
+              const prestationName = apt.prestations?.name?.toLowerCase() || '';
+              return !prestationName.includes('tirage') && !prestationName.includes('carte');
+            });
+            // +1 pour le bonus parrainage
+            referrerLoyaltyCount = eligibleReferrerApts.length + newReferralsCount;
+          }
+          
+          console.log(`[Parrainage] ✅ ${referrer.name} a maintenant ${newReferralsCount} parrainage(s)`);
+        } else {
+          console.log(`[Parrainage] ⚠️ Parrain "${data.referral_friend_name}" non trouvé dans la base clients`);
+        }
+      } catch (referralError: any) {
+        console.warn('[Parrainage] Erreur gestion parrainage:', referralError.message);
+      }
+    }
+
     // Envoyer les emails (BLOQUANT - on attend avant de répondre)
     try {
       const { 
@@ -837,6 +912,13 @@ async function handleAppointments(req: VercelRequest, res: VercelResponse, supab
         appointment_time: data.appointment_time,
         prestation_name: data.prestations?.name || undefined,
         notes: data.notes || undefined,
+        // Infos fidélité pour l'email admin
+        loyalty_count: loyaltyCount,
+        loyalty_threshold: 10, // Seuil de 10 séances
+        // Infos parrainage
+        referral_source: data.referral_source || undefined,
+        referral_friend_name: data.referral_friend_name || undefined,
+        referrer_loyalty_count: referrerLoyaltyCount,
       };
       
       console.log('[Email] 📧 Envoi des emails pour le nouveau RDV...');
