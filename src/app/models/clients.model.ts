@@ -40,6 +40,7 @@ export interface ClientProfile {
 }
 
 export interface ClientDetail extends ClientProfile {
+  completedAppointments: number;
   rejectedAppointments: number;
   cancelledAppointments: number;
   eligibleTreatments: number;

@@ -400,13 +400,19 @@ export class ClientDetailComponent implements OnInit {
   calculateClientStats(): void {
     if (!this.client || !this.prestations.length) return;
 
-    // Calculer le panier moyen pour ce client
-    const clientAppointments = this.client.appointments.filter(a => a.status === 'accepted');
+    // Calculer le panier moyen pour ce client (basé sur les RDV terminés)
+    const clientAppointments = this.client.appointments.filter(a => a.status === 'completed');
     this.clientAverageBasket = this.statisticsService.calculateAverageBasket(clientAppointments, this.prestations);
   }
 
   getClientVisitsCount(): number {
-    return this.client?.acceptedAppointments || 0;
+    // Nombre de venues = RDV terminés uniquement
+    return this.client?.completedAppointments || 0;
+  }
+
+  getConfirmedAppointmentsCount(): number {
+    // RDV confirmés = acceptés + terminés
+    return (this.client?.acceptedAppointments || 0) + (this.client?.completedAppointments || 0);
   }
 
   deleteSale(sale: AdditionalSale): void {
