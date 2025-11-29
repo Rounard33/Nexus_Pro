@@ -234,13 +234,15 @@ export class BookingComponent implements OnInit, OnChanges {
     });
 
     // Charger les rendez-vous existants pour éviter les doublons
+    // On charge 60 jours à l'avance pour couvrir les mois suivants
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    const endDate = new Date(today);
+    endDate.setDate(today.getDate() + 60); // 60 jours à l'avance
     this.contentService.getAppointments(
       undefined,
       this.formatDateLocal(today),
-      this.formatDateLocal(nextMonth)
+      this.formatDateLocal(endDate)
     ).subscribe({
       next: (appointments) => {
         this.existingAppointments = appointments.filter(a => 
