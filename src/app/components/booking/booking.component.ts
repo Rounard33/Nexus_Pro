@@ -529,6 +529,8 @@ export class BookingComponent implements OnInit, OnChanges {
 
   // Vérifier si un créneau est dans une plage bloquée (basée sur la durée réelle des soins)
   private isTimeInBlockedSlot(dateStr: string, timeStr: string): boolean {
+    const BUFFER_MINUTES = 15; // 15 min de pause entre les rendez-vous
+    
     // Seuls les rendez-vous pending ou accepted bloquent les créneaux
     const blockingAppointments = this.existingAppointments.filter(apt => 
       apt.appointment_date === dateStr &&
@@ -543,9 +545,9 @@ export class BookingComponent implements OnInit, OnChanges {
     const [checkHour, checkMin] = timeStr.split(':').map(Number);
     const checkTime = checkHour * 60 + checkMin;
     
-    // Durée de la prestation qu'on veut réserver
+    // Durée de la prestation qu'on veut réserver (+ buffer pour la fin)
     const newPrestationDuration = this.parseDurationToMinutes(this.prestation?.duration);
-    const checkEndTime = checkTime + newPrestationDuration;
+    const checkEndTime = checkTime + newPrestationDuration + BUFFER_MINUTES;
 
     // Pour chaque rendez-vous bloquant, vérifier si le créneau doit être bloqué
     for (const apt of blockingAppointments) {
@@ -555,15 +557,15 @@ export class BookingComponent implements OnInit, OnChanges {
       // Durée du rendez-vous existant (récupérée via la prestation liée)
       const aptDuration = this.parseDurationToMinutes(apt.prestations?.duration);
 
-      // Plage bloquée : calculée en fonction des durées réelles
-      const blockStart = Math.max(0, aptTime - newPrestationDuration);
-      const blockEnd = aptTime + aptDuration;
+      // Plage bloquée : durée du RDV existant + buffer de 15 min
+      const blockStart = Math.max(0, aptTime - newPrestationDuration - BUFFER_MINUTES);
+      const blockEnd = aptTime + aptDuration + BUFFER_MINUTES;
 
       // Bloquer si :
       // 1. Le créneau commence dans la plage bloquée (inclus le début, exclu la fin)
       // 2. OU le créneau se termine après le début du RDV existant
       const startsInBlockedRange = checkTime >= blockStart && checkTime < blockEnd;
-      const endsTooCloseBefore = checkTime < blockStart && checkEndTime > blockStart;
+      const endsTooCloseBefore = checkTime < blockStart && checkEndTime > aptTime;
 
       if (startsInBlockedRange || endsTooCloseBefore) {
         return true;
