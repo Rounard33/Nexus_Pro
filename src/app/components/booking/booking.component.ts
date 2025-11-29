@@ -655,16 +655,23 @@ export class BookingComponent implements OnInit, OnChanges {
 
     this.contentService.createAppointment(appointment).subscribe({
       next: (createdAppointment) => {
+        console.log('Rendez-vous créé:', createdAppointment);
         this.isSubmitting = false;
         
-        // Réinitialiser le formulaire
-        this.resetFormState();
+        // Ajouter le nouveau RDV à la liste des rendez-vous existants
+        // pour que les créneaux soient immédiatement bloqués
+        this.existingAppointments.push(createdAppointment);
         
-        // Fermer la modal immédiatement
-        this.closeModal();
-        
-        // Afficher la notification de succès (comme le formulaire de contact)
+        // Afficher la notification de succès
         this.showSuccessNotification();
+        
+        // Rafraîchir les créneaux disponibles si une date est sélectionnée
+        if (this.selectedDate) {
+          this.updateAvailableTimes();
+        }
+        
+        // Réinitialiser le formulaire pour une nouvelle réservation
+        this.resetFormState();
         
         // Émettre l'événement de succès
         this.success.emit(createdAppointment);
