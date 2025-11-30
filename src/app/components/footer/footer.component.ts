@@ -14,14 +14,11 @@ export class FooterComponent {
 
   socialLinks = [
     { name: 'Facebook', url: '#', icon: 'assets/icons/facebook.png' },
-    { name: 'Instagram', url: '#', icon: 'assets/icons/instagram.png' },
+    { name: 'Instagram', url: 'https://www.instagram.com/reikietsens?igsh=MXczdHdwcjExdTg1cQ==', icon: 'assets/icons/instagram.png' },
   ];
 
   quickLinks = [
-    { name: 'Accueil', url: '/' },
-    { name: 'À propos', url: '/about' },
-    { name: 'Services', url: '/services' },
-    { name: 'Portfolio', url: '/portfolio' },
+    { name: 'Accueil', url: '/home' },
     { name: 'Contact', url: '/contact' }
   ];
 }

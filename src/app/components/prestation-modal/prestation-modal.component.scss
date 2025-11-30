@@ -142,6 +142,29 @@
   margin-bottom: 1rem;
 }
 
+// Section contre-indications
+.contraindications-section {
+  margin-top: -1rem;
+}
+
+.contraindications-box {
+  background: linear-gradient(135deg, rgba(212, 165, 116, 0.08) 0%, rgba(212, 165, 116, 0.04) 100%);
+  border-left: 3px solid #d4a574;
+  border-radius: 0 12px 12px 0;
+  padding: 1.25rem 1.5rem;
+}
+
+.contraindications-text {
+  margin: 0;
+  font-family: inherit;
+  font-size: 0.9rem;
+  line-height: 1.7;
+  color: var(--primary-900);
+  font-weight: 300;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
 .description-text {
   margin: 0;
   padding: 1.5rem 0;

@@ -15,6 +15,15 @@
           <div class="prestation-image-overlay" *ngIf="prestation.shortDescription">
             <p class="prestation-short-description">{{ prestation.shortDescription }}</p>
           </div>
+          <!-- Badge contre-indications -->
+          <div class="contraindication-badge" *ngIf="prestation.hasContraindications" title="Cette prestation comporte des contre-indications">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <span>Contre-indications</span>
+          </div>
         </div>
         <div class="prestation-info">
           <h3 class="prestation-name">{{ prestation.name }}</h3>

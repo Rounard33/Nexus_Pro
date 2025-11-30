@@ -16,23 +16,13 @@ export class ThemeService {
   }
 
   private initializeTheme(): void {
-    // Check for saved theme preference or default to light mode
-    const savedTheme = localStorage.getItem('theme');
+    // Use system preference
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    
-    // Apply theme immediately
-    if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
-      this.setDarkMode(true);
-    } else {
-      this.setDarkMode(false);
-    }
+    this.setDarkMode(prefersDark);
     
     // Listen for system theme changes
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-      // Only auto-switch if no theme preference is saved
-      if (!localStorage.getItem('theme')) {
-        this.setDarkMode(e.matches);
-      }
+      this.setDarkMode(e.matches);
     });
   }
 
@@ -51,8 +41,6 @@ export class ThemeService {
     
     // Also set data-theme for backward compatibility
     document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
-    
-    localStorage.setItem('theme', isDark ? 'dark' : 'light');
   }
 
   getCurrentTheme(): boolean {

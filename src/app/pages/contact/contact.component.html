@@ -83,15 +83,24 @@
           
           <div class="form-group">
             <label for="subject" class="form-label">Sujet *</label>
-            <input 
-              type="text" 
+            <select 
               id="subject" 
               name="subject" 
               [(ngModel)]="contactForm.subject" 
               required
-              class="form-input"
-              placeholder="Objet de votre message"
+              class="form-input form-select"
             >
+              <option value="" disabled selected>Choisissez un sujet</option>
+              <option value="Renseignements">Renseignements sur les prestations</option>
+              <option value="Réservation">Demande de réservation</option>
+              <option value="Harmonisation">Harmonisation de lieux</option>
+              <option value="Autre">Autre question</option>
+              <optgroup label="Mes données personnelles">
+                <option value="Accès données">Demande d'accès à mes données</option>
+                <option value="Modification">Demande de modification de mes données</option>
+                <option value="Suppression">Demande de suppression de mes données</option>
+              </optgroup>
+            </select>
           </div>
           
           <div class="form-group">

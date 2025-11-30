@@ -14,6 +14,8 @@ export interface Prestation {
   description: string;
   image: string;
   requiresContact?: boolean;
+  hasContraindications?: boolean;
+  contraindications?: string;
 }
 
 @Component({

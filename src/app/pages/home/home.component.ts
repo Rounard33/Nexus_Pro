@@ -67,18 +67,26 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     
     this.contentService.getPrestations().subscribe({
       next: (data) => {
-        this.prestations = data.map(p => ({
-          id: p.id,
-          name: p.name,
-          price: p.price || '',
-          atHome: p.at_home,
-          priceOption: p.price_option,
-          duration: p.duration,
-          shortDescription: p.short_description,
-          description: p.description,
-          image: getPrestationImageUrl(p.image_url),
-          requiresContact: p.requires_contact || false
-        }));
+        this.prestations = data.map(p => {
+          // Vérifier si c'est un massage crânien (contre-indications)
+          const isCranialMassage = p.name.toLowerCase().includes('crânien') || 
+                                    p.name.toLowerCase().includes('cranien');
+          
+          return {
+            id: p.id,
+            name: p.name,
+            price: p.price || '',
+            atHome: p.at_home,
+            priceOption: p.price_option,
+            duration: p.duration,
+            shortDescription: p.short_description,
+            description: p.description,
+            image: getPrestationImageUrl(p.image_url),
+            requiresContact: p.requires_contact || false,
+            hasContraindications: isCranialMassage,
+            contraindications: isCranialMassage ? this.getCranialMassageContraindications() : undefined
+          };
+        });
       },
       error: (error) => {
         console.error('Erreur lors du chargement des prestations:', error);
@@ -268,5 +276,27 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
         }
       });
     });
+  }
+
+  /**
+   * Retourne les contre-indications pour le massage crânien
+   */
+  private getCranialMassageContraindications(): string {
+    return `⚠️ Contre-indications :
+
+• Blessures : brûlures, coupures, plaies, ampoules
+• Problèmes de peau : psoriasis, eczéma, éruptions cutanées, ecchymoses
+• Conditions médicales :
+  - Traumatisme cervical
+  - Infarctus, AVC (moins de 3 mois)
+  - Chirurgie crânienne récente (moins de 3 mois)
+  - Inflammations, nausées
+  - Phlébite, hémophilie, fièvre ou infections
+  - Maladies contagieuses
+  - Cancers (accord médical requis)
+  - Troubles cardiaques, circulatoires ou nerveux
+• Grossesse
+
+En cas de doute, consultez votre médecin avant la séance.`;
   }
 }

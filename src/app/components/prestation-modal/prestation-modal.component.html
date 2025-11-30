@@ -12,6 +12,14 @@
       <div class="modal-description">
         <p class="description-text">{{ prestation.description }}</p>
       </div>
+      
+      <!-- Contre-indications -->
+      <div class="contraindications-section" *ngIf="prestation.hasContraindications && prestation.contraindications">
+        <div class="contraindications-box">
+          <pre class="contraindications-text">{{ prestation.contraindications }}</pre>
+        </div>
+      </div>
+      
       <div class="modal-details">
         <div class="modal-price">{{ prestation.price }}</div>
         <div class="modal-price" *ngIf="prestation.priceOption">

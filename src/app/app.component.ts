@@ -26,16 +26,9 @@ export class AppComponent implements OnInit {
   }
 
   private initializeTheme(): void {
-    // Check for saved theme preference or default to system preference
-    const savedTheme = localStorage.getItem('theme');
+    // Use system preference
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    
-    // Apply theme immediately
-    if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
-      this.applyTheme(true);
-    } else {
-      this.applyTheme(false);
-    }
+    this.applyTheme(prefersDark);
   }
 
   private applyTheme(isDark: boolean): void {
@@ -47,18 +40,12 @@ export class AppComponent implements OnInit {
     
     // Set data-theme attribute
     document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
-    
-    // Save to localStorage
-    localStorage.setItem('theme', isDark ? 'dark' : 'light');
   }
 
   private setupThemeListener(): void {
     // Listen for system theme changes
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-      // Only auto-switch if no theme preference is saved
-      if (!localStorage.getItem('theme')) {
-        this.applyTheme(e.matches);
-      }
+      this.applyTheme(e.matches);
     });
   }
 }

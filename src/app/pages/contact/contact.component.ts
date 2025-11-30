@@ -109,7 +109,7 @@ export class ContactComponent implements OnInit, AfterViewInit, OnDestroy {
 
   socialLinks = [
     { name: 'Facebook', url: '#', icon: 'assets/icons/facebook.png' },
-    { name: 'Instagram', url: '#', icon: 'assets/icons/instagram.png' }
+    { name: 'Instagram', url: 'https://www.instagram.com/reikietsens?igsh=MXczdHdwcjExdTg1cQ==', icon: 'assets/icons/instagram.png' }
   ];
 
   contactForm = {
