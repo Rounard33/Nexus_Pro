@@ -23,6 +23,24 @@ export class AppComponent implements OnInit {
     
     // Listen for system theme changes
     this.setupThemeListener();
+    
+    // Marquer l'app comme chargée pour le fallback CSS
+    this.markAppAsLoaded();
+  }
+  
+  /**
+   * Ajoute une classe au body pour indiquer que JS est chargé
+   * Sert de fallback si les animations GSAP échouent
+   */
+  private markAppAsLoaded(): void {
+    // Ajouter immédiatement la classe de chargement
+    document.body.classList.add('app-loading');
+    
+    // Après un court délai, marquer comme complètement chargé
+    setTimeout(() => {
+      document.body.classList.remove('app-loading');
+      document.body.classList.add('app-loaded');
+    }, 100);
   }
 
   private initializeTheme(): void {

@@ -907,3 +907,95 @@ a {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--gray-400);
 }
+
+// ========================================
+// FALLBACK : Garantir la visibilité du contenu
+// Si les animations GSAP échouent (mobile/connexion lente)
+// ========================================
+
+// Éléments animés par GSAP qui peuvent rester invisibles
+.badge,
+.title-line,
+.description-welcome,
+.actions,
+.prestation-card,
+.creation-card,
+.testimonial-card,
+.section-title,
+.section-badge,
+.contact-form-wrapper,
+.contact-info-card,
+.hours-card,
+.faq-item,
+.cta-content {
+  // Animation de secours : s'active après 2.5s si GSAP n'a pas fonctionné
+  animation: gsap-fallback 0.3s 2.5s both;
+}
+
+@keyframes gsap-fallback {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1 !important;
+    transform: none !important;
+    visibility: visible !important;
+  }
+}
+
+// Quand l'app est complètement chargée, s'assurer que tout est visible après un délai
+body.app-loaded {
+  .badge,
+  .title-line,
+  .description-welcome,
+  .actions,
+  .prestation-card,
+  .creation-card,
+  .testimonial-card,
+  .section-title,
+  .section-badge {
+    // Forcer la visibilité après que l'app soit chargée
+    animation: ensure-visible 0.3s 3s both;
+  }
+}
+
+@keyframes ensure-visible {
+  to {
+    opacity: 1 !important;
+    transform: translateY(0) !important;
+    visibility: visible !important;
+  }
+}
+
+// Fix spécifique mobile : garantir que le contenu principal est visible
+@media (max-width: 768px) {
+  // S'assurer que les sections principales sont toujours visibles
+  .main .content,
+  .main .text {
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+  
+  // Composants Angular : s'assurer qu'ils s'affichent
+  app-welcome,
+  app-about,
+  app-services,
+  app-products,
+  app-location,
+  app-testimonials,
+  app-faq,
+  app-cta,
+  app-loyalty {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+  
+  // Réduire le délai du fallback sur mobile
+  .badge,
+  .title-line,
+  .description-welcome,
+  .actions {
+    animation-delay: 1.5s !important;
+  }
+}

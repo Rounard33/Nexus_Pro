@@ -24,7 +24,25 @@
   <link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
   <link rel="apple-touch-icon" sizes="180x180" href="assets/logo/logo-white.png">
 </head>
-<body>
+<body class="app-loading">
+  <!-- Style critique inline pour éviter le flash de contenu invisible -->
+  <style>
+    /* Garantir la visibilité du contenu pendant le chargement */
+    body.app-loading app-root {
+      opacity: 1;
+      visibility: visible;
+    }
+    /* Après 3s, forcer la visibilité de tout le contenu (fallback si JS échoue) */
+    @keyframes force-visible {
+      to { opacity: 1 !important; visibility: visible !important; }
+    }
+    body.app-loading .badge,
+    body.app-loading .title-line,
+    body.app-loading .description-welcome,
+    body.app-loading .actions {
+      animation: force-visible 0.1s 3s forwards;
+    }
+  </style>
   <app-root></app-root>
 </body>
 </html>

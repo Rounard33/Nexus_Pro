@@ -26,8 +26,13 @@ export class CaptchaComponent implements OnInit {
   
   // Honeypot : champ invisible pour piéger les bots
   honeypotValue: string = '';
+  
+  // Anti-bot : délai minimum avant soumission (en ms)
+  private readonly MIN_SUBMISSION_DELAY = 3000; // 3 secondes
+  private loadTimestamp: number = 0;
 
   ngOnInit(): void {
+    this.loadTimestamp = Date.now();
     this.generateChallenge();
   }
 
@@ -88,6 +93,15 @@ export class CaptchaComponent implements OnInit {
       return;
     }
     
+    // Vérifier le délai minimum (soumission trop rapide = bot)
+    const elapsedTime = Date.now() - this.loadTimestamp;
+    if (elapsedTime < this.MIN_SUBMISSION_DELAY) {
+      console.warn(`[Captcha] Soumission trop rapide (${elapsedTime}ms < ${this.MIN_SUBMISSION_DELAY}ms) - probable bot`);
+      this.isValid = false;
+      this.validationChange.emit(false);
+      return;
+    }
+    
     const userNum = parseInt(this.userAnswer, 10);
     
     if (isNaN(userNum)) {
@@ -120,6 +134,7 @@ export class CaptchaComponent implements OnInit {
    * Rafraîchit le captcha avec une nouvelle question
    */
   refresh(): void {
+    this.loadTimestamp = Date.now(); // Réinitialiser le timer anti-bot
     this.generateChallenge();
   }
 
