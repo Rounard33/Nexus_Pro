@@ -1,5 +1,6 @@
 import {Injectable} from '@angular/core';
 import {Appointment, OpeningHours, Prestation} from '../../../services/content.service';
+import {DateUtils} from '../../../utils/date.utils';
 
 export interface TimeSlotResult {
   availableTimes: string[];
@@ -29,7 +30,7 @@ export class BookingTimeSlotService {
     prestation: Prestation | null
   ): TimeSlotResult {
     const dayOfWeek = selectedDate.getDay();
-    const dateStr = this.formatDateLocal(selectedDate);
+    const dateStr = DateUtils.formatDateLocal(selectedDate);
     
     // Récupérer les horaires pour ce jour
     const dayHours = openingHours.find(
@@ -109,7 +110,7 @@ export class BookingTimeSlotService {
     let current = new Date(startTime);
     
     while (current <= lastAppointmentTime && current < endTime) {
-      const timeStr = this.formatTime(current);
+      const timeStr = DateUtils.formatTime(current);
       
       const isBlocked = this.isTimeInBlockedSlot(
         dateStr,
@@ -229,7 +230,7 @@ export class BookingTimeSlotService {
     
     let current = new Date(startTime);
     while (current <= lastAppointmentTime && current < endTime) {
-      times.push(this.formatTime(current));
+      times.push(DateUtils.formatTime(current));
       current.setMinutes(current.getMinutes() + this.TIME_SLOT_INTERVAL);
       
       if (current > lastAppointmentTime || current >= endTime) {
@@ -308,25 +309,6 @@ export class BookingTimeSlotService {
     }
     
     return totalMinutes > 0 ? totalMinutes : this.DEFAULT_DURATION;
-  }
-
-  /**
-   * Formate une date en YYYY-MM-DD
-   */
-  private formatDateLocal(date: Date): string {
-    const year = date.getFullYear();
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const day = date.getDate().toString().padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  }
-
-  /**
-   * Formate une heure en HH:MM
-   */
-  private formatTime(date: Date): string {
-    const hours = date.getHours().toString().padStart(2, '0');
-    const minutes = date.getMinutes().toString().padStart(2, '0');
-    return `${hours}:${minutes}`;
   }
 
   /**

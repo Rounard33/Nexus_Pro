@@ -1,5 +1,6 @@
 import {Injectable} from '@angular/core';
 import {OpeningHours} from '../../../services/content.service';
+import {DateUtils} from '../../../utils/date.utils';
 
 /**
  * Service gérant la logique du calendrier pour les réservations
@@ -57,7 +58,7 @@ export class BookingCalendarService {
     blockedDates: string[],
     openingHours: OpeningHours[]
   ): boolean {
-    const dateStr = this.formatDateLocal(date);
+    const dateStr = DateUtils.formatDateLocal(date);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
@@ -107,12 +108,10 @@ export class BookingCalendarService {
 
   /**
    * Formate une date en YYYY-MM-DD en heure locale
+   * @deprecated Utiliser DateUtils.formatDateLocal() directement
    */
   formatDateLocal(date: Date): string {
-    const year = date.getFullYear();
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const day = date.getDate().toString().padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    return DateUtils.formatDateLocal(date);
   }
 
   /**

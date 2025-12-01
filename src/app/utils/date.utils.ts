@@ -81,4 +81,26 @@ export class DateUtils {
     date.setDate(date.getDate() + days);
     return date.toISOString().split('T')[0];
   }
+
+  /**
+   * Formate une date en YYYY-MM-DD en heure locale
+   * Évite les problèmes de fuseau horaire avec toISOString()
+   * @param date Date à formater
+   */
+  static formatDateLocal(date: Date): string {
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  /**
+   * Formate une heure en HH:MM
+   * @param date Date dont extraire l'heure
+   */
+  static formatTime(date: Date): string {
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${hours}:${minutes}`;
+  }
 }

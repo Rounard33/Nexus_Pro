@@ -11,7 +11,10 @@ import {
   ViewChild
 } from '@angular/core';
 import {FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
+import {AppointmentPayload} from '../../models/appointment.model';
 import {Appointment, ContentService, OpeningHours, Prestation} from '../../services/content.service';
+import {NotificationService} from '../../services/notification.service';
+import {DateUtils} from '../../utils/date.utils';
 import {CaptchaComponent} from '../captcha/captcha.component';
 import {BookingCalendarService, BookingTimeSlotService} from './services';
 
@@ -60,7 +63,8 @@ export class BookingComponent implements OnInit, OnChanges {
     private fb: FormBuilder,
     private contentService: ContentService,
     private calendarService: BookingCalendarService,
-    private timeSlotService: BookingTimeSlotService
+    private timeSlotService: BookingTimeSlotService,
+    private notificationService: NotificationService
   ) {
     this.bookingForm = this.createForm();
     this.setupFormValidation();
@@ -219,8 +223,8 @@ export class BookingComponent implements OnInit, OnChanges {
 
     this.contentService.getAppointments(
       undefined,
-      this.calendarService.formatDateLocal(today),
-      this.calendarService.formatDateLocal(endDate)
+      DateUtils.formatDateLocal(today),
+      DateUtils.formatDateLocal(endDate)
     ).subscribe({
       next: (appointments) => {
         this.existingAppointments = appointments.filter(
@@ -373,15 +377,15 @@ export class BookingComponent implements OnInit, OnChanges {
     return true;
   }
 
-  private buildAppointmentPayload(): any {
+  private buildAppointmentPayload(): AppointmentPayload {
     const formValue = this.bookingForm.value;
 
-    const appointment: any = {
+    const appointment: AppointmentPayload = {
       client_name: formValue.client_name.trim(),
       client_email: formValue.client_email.trim().toLowerCase(),
-      prestation_id: this.prestation!.id,
-      appointment_date: this.calendarService.formatDateLocal(this.selectedDate!),
-      appointment_time: this.selectedTime,
+      prestation_id: this.prestation!.id!,
+      appointment_date: DateUtils.formatDateLocal(this.selectedDate!),
+      appointment_time: this.selectedTime!,
       status: 'pending'
     };
 
@@ -421,7 +425,11 @@ export class BookingComponent implements OnInit, OnChanges {
   private handleSubmitSuccess(createdAppointment: Appointment): void {
     this.isSubmitting = false;
     this.existingAppointments.push(createdAppointment);
-    this.showSuccessNotification();
+    
+    // Notification via le service centralisé
+    this.notificationService.success(
+      'Votre demande de réservation a été envoyée avec succès ! Je vous confirmerai rapidement.'
+    );
 
     if (this.selectedDate) {
       this.updateAvailableTimes();
@@ -494,59 +502,6 @@ export class BookingComponent implements OnInit, OnChanges {
         this.markFormGroupTouched(control);
       }
     });
-  }
-
-  private showSuccessNotification(): void {
-    const notification = document.createElement('div');
-    notification.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: linear-gradient(135deg, var(--primary-700), var(--primary-800));
-      color: white;
-      padding: 1.5rem 2rem;
-      border-radius: 50px;
-      box-shadow: 0 10px 40px rgba(139, 122, 98, 0.3);
-      z-index: 10001;
-      font-family: inherit;
-      font-size: 1rem;
-      max-width: 350px;
-      animation: slideIn 0.4s ease-out;
-    `;
-
-    const contentDiv = document.createElement('div');
-    contentDiv.style.cssText = 'display: flex; align-items: center; gap: 0.75rem;';
-
-    const iconSpan = document.createElement('span');
-    iconSpan.style.cssText = 'font-size: 1.5rem;';
-    iconSpan.textContent = '✓';
-
-    const messageSpan = document.createElement('span');
-    messageSpan.textContent = 'Votre demande de réservation a été envoyée avec succès ! Je vous confirmerai rapidement.';
-
-    contentDiv.appendChild(iconSpan);
-    contentDiv.appendChild(messageSpan);
-    notification.appendChild(contentDiv);
-
-    let style = document.getElementById('booking-notification-style');
-    if (!style) {
-      style = document.createElement('style');
-      style.id = 'booking-notification-style';
-      style.textContent = `
-        @keyframes slideIn {
-          from { transform: translateX(100%); opacity: 0; }
-          to { transform: translateX(0); opacity: 1; }
-        }
-      `;
-      document.head.appendChild(style);
-    }
-
-    document.body.appendChild(notification);
-
-    setTimeout(() => {
-      notification.style.animation = 'slideIn 0.4s ease-out reverse';
-      setTimeout(() => notification.parentNode?.removeChild(notification), 400);
-    }, 5000);
   }
 
   // ============================================================
