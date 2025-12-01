@@ -22,7 +22,7 @@ export class ThemeService {
     
     // Listen for system theme changes
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-      this.setDarkMode(e.matches);
+        this.setDarkMode(e.matches);
     });
   }
 
