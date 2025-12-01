@@ -66,8 +66,7 @@ export class HoursComponent implements OnInit {
 
         this.isLoading = false;
       },
-      error: (error) => {
-        console.error('Erreur lors du chargement des horaires:', error);
+      error: () => {
         this.isLoading = false;
       }
     });
@@ -99,8 +98,7 @@ export class HoursComponent implements OnInit {
         this.isSaving = false;
         setTimeout(() => this.saveSuccess = false, 3000);
       },
-      error: (error) => {
-        console.error('Erreur lors de la sauvegarde:', error);
+      error: () => {
         this.saveError = 'Erreur lors de la sauvegarde. Veuillez réessayer.';
         this.isSaving = false;
       }
@@ -133,8 +131,7 @@ export class HoursComponent implements OnInit {
       this.saveSuccess = true;
       this.isSaving = false;
       setTimeout(() => this.saveSuccess = false, 3000);
-    }).catch(error => {
-      console.error('Erreur lors de la sauvegarde:', error);
+    }).catch(() => {
       this.saveError = 'Erreur lors de la sauvegarde. Veuillez réessayer.';
       this.isSaving = false;
     });

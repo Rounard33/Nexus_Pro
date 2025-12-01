@@ -80,8 +80,8 @@ export class ClientDetailComponent implements OnInit {
       next: (creations) => {
         this.creations = creations;
       },
-      error: (error) => {
-        console.error('Erreur lors du chargement des créations:', error);
+      error: () => {
+        // Erreur silencieuse
       }
     });
   }
@@ -95,8 +95,8 @@ export class ClientDetailComponent implements OnInit {
           this.calculateClientStats();
         }
       },
-      error: (error) => {
-        console.error('Erreur lors du chargement des prestations:', error);
+      error: () => {
+        // Erreur silencieuse
       }
     });
   }
@@ -151,14 +151,12 @@ export class ClientDetailComponent implements OnInit {
 
             this.isLoading = false;
           },
-          error: (error) => {
-            console.error('Erreur lors du chargement des rendez-vous:', error);
+          error: () => {
             this.isLoading = false;
           }
         });
       },
-      error: (error) => {
-        console.error('Erreur lors du chargement des détails du client:', error);
+      error: () => {
         this.isLoading = false;
       }
     });
@@ -224,8 +222,7 @@ export class ClientDetailComponent implements OnInit {
         this.isSaving = false;
         this.notificationService.success('Date de naissance mise à jour avec succès');
       },
-      error: (error) => {
-        console.error('Erreur lors de la mise à jour de la date de naissance:', error);
+      error: () => {
         this.isSaving = false;
         this.notificationService.error('Erreur lors de la mise à jour de la date de naissance');
       }
@@ -313,8 +310,7 @@ export class ClientDetailComponent implements OnInit {
         this.isSaving = false;
         this.notificationService.success('Récompense enregistrée avec succès');
       },
-      error: (error) => {
-        console.error('Erreur lors de l\'enregistrement de la récompense:', error);
+      error: () => {
         this.isSaving = false;
         this.notificationService.error('Erreur lors de l\'enregistrement de la récompense');
       }
@@ -380,8 +376,7 @@ export class ClientDetailComponent implements OnInit {
         this.notificationService.success('Vente additionnelle enregistrée avec succès');
         this.cancelAddSale();
       },
-      error: (error) => {
-        console.error('Erreur lors de l\'enregistrement de la vente:', error);
+      error: () => {
         this.isSaving = false;
         this.notificationService.error('Erreur lors de l\'enregistrement de la vente');
       }
@@ -442,8 +437,7 @@ export class ClientDetailComponent implements OnInit {
         this.closeDeleteConfirmModal();
         this.notificationService.success('Vente additionnelle supprimée avec succès');
       },
-      error: (error) => {
-        console.error('Erreur lors de la suppression de la vente:', error);
+      error: () => {
         this.isSaving = false;
         this.notificationService.error('Erreur lors de la suppression de la vente');
       }

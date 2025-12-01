@@ -24,7 +24,6 @@ export async function checkAdminAccess(userId: string, supabaseClient: any): Pro
       // Si la table n'existe pas, on considère que l'utilisateur authentifié est admin
       // (pour compatibilité si la table admin n'a pas encore été créée)
       if (error.code === 'PGRST116' || error.message?.includes('does not exist')) {
-        console.warn('⚠️ Table admin n\'existe pas, vérification d\'authentification uniquement');
         return { isAdmin: true }; // Fallback: si pas de table admin, auth = admin
       }
       

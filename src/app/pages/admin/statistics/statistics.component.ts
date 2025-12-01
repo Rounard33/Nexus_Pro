@@ -46,14 +46,12 @@ export class StatisticsComponent implements OnInit {
             this.calculateAverageBasket(appointments, prestations);
             this.isLoading = false;
           },
-          error: (error) => {
-            console.error('Erreur lors du chargement des prestations:', error);
+          error: () => {
             this.isLoading = false;
           }
         });
       },
-      error: (error) => {
-        console.error('Erreur lors du chargement des statistiques:', error);
+      error: () => {
         this.isLoading = false;
       }
     });

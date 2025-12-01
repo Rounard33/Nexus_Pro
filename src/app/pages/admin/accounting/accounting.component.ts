@@ -77,8 +77,7 @@ export class AccountingComponent implements OnInit {
         this.calculateStats();
         this.isLoading = false;
       },
-      error: (error) => {
-        console.error('Erreur lors du chargement des données:', error);
+      error: () => {
         this.isLoading = false;
       }
     });

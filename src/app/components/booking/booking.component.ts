@@ -210,8 +210,7 @@ export class BookingComponent implements OnInit, OnChanges {
         this.blockedDates = dates.map(d => d.blocked_date);
         this.initializeCalendar();
       },
-      error: (error) => {
-        console.error('Erreur lors du chargement des dates bloquées:', error);
+      error: () => {
         this.isLoading = false;
       }
     });
@@ -221,12 +220,9 @@ export class BookingComponent implements OnInit, OnChanges {
       next: (hours) => {
         this.openingHours = hours.filter(h => h.is_active !== false);
         this.isLoading = false;
-        console.log('Horaires d\'ouverture chargés:', this.openingHours.length);
-        // Réinitialiser le calendrier avec les horaires d'ouverture
         this.updateAvailableDates();
       },
-      error: (error) => {
-        console.error('Erreur lors du chargement des horaires d\'ouverture:', error);
+      error: () => {
         this.isLoading = false;
         // Même en cas d'erreur, permettre la sélection de dates
         this.openingHours = [];
@@ -249,8 +245,8 @@ export class BookingComponent implements OnInit, OnChanges {
           a.status === 'pending' || a.status === 'accepted'
         );
       },
-      error: (error) => {
-        console.error('Erreur lors du chargement des rendez-vous:', error);
+      error: () => {
+        // Erreur silencieuse - les créneaux seront tous disponibles
       }
     });
   }
@@ -321,8 +317,8 @@ export class BookingComponent implements OnInit, OnChanges {
             this.openingHours = hours.filter(h => h.is_active !== false);
             this.updateAvailableTimes(); // Rappeler après le chargement
           },
-          error: (error) => {
-            console.error('Erreur lors du chargement des horaires:', error);
+          error: () => {
+            // Erreur silencieuse
           }
         });
       }
@@ -593,7 +589,6 @@ export class BookingComponent implements OnInit, OnChanges {
 
     // Vérifier que la prestation a un ID
     if (!this.prestation.id) {
-      console.error('Erreur: La prestation n\'a pas d\'ID', this.prestation);
       this.errorMessage = 'Erreur: Prestation invalide. Veuillez réessayer.';
       return;
     }
@@ -659,7 +654,6 @@ export class BookingComponent implements OnInit, OnChanges {
 
     this.contentService.createAppointment(appointment).subscribe({
       next: (createdAppointment) => {
-        console.log('Rendez-vous créé:', createdAppointment);
         this.isSubmitting = false;
         
         // Ajouter le nouveau RDV à la liste des rendez-vous existants
@@ -681,7 +675,6 @@ export class BookingComponent implements OnInit, OnChanges {
         this.success.emit(createdAppointment);
       },
       error: (error) => {
-        console.error('Erreur lors de la création du rendez-vous:', error);
         this.isSubmitting = false;
         
         if (error.status === 409) {

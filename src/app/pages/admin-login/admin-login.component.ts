@@ -41,16 +41,9 @@ export class AdminLoginComponent implements OnInit {
   }
 
   private checkSupabaseConfiguration(): void {
-    // Afficher un message d'aide si Supabase n'est pas configuré
+    // Vérifier si Supabase est configuré (message visible dans l'UI si nécessaire)
     if (!isSupabaseConfigured()) {
-      const isDev = !environment.production;
-      const configFile = isDev ? 'src/environments/environment.ts' : 'environment variables';
-      console.error('⚠️ Configuration Supabase manquante');
-      console.error(`Veuillez configurer supabaseUrl et supabaseAnonKey dans ${configFile}`);
-      console.error('Consultez SECURITY_SETUP.md pour les instructions détaillées');
-      
-      // On pourrait aussi afficher un message visuel dans l'UI si nécessaire
-      // Mais pour l'instant, on garde juste le log pour ne pas perturber l'UX
+      // Configuration manquante - l'UI affichera un message approprié
     }
   }
 

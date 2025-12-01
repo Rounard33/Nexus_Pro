@@ -49,8 +49,7 @@ export class ContactComponent implements OnInit, AfterViewInit, OnDestroy {
         this.isLoadingHours = false;
         this.cdr.detectChanges();
       },
-      error: (error) => {
-        console.error('Erreur lors du chargement des horaires:', error);
+      error: () => {
         this.openingHours = [];
         this.isLoadingHours = false;
         this.cdr.detectChanges();
@@ -174,7 +173,6 @@ export class ContactComponent implements OnInit, AfterViewInit, OnDestroy {
           this.cdr.detectChanges();
         },
         error: (error) => {
-          console.error('Erreur lors de l\'envoi du message:', error);
           this.showErrorMessage(
             error.error?.message || 
             'Une erreur est survenue lors de l\'envoi. Veuillez réessayer.'

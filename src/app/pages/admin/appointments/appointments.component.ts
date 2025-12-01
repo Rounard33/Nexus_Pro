@@ -98,8 +98,7 @@ export class AppointmentsComponent implements OnInit, OnDestroy {
           this.applyFilters();
           this.isLoading = false;
         },
-        error: (error) => {
-          console.error('Erreur lors du chargement des rendez-vous:', error);
+        error: () => {
           this.isLoading = false;
           this.notificationService.error(
             'Impossible de charger les rendez-vous. Veuillez réessayer.'
@@ -210,7 +209,6 @@ export class AppointmentsComponent implements OnInit, OnDestroy {
           }
         },
         error: (error) => {
-          console.error('Erreur lors de la mise à jour:', error);
           this.updatingAppointmentId = null;
           
           const errorMessage = error.error?.error || error.error?.details || error.message || 
@@ -314,7 +312,6 @@ export class AppointmentsComponent implements OnInit, OnDestroy {
           this.notificationService.success('Mode de paiement mis à jour avec succès');
         },
         error: (error) => {
-          console.error('Erreur lors de la mise à jour du mode de paiement:', error);
           this.updatingAppointmentId = null;
           
           const errorMessage = error.error?.error || error.error?.details || error.message || 

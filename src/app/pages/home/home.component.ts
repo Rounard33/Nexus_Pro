@@ -88,8 +88,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
           };
         });
       },
-      error: (error) => {
-        console.error('Erreur lors du chargement des prestations:', error);
+      error: () => {
         this.prestations = [];
       }
     });
@@ -104,8 +103,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
           image: getCreationImageUrl(c.image_url) // Utiliser la fonction utilitaire pour construire l'URL Supabase Storage
         }));
       },
-      error: (error) => {
-        console.error('Erreur lors du chargement des créations:', error);
+      error: () => {
         this.creations = [];
       }
     });
@@ -121,8 +119,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
           age: t.age,
         }));
       },
-      error: (error) => {
-        console.error('Erreur lors du chargement des témoignages:', error);
+      error: () => {
         this.testimonials = [];
       }
     });
@@ -137,8 +134,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
         }));
         this.isLoading = false;
       },
-      error: (error) => {
-        console.error('Erreur lors du chargement des FAQ:', error);
+      error: () => {
         this.faqs = [];
         this.isLoading = false;
       }
@@ -200,8 +196,6 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // Gérer le succès de la réservation
   onBookingSuccess(appointment: Appointment): void {
-    console.log('Réservation créée avec succès:', appointment);
-    // Vous pouvez ajouter ici une notification de succès
     this.closeBookingModal();
   }
 

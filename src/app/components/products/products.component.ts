@@ -125,8 +125,6 @@ export class ProductsComponent implements AfterViewInit, OnChanges, OnDestroy {
       } else if (this.initAttempts < this.maxInitAttempts) {
         this.initAttempts++;
         setTimeout(checkElements, 150);
-      } else {
-        console.warn('Carousel initialization failed: elements not found after', this.maxInitAttempts, 'attempts');
       }
     };
     
@@ -142,13 +140,11 @@ export class ProductsComponent implements AfterViewInit, OnChanges, OnDestroy {
 
     const track = document.querySelector('.creations-track') as HTMLElement;
     if (!track) {
-      console.error('Track element not found');
       return;
     }
 
     const cards = Array.from(document.querySelectorAll('.creation-card')) as HTMLElement[];
     if (cards.length === 0 || this.creations.length === 0) {
-      console.error('No cards found or no creations');
       return;
     }
 

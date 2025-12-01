@@ -24,8 +24,8 @@ export class LoyaltyService {
       if (match) {
         return JSON.parse(match[1]);
       }
-    } catch (e) {
-      console.warn('Erreur lors du parsing des récompenses:', e);
+    } catch {
+      // Erreur de parsing silencieuse
     }
     
     return [];

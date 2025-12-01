@@ -27,7 +27,6 @@ export class AuthService {
     const key = environment.supabaseAnonKey?.trim() || '';
     
     if (!url || !key) {
-      console.warn('⚠️ Supabase URL ou Anon Key manquants. Configurez-les dans environment.ts');
       this.isConfigured = false;
       return;
     }
@@ -47,8 +46,7 @@ export class AuthService {
 
       // Initialiser la session actuelle
       this.initSession();
-    } catch (error) {
-      console.error('Erreur lors de l\'initialisation de Supabase:', error);
+    } catch {
       this.isConfigured = false;
     }
   }
@@ -63,8 +61,8 @@ export class AuthService {
       if (session?.user) {
         this.currentUserSubject.next(session.user);
       }
-    } catch (error) {
-      console.error('Erreur lors de l\'initialisation de la session:', error);
+    } catch {
+      // Erreur silencieuse
     }
   }
 
@@ -103,8 +101,8 @@ export class AuthService {
     if (this.supabase && this.isConfigured) {
       try {
         await this.supabase.auth.signOut();
-      } catch (error) {
-        console.error('Erreur lors de la déconnexion:', error);
+      } catch {
+        // Erreur silencieuse
       }
     }
     this.currentUserSubject.next(null);

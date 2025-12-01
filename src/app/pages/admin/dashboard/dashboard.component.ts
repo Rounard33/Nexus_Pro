@@ -45,8 +45,8 @@ export class DashboardComponent implements OnInit {
         this.stats.acceptedThisMonth = stats.accepted;
         this.stats.rejectedThisMonth = stats.rejected;
       },
-      error: (error) => {
-        console.error('Erreur lors du chargement des statistiques:', error);
+      error: () => {
+        // Erreur silencieuse
       }
     });
 
@@ -55,8 +55,7 @@ export class DashboardComponent implements OnInit {
         this.stats.pending = appointments.length;
         this.isLoading = false;
       },
-      error: (error) => {
-        console.error('Erreur lors du chargement des rendez-vous en attente:', error);
+      error: () => {
         this.isLoading = false;
       }
     });
@@ -77,8 +76,8 @@ export class DashboardComponent implements OnInit {
           })
           .slice(0, 5);
       },
-      error: (error) => {
-        console.error('Erreur lors du chargement des rendez-vous récents:', error);
+      error: () => {
+        // Erreur silencieuse
       }
     });
   }

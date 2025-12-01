@@ -73,8 +73,7 @@ export class ClientsComponent implements OnInit, OnDestroy {
         this.applyFilters();
         this.isLoading = false;
       },
-      error: (error) => {
-        console.error('Erreur lors du chargement des clients:', error);
+      error: () => {
         this.isLoading = false;
       }
     });
@@ -131,8 +130,8 @@ export class ClientsComponent implements OnInit, OnDestroy {
         });
         this.applyFilters(); // Réappliquer les filtres après chargement des données
       },
-      error: (error) => {
-        console.error('Erreur lors du chargement des données clients:', error);
+      error: () => {
+        // Erreur silencieuse
       }
     });
   }
@@ -172,11 +171,8 @@ export class ClientsComponent implements OnInit, OnDestroy {
         client.clientId = finalClientId;
         this.router.navigate(['/admin/clients', finalClientId]);
       },
-      error: (error) => {
-        console.error('Erreur lors de la récupération/création du client:', error);
-        // Fallback: utiliser l'email directement si tout échoue
-        // Mais il faudra modifier la route pour accepter les emails aussi
-        console.warn('Impossible de récupérer le clientId, navigation impossible');
+      error: () => {
+        // Fallback: navigation impossible sans clientId valide
       }
     });
   }

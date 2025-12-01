@@ -25,8 +25,7 @@ export class AboutComponent implements OnInit {
         this.aboutContent = data.sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
         this.isLoading = false;
       },
-      error: (error) => {
-        console.error('Erreur lors du chargement du contenu About:', error);
+      error: () => {
         this.aboutContent = [];
         this.isLoading = false;
       }

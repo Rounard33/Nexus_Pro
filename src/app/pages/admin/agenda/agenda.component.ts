@@ -133,8 +133,7 @@ export class AgendaComponent implements OnInit {
         this.refresh.next();
         this.cdr.markForCheck();
       },
-      error: (error) => {
-        console.error('Erreur lors du chargement des rendez-vous:', error);
+      error: () => {
         this.isLoading = false;
         this.cdr.markForCheck();
       }
