@@ -40,7 +40,14 @@ export function generateAdminNotificationEmail(data: AdminNotificationData): str
   // Infos fidélité (basé sur les RDV terminés uniquement)
   const loyaltyCount = data.loyalty_count || 0;
   const loyaltyThreshold = data.loyalty_threshold || 10;
-  const loyaltyAfterThis = loyaltyCount + 1; // +1 quand ce RDV sera marqué comme terminé
+  
+  // Vérifier si la prestation actuelle est un tirage de cartes (ne compte pas pour la fidélité)
+  const prestationNameLower = (data.prestation_name || '').toLowerCase();
+  const isCardReading = prestationNameLower.includes('tirage') || prestationNameLower.includes('carte');
+  
+  // +1 seulement si ce n'est pas un tirage de cartes
+  const loyaltyAfterThis = loyaltyCount + (isCardReading ? 0 : 1);
+  
   const isCloseToReward = loyaltyAfterThis >= loyaltyThreshold - 2 && loyaltyAfterThis < loyaltyThreshold;
   const hasReachedReward = loyaltyAfterThis >= loyaltyThreshold;
   
