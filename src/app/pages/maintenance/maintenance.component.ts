@@ -93,7 +93,6 @@ import {Component} from '@angular/core';
       50% { opacity: 1; }
     }
     
-    /* Background décoratif */
     .background {
       position: absolute;
       top: 0;
