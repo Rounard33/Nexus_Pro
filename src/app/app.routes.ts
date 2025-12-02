@@ -1,11 +1,20 @@
 import {Routes} from '@angular/router';
 import {adminGuard} from './guards/admin.guard';
+import {maintenanceGuard, maintenancePageGuard} from './guards/maintenance.guard';
 
 export const routes: Routes = [
+  // Page de maintenance (accessible uniquement si le mode est activé)
+  { 
+    path: 'maintenance', 
+    loadComponent: () => import('./pages/maintenance/maintenance.component').then(m => m.MaintenanceComponent),
+    canActivate: [maintenancePageGuard]
+  },
+  
+  // Routes publiques (protégées par le guard de maintenance)
   { path: '', redirectTo: '/home', pathMatch: 'full' },
-  { path: 'home', loadComponent: () => import('./pages/home/home.component').then(m => m.HomeComponent) },
-  { path: 'contact', loadComponent: () => import('./pages/contact/contact.component').then(m => m.ContactComponent) },
-  { path: 'cgu', loadComponent: () => import('./pages/cgu/cgu.component').then(m => m.CguComponent) },
+  { path: 'home', loadComponent: () => import('./pages/home/home.component').then(m => m.HomeComponent), canActivate: [maintenanceGuard] },
+  { path: 'contact', loadComponent: () => import('./pages/contact/contact.component').then(m => m.ContactComponent), canActivate: [maintenanceGuard] },
+  { path: 'cgu', loadComponent: () => import('./pages/cgu/cgu.component').then(m => m.CguComponent), canActivate: [maintenanceGuard] },
   { 
     path: 'admin/login', 
     loadComponent: () => import('./pages/admin-login/admin-login.component').then(m => m.AdminLoginComponent) 
