@@ -1,9 +1,9 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { findClientById, generateClientId, verifyClientId } from './utils/client-id.js';
-import { rateLimitMiddleware } from './utils/rate-limiter.js';
-import { applyRateLimit, getAllowedOrigins, setCORSHeaders, setSecurityHeaders } from './utils/security-helpers.js';
-import { sanitizeAppointment, validateAppointment, validateAppointmentQuery, validateCaptchaToken } from './utils/validation.js';
+import {createClient, SupabaseClient} from '@supabase/supabase-js';
+import type {VercelRequest, VercelResponse} from '@vercel/node';
+import {findClientById, generateClientId, verifyClientId} from './utils/client-id.js';
+import {rateLimitMiddleware} from './utils/rate-limiter.js';
+import {applyRateLimit, getAllowedOrigins, setCORSHeaders, setSecurityHeaders} from './utils/security-helpers.js';
+import {sanitizeAppointment, validateAppointment, validateAppointmentQuery, validateCaptchaToken} from './utils/validation.js';
 
 /**
  * Détermine l'origine CORS à autoriser
@@ -841,24 +841,38 @@ async function handleAppointments(req: VercelRequest, res: VercelResponse, supab
         }
       });
       
-      const { data: clientAppointments } = await supabaseFresh
+      // DEBUG: Afficher l'email recherché
+      const searchEmail = data.client_email.toLowerCase();
+      console.log(`[Fidélité DEBUG] Recherche pour email: "${searchEmail}"`);
+      
+      const { data: clientAppointments, error: loyaltyQueryError } = await supabaseFresh
         .from('appointments')
         .select('id, prestation_id, prestations(name)')
-        .eq('client_email', data.client_email.toLowerCase())
+        .eq('client_email', searchEmail)
         .eq('status', 'completed');
       
+      // DEBUG: Afficher les résultats bruts et les erreurs éventuelles
+      console.log(`[Fidélité DEBUG] Erreur requête:`, loyaltyQueryError);
+      console.log(`[Fidélité DEBUG] Résultats bruts:`, JSON.stringify(clientAppointments, null, 2));
+      
       if (clientAppointments) {
+        console.log(`[Fidélité DEBUG] Nombre de RDV completed trouvés: ${clientAppointments.length}`);
+        
         // Filtrer les tirages de cartes (ne comptent pas pour la fidélité)
         const eligibleAppointments = clientAppointments.filter((apt: any) => {
           const prestationName = apt.prestations?.name?.toLowerCase() || '';
+          console.log(`[Fidélité DEBUG] Prestation "${prestationName}" - inclut tirage: ${prestationName.includes('tirage')}, inclut carte: ${prestationName.includes('carte')}`);
           // Exclure les tirages de cartes
           return !prestationName.includes('tirage') && !prestationName.includes('carte');
         });
         loyaltyCount = eligibleAppointments.length;
         console.log(`[Fidélité] Client ${data.client_email}: ${loyaltyCount} séances terminées éligibles`);
+      } else {
+        console.log(`[Fidélité DEBUG] clientAppointments est null ou undefined`);
       }
     } catch (loyaltyError: any) {
       console.warn('[Fidélité] Erreur récupération fidélité client:', loyaltyError.message);
+      console.warn('[Fidélité] Stack:', loyaltyError.stack);
     }
     
     // Gérer le parrainage : si quelqu'un vient de la part d'un client, +1 au parrain
