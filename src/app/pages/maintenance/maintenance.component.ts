@@ -26,7 +26,6 @@ import {Component} from '@angular/core';
         
         <div class="divider">
           <span class="line"></span>
-          <span class="line"></span>
         </div>
         
         <p class="message">
@@ -222,7 +221,7 @@ import {Component} from '@angular/core';
     }
     
     .divider .line {
-      width: 80px;
+      width: 200px;
       height: 1px;
       background: linear-gradient(90deg, transparent, #b8a889, transparent);
     }
