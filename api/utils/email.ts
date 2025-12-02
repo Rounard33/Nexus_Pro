@@ -4,25 +4,25 @@
  * Les templates sont dans des fichiers séparés pour plus de clarté
  */
 
-import { Resend } from 'resend';
+import {Resend} from 'resend';
 
 // Import des templates
-import { 
-  generateConfirmationEmail, 
-  getConfirmationSubject 
-} from './email-templates/confirmation.js';
-import { 
-  generateAdminNotificationEmail, 
-  getAdminNotificationSubject 
+import {
+  generateAdminNotificationEmail,
+  getAdminNotificationSubject
 } from './email-templates/admin-notification.js';
-import { 
-  generateStatusUpdateEmail, 
-  getStatusUpdateSubject 
-} from './email-templates/status-update.js';
-import { 
-  generateContactMessageEmail, 
-  getContactMessageSubject 
+import {
+  generateConfirmationEmail,
+  getConfirmationSubject
+} from './email-templates/confirmation.js';
+import {
+  generateContactMessageEmail,
+  getContactMessageSubject
 } from './email-templates/contact-message.js';
+import {
+  generateStatusUpdateEmail,
+  getStatusUpdateSubject
+} from './email-templates/status-update.js';
 
 // ============================================
 // Configuration
@@ -49,6 +49,11 @@ export interface AppointmentData {
   prestation_name?: string;
   notes?: string;
   status?: string;
+  loyalty_count?: number;
+  loyalty_threshold?: number;
+  referral_source?: string;
+  referral_friend_name?: string;
+  referrer_loyalty_count?: number;
 }
 
 export interface ContactData {
@@ -108,7 +113,21 @@ export async function sendAppointmentRequestConfirmation(appointment: Appointmen
  */
 export async function sendNewAppointmentNotificationToAdmin(appointment: AppointmentData): Promise<boolean> {
   try {
-    const { client_name, client_email, client_phone, appointment_date, appointment_time, prestation_name, notes } = appointment;
+    const { 
+      client_name, 
+      client_email, 
+      client_phone, 
+      appointment_date, 
+      appointment_time, 
+      prestation_name, 
+      notes,
+      // Ajouter les données de fidélité et parrainage
+      loyalty_count,
+      loyalty_threshold,
+      referral_source,
+      referral_friend_name,
+      referrer_loyalty_count
+    } = appointment;
     
     // Générer l'email à partir du template
     const html = generateAdminNotificationEmail({
@@ -119,6 +138,12 @@ export async function sendNewAppointmentNotificationToAdmin(appointment: Appoint
       appointment_time,
       prestation_name,
       notes,
+      // Passer les données de fidélité et parrainage au template
+      loyalty_count,
+      loyalty_threshold,
+      referral_source,
+      referral_friend_name,
+      referrer_loyalty_count
     });
 
     const subject = getAdminNotificationSubject(client_name, appointment_date);
