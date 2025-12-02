@@ -826,9 +826,6 @@ async function handleAppointments(req: VercelRequest, res: VercelResponse, supab
     let loyaltyCount = 0;
     let referrerLoyaltyCount: number | undefined = undefined;
     
-    // Petit délai pour s'assurer que les données sont bien répliquées
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
     // Récupérer le nombre de RDV terminés du client (pour la fidélité)
     // Seuls les RDV terminés comptent (hors tirages de cartes)
     try {
@@ -841,38 +838,22 @@ async function handleAppointments(req: VercelRequest, res: VercelResponse, supab
         }
       });
       
-      // DEBUG: Afficher l'email recherché
-      const searchEmail = data.client_email.toLowerCase();
-      console.log(`[Fidélité DEBUG] Recherche pour email: "${searchEmail}"`);
-      
-      const { data: clientAppointments, error: loyaltyQueryError } = await supabaseFresh
+      const { data: clientAppointments } = await supabaseFresh
         .from('appointments')
         .select('id, prestation_id, prestations(name)')
-        .eq('client_email', searchEmail)
+        .eq('client_email', data.client_email.toLowerCase())
         .eq('status', 'completed');
       
-      // DEBUG: Afficher les résultats bruts et les erreurs éventuelles
-      console.log(`[Fidélité DEBUG] Erreur requête:`, loyaltyQueryError);
-      console.log(`[Fidélité DEBUG] Résultats bruts:`, JSON.stringify(clientAppointments, null, 2));
-      
       if (clientAppointments) {
-        console.log(`[Fidélité DEBUG] Nombre de RDV completed trouvés: ${clientAppointments.length}`);
-        
         // Filtrer les tirages de cartes (ne comptent pas pour la fidélité)
         const eligibleAppointments = clientAppointments.filter((apt: any) => {
           const prestationName = apt.prestations?.name?.toLowerCase() || '';
-          console.log(`[Fidélité DEBUG] Prestation "${prestationName}" - inclut tirage: ${prestationName.includes('tirage')}, inclut carte: ${prestationName.includes('carte')}`);
-          // Exclure les tirages de cartes
           return !prestationName.includes('tirage') && !prestationName.includes('carte');
         });
         loyaltyCount = eligibleAppointments.length;
-        console.log(`[Fidélité] Client ${data.client_email}: ${loyaltyCount} séances terminées éligibles`);
-      } else {
-        console.log(`[Fidélité DEBUG] clientAppointments est null ou undefined`);
       }
     } catch (loyaltyError: any) {
-      console.warn('[Fidélité] Erreur récupération fidélité client:', loyaltyError.message);
-      console.warn('[Fidélité] Stack:', loyaltyError.stack);
+      console.warn('[Fidélité] Erreur récupération fidélité:', loyaltyError.message);
     }
     
     // Gérer le parrainage : si quelqu'un vient de la part d'un client, +1 au parrain

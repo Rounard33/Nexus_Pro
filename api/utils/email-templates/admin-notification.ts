@@ -4,8 +4,8 @@
  */
 
 import {
-    escapeHtml,
-    formatDateFr
+  escapeHtml,
+  formatDateFr
 } from './common.js';
 
 export interface AdminNotificationData {
