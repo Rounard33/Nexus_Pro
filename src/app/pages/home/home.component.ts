@@ -73,15 +73,15 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
                                     p.name.toLowerCase().includes('cranien');
           
           return {
-            id: p.id,
-            name: p.name,
-            price: p.price || '',
-            atHome: p.at_home,
-            priceOption: p.price_option,
-            duration: p.duration,
-            shortDescription: p.short_description,
-            description: p.description,
-            image: getPrestationImageUrl(p.image_url),
+          id: p.id,
+          name: p.name,
+          price: p.price || '',
+          atHome: p.at_home,
+          priceOption: p.price_option,
+          duration: p.duration,
+          shortDescription: p.short_description,
+          description: p.description,
+          image: getPrestationImageUrl(p.image_url),
             requiresContact: p.requires_contact || false,
             hasContraindications: isCranialMassage,
             contraindications: isCranialMassage ? this.getCranialMassageContraindications() : undefined

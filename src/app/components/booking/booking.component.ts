@@ -147,11 +147,11 @@ export class BookingComponent implements OnInit, OnChanges {
       const updateValidation = () => {
         const unit = childAgeUnitControl.value || 'mois';
         const maxAge = unit === 'mois' ? 24 : 2;
-        childAgeControl.setValidators([
-          Validators.required,
-          Validators.min(0),
+          childAgeControl.setValidators([
+            Validators.required,
+            Validators.min(0),
           Validators.max(maxAge)
-        ]);
+          ]);
         childAgeControl.updateValueAndValidity();
       };
 
@@ -298,7 +298,7 @@ export class BookingComponent implements OnInit, OnChanges {
       }
       return;
     }
-
+    
     const result = this.timeSlotService.generateTimeSlots(
       this.selectedDate,
       this.openingHours,
@@ -311,8 +311,8 @@ export class BookingComponent implements OnInit, OnChanges {
     
     if (result.errorMessage) {
       this.errorMessage = result.errorMessage;
-    }
-  }
+          }
+        }
 
   isTimeAvailable(time: string): boolean {
     return this.timeSlotService.isTimeAvailable(time, this.availableTimes);
@@ -412,8 +412,8 @@ export class BookingComponent implements OnInit, OnChanges {
       if (!isNaN(age) && age >= 0) {
         const unit = formValue.child_age_unit || 'mois';
         appointment.child_age = unit === 'années' ? Math.round(age * 12) : Math.round(age);
+        }
       }
-    }
 
     if (this.captchaToken) {
       appointment.captcha_token = this.captchaToken;
@@ -423,32 +423,32 @@ export class BookingComponent implements OnInit, OnChanges {
   }
 
   private handleSubmitSuccess(createdAppointment: Appointment): void {
-    this.isSubmitting = false;
-    this.existingAppointments.push(createdAppointment);
-    
+        this.isSubmitting = false;
+        this.existingAppointments.push(createdAppointment);
+        
     // Notification via le service centralisé
     this.notificationService.success(
       'Votre demande de réservation a été envoyée avec succès ! Je vous confirmerai rapidement.'
     );
 
-    if (this.selectedDate) {
-      this.updateAvailableTimes();
-    }
-
-    this.resetFormState();
-    this.success.emit(createdAppointment);
+        if (this.selectedDate) {
+          this.updateAvailableTimes();
+        }
+        
+        this.resetFormState();
+        this.success.emit(createdAppointment);
   }
 
   private handleSubmitError(error: any): void {
-    this.isSubmitting = false;
-
-    if (error.status === 409) {
-      this.errorMessage = 'Ce créneau est déjà réservé. Veuillez en sélectionner un autre.';
-      this.selectedTime = null;
-      this.updateAvailableTimes();
-    } else {
-      this.errorMessage = 'Une erreur est survenue. Veuillez réessayer plus tard.';
-    }
+        this.isSubmitting = false;
+        
+        if (error.status === 409) {
+          this.errorMessage = 'Ce créneau est déjà réservé. Veuillez en sélectionner un autre.';
+          this.selectedTime = null;
+          this.updateAvailableTimes();
+        } else {
+          this.errorMessage = 'Une erreur est survenue. Veuillez réessayer plus tard.';
+        }
   }
 
   private validateFormData(): boolean {
@@ -492,7 +492,7 @@ export class BookingComponent implements OnInit, OnChanges {
     this.isCaptchaValid = false;
     this.captchaToken = '';
     this.captchaComponent?.refresh();
-  }
+        }
 
   private markFormGroupTouched(formGroup: FormGroup): void {
     Object.keys(formGroup.controls).forEach(key => {

@@ -26,7 +26,7 @@ export class CaptchaComponent implements OnInit {
   
   // Honeypot : champ invisible pour piéger les bots
   honeypotValue: string = '';
-  
+
   // Anti-bot : délai minimum avant soumission (en ms)
   private readonly MIN_SUBMISSION_DELAY = 3000; // 3 secondes
   private loadTimestamp: number = 0;

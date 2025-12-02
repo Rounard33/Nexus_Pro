@@ -826,10 +826,22 @@ async function handleAppointments(req: VercelRequest, res: VercelResponse, supab
     let loyaltyCount = 0;
     let referrerLoyaltyCount: number | undefined = undefined;
     
+    // Petit délai pour s'assurer que les données sont bien répliquées
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
     // Récupérer le nombre de RDV terminés du client (pour la fidélité)
     // Seuls les RDV terminés comptent (hors tirages de cartes)
     try {
-      const { data: clientAppointments } = await supabase
+      // Créer une instance Supabase sans cache pour avoir les données les plus récentes
+      const freshUrl = process.env['SUPABASE_URL']!;
+      const freshKey = process.env['SUPABASE_SERVICE_ROLE_KEY']!;
+      const supabaseFresh = createClient(freshUrl, freshKey, {
+        global: {
+          fetch: (url, init) => fetch(url, { ...init, cache: 'no-store' })
+        }
+      });
+      
+      const { data: clientAppointments } = await supabaseFresh
         .from('appointments')
         .select('id, prestation_id, prestations(name)')
         .eq('client_email', data.client_email.toLowerCase())
