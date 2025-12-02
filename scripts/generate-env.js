@@ -88,12 +88,17 @@ function generateEnvironmentFile(env, isProduction = false) {
     process.env.API_URL || 
     (isProduction ? 'https://nexus-pro-liart.vercel.app/api' : 'http://localhost:3000/api');
 
+  // Mode maintenance : activé par variable d'env ou false par défaut
+  const maintenanceMode = process.env.MAINTENANCE_MODE === 'true' || 
+    env.MAINTENANCE_MODE === 'true' || 
+    false;
 
   return `export const environment = {
   production: ${isProduction},
   supabaseUrl: '${supabaseUrl}',
   supabaseAnonKey: '${supabaseAnonKey}',
   apiUrl: '${apiUrl}',
+  maintenanceMode: ${maintenanceMode},
 };
 `;
 }
