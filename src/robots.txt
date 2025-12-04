@@ -1,0 +1,15 @@
+# Robots.txt pour Reiki & Sens
+# https://reikietsens.fr
+
+User-agent: *
+Allow: /
+
+# Pages à ne pas indexer
+Disallow: /admin
+Disallow: /admin/
+Disallow: /maintenance
+Disallow: /api/
+
+# Sitemap
+Sitemap: https://reikietsens.fr/sitemap.xml
+
