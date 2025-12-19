@@ -23,6 +23,13 @@
   }
 }
 
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
 .modal-content {
   background: white;
   border-radius: 24px;

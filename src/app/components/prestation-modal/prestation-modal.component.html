@@ -33,7 +33,12 @@
         </div>
       </div>
       <div class="modal-actions">
-        <button class="btn btn-primary btn-lg" (click)="onBook()">
+        <button 
+          class="btn btn-primary btn-lg" 
+          (click)="onBook()" 
+          [disabled]="true"
+          title="Réservation bientôt disponible"
+        >
           {{ prestation.requiresContact ? 'Contacter' : 'Réserver' }}
         </button>
       </div>

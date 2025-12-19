@@ -43,7 +43,12 @@
             <button class="btn btn-outline prestation-btn-more" (click)="openDetails.emit(prestation)">
               En savoir plus
             </button>
-            <button class="btn btn-primary prestation-btn" (click)="onBookingClick(prestation)">
+            <button 
+              class="btn btn-primary prestation-btn" 
+              (click)="onBookingClick(prestation)" 
+              [disabled]="true"
+              title="Réservation bientôt disponible"
+            >
               {{ prestation.requiresContact ? 'Contacter' : 'Réserver' }}
             </button>
           </div>
