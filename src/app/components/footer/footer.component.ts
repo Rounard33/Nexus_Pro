@@ -13,7 +13,7 @@ export class FooterComponent {
   currentYear = new Date().getFullYear();
 
   socialLinks = [
-    { name: 'Facebook', url: '#', icon: 'assets/icons/facebook.png' },
+    { name: 'Facebook', url: 'https://www.facebook.com/people/Re%C3%AFki-Sens/61585529754249/', icon: 'assets/icons/facebook.png' },
     { name: 'Instagram', url: 'https://www.instagram.com/reikietsens?igsh=MXczdHdwcjExdTg1cQ==', icon: 'assets/icons/instagram.png' },
   ];
 

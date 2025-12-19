@@ -6,9 +6,9 @@ import {ActivatedRoute, NavigationEnd, Router, RouterModule} from '@angular/rout
 import {gsap} from 'gsap';
 import {ScrollTrigger} from 'gsap/ScrollTrigger';
 import {filter} from 'rxjs/operators';
-import {ContentService, OpeningHours} from '../../services/content.service';
 import {environment} from '../../../environments/environment';
 import {CaptchaComponent} from '../../components/captcha/captcha.component';
+import {ContentService, OpeningHours} from '../../services/content.service';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -107,7 +107,7 @@ export class ContactComponent implements OnInit, AfterViewInit, OnDestroy {
   };
 
   socialLinks = [
-    { name: 'Facebook', url: '#', icon: 'assets/icons/facebook.png' },
+    { name: 'Facebook', url: 'https://www.facebook.com/people/Re%C3%AFki-Sens/61585529754249/', icon: 'assets/icons/facebook.png' },
     { name: 'Instagram', url: 'https://www.instagram.com/reikietsens?igsh=MXczdHdwcjExdTg1cQ==', icon: 'assets/icons/instagram.png' }
   ];
 
