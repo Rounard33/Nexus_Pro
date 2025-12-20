@@ -31,5 +31,26 @@
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
+  
+  <url>
+    <loc>https://reikietsens.fr/cgv</loc>
+    <lastmod>2024-12-04</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+
+  <url>
+    <loc>https://reikietsens.fr/politique-confidentialite</loc>
+    <lastmod>2024-12-04</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+
+  <url>
+    <loc>https://reikietsens.fr/mentions-legales</loc>
+    <lastmod>2024-12-04</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
 </urlset>
 

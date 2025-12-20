@@ -15,6 +15,9 @@ export const routes: Routes = [
   { path: 'home', loadComponent: () => import('./pages/home/home.component').then(m => m.HomeComponent), canActivate: [maintenanceGuard] },
   { path: 'contact', loadComponent: () => import('./pages/contact/contact.component').then(m => m.ContactComponent), canActivate: [maintenanceGuard] },
   { path: 'cgu', loadComponent: () => import('./pages/cgu/cgu.component').then(m => m.CguComponent), canActivate: [maintenanceGuard] },
+  { path: 'cgv', loadComponent: () => import('./pages/cgv/cgv.component').then(m => m.CgvComponent), canActivate: [maintenanceGuard] },
+  { path: 'politique-confidentialite', loadComponent: () => import('./pages/politique-confidentialite/politique-confidentialite.component').then(m => m.PolitiqueConfidentialiteComponent), canActivate: [maintenanceGuard] },
+  { path: 'mentions-legales', loadComponent: () => import('./pages/mentions-legales/mentions-legales.component').then(m => m.MentionsLegalesComponent), canActivate: [maintenanceGuard] },
   { 
     path: 'admin/login', 
     loadComponent: () => import('./pages/admin-login/admin-login.component').then(m => m.AdminLoginComponent) 
