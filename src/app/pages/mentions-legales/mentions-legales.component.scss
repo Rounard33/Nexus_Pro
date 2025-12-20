@@ -325,6 +325,20 @@
     color: white;
     transform: translateY(-2px);
   }
+  
+  .btn-text-mobile {
+    display: none;
+  }
+  
+  @media (max-width: 768px) {
+    .btn-text-desktop {
+      display: none;
+    }
+    
+    .btn-text-mobile {
+      display: inline;
+    }
+  }
 }
 
 // Container

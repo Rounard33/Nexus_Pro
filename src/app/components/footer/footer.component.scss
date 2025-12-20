@@ -155,6 +155,20 @@
   @media (max-width: 480px) {
     font-size: 0.8rem;
   }
+
+  .link-text-mobile {
+    display: none;
+  }
+  
+  @media (max-width: 768px) {
+    .link-text-desktop {
+      display: none;
+    }
+    
+    .link-text-mobile {
+      display: inline;
+    }
+  }
 }
 
 .social-links {
@@ -269,5 +283,23 @@
 
   &:hover {
     color: var(--primary-700);
+  }
+}
+
+.back-link {
+  .btn {
+    .btn-text-mobile {
+      display: none;
+    }
+    
+    @media (max-width: 768px) {
+      .btn-text-desktop {
+        display: none;
+      }
+      
+      .btn-text-mobile {
+        display: inline;
+      }
+    }
   }
 }

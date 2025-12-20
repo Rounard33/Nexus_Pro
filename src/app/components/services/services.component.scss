@@ -265,16 +265,41 @@
   padding: 0.75rem 1.5rem;
   font-size: 0.9rem;
   border-radius: 40px;
+  min-height: 44px; // Hauteur minimale pour l'accessibilité tactile
   
   @media (max-width: 1024px) {
-    padding: 0.625rem 1rem;
-    font-size: 0.85rem;
+    padding: 0.75rem 1.25rem; // Augmenté de 0.625rem à 0.75rem
+    font-size: 0.9rem; // Augmenté de 0.85rem à 0.9rem
     white-space: nowrap;
+    min-height: 44px;
+  }
+  
+  @media (max-width: 768px) {
+    padding: 0.875rem 1.5rem;
+    font-size: 0.95rem;
+    min-height: 48px; // Plus grand sur mobile
   }
   
   @media (max-width: 480px) {
-    padding: 0.875rem 1.5rem;
-    font-size: 0.95rem;
+    width: 100%;
+    padding: 1rem 1.75rem; // Augmenté de 0.875rem à 1rem
+    font-size: 1rem; // Augmenté de 0.95rem à 1rem
+    min-height: 50px; // Encore plus grand sur très petit écran
+    font-weight: 500; // Légèrement plus gras pour meilleure lisibilité
+  }
+}
+
+// Améliorer spécifiquement le bouton "Réserver" sur mobile
+.booking-button-container {
+  flex: 1;
+  
+  @media (max-width: 480px) {
+    .prestation-btn {
+      width: 100%;
+      padding: 1.125rem 2rem; // Encore plus grand pour le bouton principal
+      font-size: 1.05rem;
+      min-height: 52px;
+    }
   }
 }
 
