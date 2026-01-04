@@ -7,6 +7,8 @@
   background: linear-gradient(135deg, #ffffff 0%, #faf8f3 50%, #f5f1e8 100%);
   overflow: hidden;
   padding-top: 80px;
+  opacity: 1 !important;
+  visibility: visible !important;
 }
 
 .background {
@@ -144,6 +146,13 @@
   max-width: 100%;
   box-sizing: border-box;
   word-wrap: break-word;
+  opacity: 1 !important;
+  visibility: visible !important;
+  
+  .badge-text {
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
   
   @media (max-width: 768px) {
     padding: 0.625rem 1.25rem;
@@ -159,6 +168,8 @@
   margin-bottom: 2rem;
   color: var(--primary-800);
   letter-spacing: -0.03em;
+  opacity: 1 !important;
+  visibility: visible !important;
 
   @media (max-width: 768px) {
     font-size: 3rem;
@@ -169,6 +180,8 @@
   display: block;
   font-family: 'Allura', cursive;
   font-size: 6rem;
+  opacity: 1 !important;
+  visibility: visible !important;
 
   @media (max-width: 768px) {
     font-size: 4rem;

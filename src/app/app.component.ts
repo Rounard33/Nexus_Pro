@@ -1,18 +1,19 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, AfterViewInit} from '@angular/core';
 import {RouterOutlet} from '@angular/router';
 import {FooterComponent} from './components/footer/footer.component';
 import {HeaderComponent} from './components/header/header.component';
 import {NotificationContainerComponent} from './components/notification-container/notification-container.component';
+import {LoaderComponent} from './components/loader/loader.component';
 import {ThemeService} from './services/theme.service';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, HeaderComponent, FooterComponent, NotificationContainerComponent],
+  imports: [RouterOutlet, HeaderComponent, FooterComponent, NotificationContainerComponent, LoaderComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })
-export class AppComponent implements OnInit {
+export class AppComponent implements OnInit, AfterViewInit {
   title = 'NexusPro';
 
   constructor(private themeService: ThemeService) {}
@@ -23,24 +24,29 @@ export class AppComponent implements OnInit {
     
     // Listen for system theme changes
     this.setupThemeListener();
-    
-    // Marquer l'app comme chargée pour le fallback CSS
-    this.markAppAsLoaded();
   }
-  
-  /**
-   * Ajoute une classe au body pour indiquer que JS est chargé
-   * Sert de fallback si les animations GSAP échouent
-   */
-  private markAppAsLoaded(): void {
-    // Ajouter immédiatement la classe de chargement
-    document.body.classList.add('app-loading');
-    
-    // Après un court délai, marquer comme complètement chargé
-    setTimeout(() => {
-      document.body.classList.remove('app-loading');
-      document.body.classList.add('app-loaded');
-    }, 100);
+
+  ngAfterViewInit(): void {
+    // S'assurer que le contenu est visible une fois qu'Angular a fini de rendre
+    // Utiliser requestAnimationFrame pour s'assurer que le DOM est à jour
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        this.ensureContentVisible();
+      }, 100);
+    });
+  }
+
+  private ensureContentVisible(): void {
+    // Si le loader est fermé, s'assurer que le contenu est visible
+    const body = document.body;
+    if (!body.classList.contains('app-loading') || body.classList.contains('app-loaded')) {
+      const appLayout = document.querySelector('app-root .app-layout');
+      if (appLayout) {
+        const element = appLayout as HTMLElement;
+        element.style.setProperty('opacity', '1', 'important');
+        element.style.setProperty('visibility', 'visible', 'important');
+      }
+    }
   }
 
   private initializeTheme(): void {

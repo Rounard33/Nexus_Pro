@@ -16,6 +16,7 @@ import {Prestation, ServicesComponent} from '../../components/services/services.
 import {Testimonial, TestimonialsComponent} from '../../components/testimonials/testimonials.component';
 import {WelcomeComponent} from '../../components/welcome/welcome.component';
 import {Appointment, ContentService} from '../../services/content.service';
+import {LoadingService} from '../../services/loading.service';
 import {getCreationImageUrl, getPrestationImageUrl, getTestimonialAvatarUrl} from '../../utils/supabase-storage.utils';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -54,7 +55,10 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   
   isLoading = true;
 
-  constructor(private contentService: ContentService) {}
+  constructor(
+    private contentService: ContentService,
+    private loadingService: LoadingService
+  ) {}
 
   ngOnInit() {
     document.addEventListener('keydown', this.handleEscapeKey.bind(this));
@@ -64,6 +68,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private loadContent() {
     this.isLoading = true;
+    this.loadingService.reset(); // Réinitialiser le compteur
     
     this.contentService.getPrestations().subscribe({
       next: (data) => {
@@ -87,9 +92,11 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
             contraindications: isCranialMassage ? this.getCranialMassageContraindications() : undefined
           };
         });
+        this.loadingService.markDataLoaded(); // Signaler que les prestations sont chargées
       },
       error: () => {
         this.prestations = [];
+        this.loadingService.markDataLoaded(); // Signaler même en cas d'erreur
       }
     });
 
@@ -102,9 +109,11 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
           description: c.description,
           image: getCreationImageUrl(c.image_url) // Utiliser la fonction utilitaire pour construire l'URL Supabase Storage
         }));
+        this.loadingService.markDataLoaded(); // Signaler que les créations sont chargées
       },
       error: () => {
         this.creations = [];
+        this.loadingService.markDataLoaded(); // Signaler même en cas d'erreur
       }
     });
 
@@ -118,9 +127,11 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
           avatar: t.avatar_url ? getTestimonialAvatarUrl(t.avatar_url) : `https://ui-avatars.com/api/?name=${encodeURIComponent(t.name)}&background=f5f1e8&color=6f5f4e&size=150`,
           age: t.age,
         }));
+        this.loadingService.markDataLoaded(); // Signaler que les témoignages sont chargés
       },
       error: () => {
         this.testimonials = [];
+        this.loadingService.markDataLoaded(); // Signaler même en cas d'erreur
       }
     });
 
@@ -133,10 +144,12 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
           isOpen: false
         }));
         this.isLoading = false;
+        this.loadingService.markDataLoaded(); // Signaler que les FAQs sont chargées
       },
       error: () => {
         this.faqs = [];
         this.isLoading = false;
+        this.loadingService.markDataLoaded(); // Signaler même en cas d'erreur
       }
     });
   }

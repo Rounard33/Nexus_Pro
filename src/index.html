@@ -50,7 +50,17 @@
   <link rel="icon" type="image/png" sizes="32x32" href="assets/logo/logo-white.png">
   <link rel="icon" type="image/png" sizes="16x16" href="assets/logo/logo-white.png">
   <link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
-  <link rel="apple-touch-icon" sizes="180x180" href="assets/logo/logo-white.png">
+  <!-- Apple Touch Icon pour l'ajout à l'écran d'accueil iOS -->
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/logo/logo-black.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="assets/logo/logo-black.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="assets/logo/logo-black.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="assets/logo/logo-black.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="assets/logo/logo-black.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="assets/logo/logo-black.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="assets/logo/logo-black.png">
+  <link rel="apple-touch-icon" sizes="60x60" href="assets/logo/logo-black.png">
+  <link rel="apple-touch-icon" sizes="57x57" href="assets/logo/logo-black.png">
+  <link rel="apple-touch-icon" href="assets/logo/logo-black.png">
 
   <!-- Données structurées Schema.org pour le SEO local -->
   <script type="application/ld+json">
@@ -119,20 +129,54 @@
 <body class="app-loading">
   <!-- Style critique inline pour éviter le flash de contenu invisible -->
   <style>
-    /* Garantir la visibilité du contenu pendant le chargement */
-    body.app-loading app-root {
-      opacity: 1;
-      visibility: visible;
+    /* Le loader doit toujours être visible pendant le chargement */
+    body.app-loading app-loader {
+      opacity: 1 !important;
+      visibility: visible !important;
+      display: block !important;
     }
-    /* Après 3s, forcer la visibilité de tout le contenu (fallback si JS échoue) */
-    @keyframes force-visible {
-      to { opacity: 1 !important; visibility: visible !important; }
+    
+    /* Le welcome doit TOUJOURS être visible, même pendant le chargement */
+    body.app-loading app-welcome {
+      opacity: 1 !important;
+      visibility: visible !important;
     }
-    body.app-loading .badge,
-    body.app-loading .title-line,
-    body.app-loading .description-welcome,
-    body.app-loading .actions {
-      animation: force-visible 0.1s 3s forwards;
+    
+    /* Le badge, le logo et le texte du welcome doivent TOUJOURS être visibles */
+    body.app-loading app-welcome .badge,
+    body.app-loading app-welcome .badge-text,
+    body.app-loading app-welcome .title,
+    body.app-loading app-welcome .title-line,
+    body.app-loading app-welcome .title-line-text,
+    body.app-loading app-welcome .title-line img,
+    body.app-loading app-welcome .description-welcome {
+      opacity: 1 !important;
+      visibility: visible !important;
+    }
+    
+    /* Masquer uniquement les sections qui dépendent des données de la base */
+    body.app-loading:not(.app-loaded) app-root .app-layout app-services,
+    body.app-loading:not(.app-loaded) app-root .app-layout app-products,
+    body.app-loading:not(.app-loaded) app-root .app-layout app-testimonials,
+    body.app-loading:not(.app-loaded) app-root .app-layout app-faq {
+      opacity: 0;
+      visibility: hidden;
+    }
+    
+    /* Révéler toutes les sections une fois chargé */
+    body.app-loaded app-root .app-layout,
+    body:not(.app-loading) app-root .app-layout {
+      opacity: 1 !important;
+      visibility: visible !important;
+      transition: opacity 0.5s ease-in;
+    }
+    
+    body.app-loaded app-root .app-layout app-services,
+    body.app-loaded app-root .app-layout app-products,
+    body.app-loaded app-root .app-layout app-testimonials,
+    body.app-loaded app-root .app-layout app-faq {
+      opacity: 1 !important;
+      visibility: visible !important;
     }
   </style>
   <app-root></app-root>
