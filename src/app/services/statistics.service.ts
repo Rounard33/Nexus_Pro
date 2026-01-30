@@ -166,6 +166,38 @@ export class StatisticsService {
     });
 
     if (countWithPrice === 0) return 0;
-    return Math.round((totalAmount / countWithPrice) * 100) / 100; // Arrondir à 2 décimales
+    return Math.round((totalAmount / countWithPrice) * 100) / 100;
+  }
+
+  calculateTimeSlotStats(appointments: Appointment[]): Array<{
+    time: string;
+    count: number;
+    percentage: number;
+  }> {
+    const confirmed = appointments.filter(a => 
+      a.status === 'accepted' || a.status === 'completed'
+    );
+
+    if (confirmed.length === 0) {
+      return [];
+    }
+
+    const timeSlotCounts: {[key: string]: number} = {};
+
+    confirmed.forEach(appointment => {
+      if (appointment.appointment_time) {
+        const time = appointment.appointment_time.substring(0, 5);
+        timeSlotCounts[time] = (timeSlotCounts[time] || 0) + 1;
+      }
+    });
+
+    const total = confirmed.length;
+    return Object.entries(timeSlotCounts)
+      .map(([time, count]) => ({
+        time,
+        count,
+        percentage: Math.round((count / total) * 100 * 10) / 10
+      }))
+      .sort((a, b) => b.count - a.count);
   }
 }

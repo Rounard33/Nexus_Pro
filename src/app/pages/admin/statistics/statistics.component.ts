@@ -17,6 +17,7 @@ export class StatisticsComponent implements OnInit {
   paymentMethods: {[key: string]: number} = {};
   averageClientVisits: number = 0;
   averageBasket: number = 0;
+  timeSlotStats: Array<{time: string; count: number; percentage: number}> = [];
   isLoading = true;
 
   constructor(
@@ -44,6 +45,7 @@ export class StatisticsComponent implements OnInit {
             this.calculatePaymentMethods(appointments);
             this.calculateAverageClientVisits(appointments);
             this.calculateAverageBasket(appointments, prestations);
+            this.calculateTimeSlotStats(appointments);
             this.isLoading = false;
           },
           error: () => {
@@ -153,5 +155,26 @@ export class StatisticsComponent implements OnInit {
   getTotalPayments(): number {
     if (!this.paymentMethods) return 0;
     return Object.values(this.paymentMethods).reduce((sum, count) => sum + count, 0);
+  }
+
+   private calculateTimeSlotStats(appointments: Appointment[]): void {
+    this.timeSlotStats = this.statisticsService.calculateTimeSlotStats(appointments);
+  }
+
+  getTopTimeSlots(count: number = 5): Array<{time: string; count: number; percentage: number}> {
+    return this.timeSlotStats.slice(0, count);
+  }
+
+  getLeastUsedTimeSlots(count: number = 5): Array<{time: string; count: number; percentage: number}> {
+    const withReservations = this.timeSlotStats.filter(ts => ts.count > 0);
+    return withReservations.slice(-count).reverse();
+  }
+
+  getTotalTimeSlots(): number {
+    return this.timeSlotStats.length;
+  }
+
+  getTotalReservations(): number {
+    return this.timeSlotStats.reduce((sum, ts) => sum + ts.count, 0);
   }
 }

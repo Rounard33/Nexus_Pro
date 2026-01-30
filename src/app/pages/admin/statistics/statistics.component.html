@@ -152,4 +152,69 @@
       <p>Aucun paiement enregistré</p>
     </div>
   </div>
+
+   <!-- Statistiques des créneaux horaires -->
+  <div class="time-slots-card">
+    <div class="time-slots-header">
+      <h2 class="section-title">📊 Statistiques des créneaux horaires</h2>
+      <div class="time-slots-summary" *ngIf="timeSlotStats.length > 0">
+        <span class="summary-label">Total :</span>
+        <span class="summary-value">{{ getTotalReservations() }} réservation{{ getTotalReservations() > 1 ? 's' : '' }} sur {{ getTotalTimeSlots() }} créneau{{ getTotalTimeSlots() > 1 ? 'x' : '' }} différent{{ getTotalTimeSlots() > 1 ? 's' : '' }}</span>
+      </div>
+    </div>
+
+    <div class="time-slots-content" *ngIf="timeSlotStats.length > 0">
+      <!-- Créneaux les plus utilisés -->
+      <div class="time-slots-section">
+        <h3 class="time-slots-subtitle">⭐ Créneaux les plus utilisés</h3>
+        <div class="time-slots-list">
+          <div class="time-slot-item" 
+               *ngFor="let slot of getTopTimeSlots(5); let i = index"
+               [class.top-slot]="i === 0">
+            <div class="time-slot-rank">{{ i + 1 }}</div>
+            <div class="time-slot-info">
+              <div class="time-slot-time">{{ slot.time }}</div>
+              <div class="time-slot-stats">
+                <span class="time-slot-count">{{ slot.count }} réservation{{ slot.count > 1 ? 's' : '' }}</span>
+                <span class="time-slot-percentage">{{ slot.percentage }}%</span>
+              </div>
+            </div>
+            <div class="time-slot-bar-wrapper">
+              <div class="time-slot-bar" 
+                   [style.width.%]="(slot.count / getTopTimeSlots(5)[0].count) * 100">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Créneaux les moins utilisés -->
+      <div class="time-slots-section">
+        <h3 class="time-slots-subtitle">📉 Créneaux les moins utilisés</h3>
+        <div class="time-slots-list">
+          <div class="time-slot-item" 
+               *ngFor="let slot of getLeastUsedTimeSlots(5); let i = index">
+            <div class="time-slot-rank">{{ i + 1 }}</div>
+            <div class="time-slot-info">
+              <div class="time-slot-time">{{ slot.time }}</div>
+              <div class="time-slot-stats">
+                <span class="time-slot-count">{{ slot.count }} réservation{{ slot.count > 1 ? 's' : '' }}</span>
+                <span class="time-slot-percentage">{{ slot.percentage }}%</span>
+              </div>
+            </div>
+            <div class="time-slot-bar-wrapper">
+              <div class="time-slot-bar time-slot-bar-least" 
+                   [style.width.%]="slot.count > 0 ? (slot.count / getTopTimeSlots(5)[0].count) * 100 : 0">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="empty-state" *ngIf="timeSlotStats.length === 0">
+      <div class="empty-icon">⏰</div>
+      <p>Aucune statistique de créneaux disponible</p>
+    </div>
+  </div>
 </div>
