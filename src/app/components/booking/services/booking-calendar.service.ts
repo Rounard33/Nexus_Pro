@@ -1,5 +1,5 @@
 import {Injectable} from '@angular/core';
-import {OpeningHours} from '../../../services/content.service';
+import {AvailableSlot, OpeningHours} from '../../../services/content.service';
 import {DateUtils} from '../../../utils/date.utils';
 
 /**
@@ -52,27 +52,35 @@ export class BookingCalendarService {
 
   /**
    * Vérifie si une date est disponible pour la réservation
+   * Priorité : availableSlots si présent, sinon openingHours
    */
   isDateAvailable(
     date: Date,
     blockedDates: string[],
-    openingHours: OpeningHours[]
+    openingHours: OpeningHours[],
+    availableSlots?: AvailableSlot[]
   ): boolean {
     const dateStr = DateUtils.formatDateLocal(date);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     // Ne pas permettre les RDV pour le jour même ou les dates passées
     if (date <= today) return false;
-    
+
     // Ne pas afficher les dates bloquées
     if (blockedDates.includes(dateStr)) return false;
-    
-    // Si les horaires ne sont pas encore chargés, permettre la sélection
-    if (openingHours.length === 0) return true;
-    
-    // Vérifier s'il y a des horaires d'ouverture pour ce jour
+
     const dayOfWeek = date.getDay();
+
+    // Priorité aux créneaux explicites (available_slots)
+    if (availableSlots && availableSlots.length > 0) {
+      return availableSlots.some(
+        s => s.day_of_week === dayOfWeek && s.is_active !== false
+      );
+    }
+
+    // Fallback : horaires d'ouverture
+    if (openingHours.length === 0) return true;
     return openingHours.some(h => h.day_of_week === dayOfWeek && h.is_active !== false);
   }
 
@@ -120,21 +128,22 @@ export class BookingCalendarService {
   generateAvailableDates(
     daysAhead: number,
     blockedDates: string[],
-    openingHours: OpeningHours[]
+    openingHours: OpeningHours[],
+    availableSlots?: AvailableSlot[]
   ): Date[] {
     const dates: Date[] = [];
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     for (let i = 0; i < daysAhead; i++) {
       const date = new Date(today);
       date.setDate(today.getDate() + i);
-      
-      if (this.isDateAvailable(date, blockedDates, openingHours)) {
+
+      if (this.isDateAvailable(date, blockedDates, openingHours, availableSlots)) {
         dates.push(date);
       }
     }
-    
+
     return dates;
   }
 }

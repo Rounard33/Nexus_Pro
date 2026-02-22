@@ -1,5 +1,5 @@
 import {Injectable} from '@angular/core';
-import {Appointment, OpeningHours, Prestation} from '../../../services/content.service';
+import {Appointment, AvailableSlot, BlockedSlot, OpeningHours, Prestation} from '../../../services/content.service';
 import {DateUtils} from '../../../utils/date.utils';
 
 export interface TimeSlotResult {
@@ -59,6 +59,73 @@ export class BookingTimeSlotService {
       allTimes,
       errorMessage: null
     };
+  }
+
+  /**
+   * Génère les créneaux à partir de la table available_slots (1 ligne = 1 créneau de 1h30)
+   */
+  generateTimeSlotsFromAvailableSlots(
+    selectedDate: Date,
+    availableSlots: AvailableSlot[],
+    existingAppointments: Appointment[],
+    prestation: Prestation | null,
+    blockedSlots: BlockedSlot[] = []
+  ): TimeSlotResult {
+    const dayOfWeek = selectedDate.getDay();
+    const dateStr = DateUtils.formatDateLocal(selectedDate);
+
+    const daySlots = availableSlots.filter(
+      s => s.day_of_week === dayOfWeek && s.is_active !== false
+    );
+
+    if (daySlots.length === 0) {
+      return {
+        availableTimes: [],
+        allTimes: [],
+        errorMessage: 'Aucun créneau disponible pour ce jour.'
+      };
+    }
+
+    const allTimes: string[] = [];
+    const availableTimes: string[] = [];
+
+    for (const slot of daySlots) {
+      // start_time peut être "12:30:00" -> extraire "12:30"
+      const timeStr = slot.start_time.substring(0, 5);
+      allTimes.push(timeStr);
+
+      const blockedByAppointment = this.isTimeInBlockedSlot(
+        dateStr,
+        timeStr,
+        existingAppointments,
+        prestation
+      );
+      const blockedBySlot = this.isTimeInBlockedSlotsList(dateStr, timeStr, blockedSlots);
+      if (!blockedByAppointment && !blockedBySlot) {
+        availableTimes.push(timeStr);
+      }
+    }
+
+    return {
+      availableTimes: [...new Set(availableTimes)].sort(),
+      allTimes: [...new Set(allTimes)].sort(),
+      errorMessage: null
+    };
+  }
+
+  /**
+   * Vérifie si un créneau est bloqué manuellement (indisponibilité)
+   */
+  private isTimeInBlockedSlotsList(
+    dateStr: string,
+    timeStr: string,
+    blockedSlots: BlockedSlot[]
+  ): boolean {
+    return blockedSlots.some(bs => {
+      if (bs.blocked_date !== dateStr) return false;
+      const bsTime = bs.start_time.substring(0, 5);
+      return bsTime === timeStr;
+    });
   }
 
   /**

@@ -12,7 +12,7 @@ import {
 } from '@angular/core';
 import {FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
 import {AppointmentPayload} from '../../models/appointment.model';
-import {Appointment, ContentService, OpeningHours, Prestation} from '../../services/content.service';
+import {Appointment, AvailableSlot, BlockedSlot, ContentService, OpeningHours, Prestation} from '../../services/content.service';
 import {NotificationService} from '../../services/notification.service';
 import {DateUtils} from '../../utils/date.utils';
 import {CaptchaComponent} from '../captcha/captcha.component';
@@ -48,6 +48,8 @@ export class BookingComponent implements OnInit, OnChanges {
   availableDates: Date[] = [];
   blockedDates: string[] = [];
   openingHours: OpeningHours[] = [];
+  availableSlots: AvailableSlot[] = [];
+  blockedSlots: BlockedSlot[] = [];
 
   // === Time Slots State ===
   selectedTime: string | null = null;
@@ -185,8 +187,35 @@ export class BookingComponent implements OnInit, OnChanges {
   private loadInitialData(): void {
     this.isLoading = true;
     this.loadBlockedDates();
+    this.loadBlockedSlots();
     this.loadOpeningHours();
+    this.loadAvailableSlots();
     this.loadExistingAppointments();
+  }
+
+  private loadBlockedSlots(): void {
+    const today = new Date();
+    const endDate = new Date(today);
+    endDate.setDate(today.getDate() + 60);
+    this.contentService.getBlockedSlots(
+      DateUtils.formatDateLocal(today),
+      DateUtils.formatDateLocal(endDate)
+    ).subscribe({
+      next: (slots) => this.blockedSlots = slots,
+      error: () => this.blockedSlots = []
+    });
+  }
+
+  private loadAvailableSlots(): void {
+    this.contentService.getAvailableSlots().subscribe({
+      next: (slots) => {
+        this.availableSlots = slots;
+        this.updateAvailableDates();
+      },
+      error: () => {
+        this.availableSlots = [];
+      }
+    });
   }
 
   private loadBlockedDates(): void {
@@ -245,7 +274,8 @@ export class BookingComponent implements OnInit, OnChanges {
     this.availableDates = this.calendarService.generateAvailableDates(
       60,
       this.blockedDates,
-      this.openingHours
+      this.openingHours,
+      this.availableSlots
     );
   }
 
@@ -264,7 +294,12 @@ export class BookingComponent implements OnInit, OnChanges {
   }
 
   isDateAvailable(date: Date): boolean {
-    return this.calendarService.isDateAvailable(date, this.blockedDates, this.openingHours);
+    return this.calendarService.isDateAvailable(
+      date,
+      this.blockedDates,
+      this.openingHours,
+      this.availableSlots
+    );
   }
 
   isDateSelected(date: Date): boolean {
@@ -291,28 +326,43 @@ export class BookingComponent implements OnInit, OnChanges {
   private updateAvailableTimes(): void {
     if (!this.selectedDate) return;
 
-    if (this.openingHours.length === 0) {
-      this.availableTimes = [];
-      if (!this.isLoading) {
-        this.loadOpeningHours();
-      }
-      return;
-    }
-    
-    const result = this.timeSlotService.generateTimeSlots(
-      this.selectedDate,
-      this.openingHours,
-      this.existingAppointments,
-      this.prestation
+    const dayOfWeek = this.selectedDate.getDay();
+    const hasSlotsForDay = this.availableSlots.some(
+      s => s.day_of_week === dayOfWeek && s.is_active !== false
     );
 
-    this.availableTimes = result.availableTimes;
-    this.allTimes = result.allTimes;
-    
-    if (result.errorMessage) {
+    if (hasSlotsForDay) {
+      const result = this.timeSlotService.generateTimeSlotsFromAvailableSlots(
+        this.selectedDate,
+        this.availableSlots,
+        this.existingAppointments,
+        this.prestation,
+        this.blockedSlots
+      );
+      this.availableTimes = result.availableTimes;
+      this.allTimes = result.allTimes;
       this.errorMessage = result.errorMessage;
-          }
-        }
+    } else if (this.openingHours.length > 0) {
+      const result = this.timeSlotService.generateTimeSlots(
+        this.selectedDate,
+        this.openingHours,
+        this.existingAppointments,
+        this.prestation
+      );
+      this.availableTimes = result.availableTimes;
+      this.allTimes = result.allTimes;
+      this.errorMessage = result.errorMessage;
+    } else {
+      this.availableTimes = [];
+      this.allTimes = [];
+      this.errorMessage = 'Aucun créneau disponible pour ce jour.';
+      if (!this.isLoading) {
+        this.loadOpeningHours();
+        this.loadAvailableSlots();
+        this.loadBlockedSlots();
+      }
+    }
+  }
 
   isTimeAvailable(time: string): boolean {
     return this.timeSlotService.isTimeAvailable(time, this.availableTimes);
@@ -508,7 +558,7 @@ export class BookingComponent implements OnInit, OnChanges {
   // MODAL MANAGEMENT
   // ============================================================
 
-  @HostListener('document:keydown.escape', ['$event'])
+  @HostListener('document:keydown.escape')
   onEscapeKey(): void {
     this.closeModal();
   }

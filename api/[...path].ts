@@ -149,7 +149,7 @@ export default async function handler(
   const allowedOrigin = getCORSOrigin(origin);
   
   res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Max-Age', '86400');
@@ -232,6 +232,9 @@ export default async function handler(
       
       case 'blocked-dates':
         return await handleBlockedDates(req, res, supabase);
+
+      case 'blocked-slots':
+        return await handleBlockedSlots(req, res, supabase);
       
       case 'opening-hours':
         return await handleOpeningHours(req, res, supabase);
@@ -439,6 +442,92 @@ async function handleBlockedDates(req: VercelRequest, res: VercelResponse, supab
     }
     return res.json(data);
   }
+  return res.status(405).json({ error: 'Method not allowed' });
+}
+
+async function handleBlockedSlots(req: VercelRequest, res: VercelResponse, supabase: any) {
+  setCORSHeaders(res, req.headers.origin as string, 'GET, POST, DELETE, OPTIONS', 'Content-Type, Authorization');
+  res.setHeader('Content-Type', 'application/json');
+
+  const maxRequests = req.method === 'GET' ? 100 : 30;
+  const rateLimit = rateLimitMiddleware(req, maxRequests, 60000);
+  Object.entries(rateLimit.headers).forEach(([key, value]) => {
+    res.setHeader(key, value);
+  });
+  if (!rateLimit.allowed) {
+    const resetTimeStr = rateLimit.headers['X-RateLimit-Reset'];
+    const retryAfter = Math.ceil((new Date(resetTimeStr).getTime() - Date.now()) / 1000);
+    res.setHeader('Retry-After', Math.max(1, retryAfter).toString());
+    return res.status(429).json({ error: 'Trop de requêtes', retryAfter: Math.max(1, retryAfter) });
+  }
+
+  if (req.method === 'GET') {
+    const { startDate, endDate } = req.query;
+    const today = new Date().toISOString().split('T')[0];
+    let query = supabase
+      .from('blocked_slots')
+      .select('*')
+      .gte('blocked_date', (startDate as string) || today)
+      .order('blocked_date', { ascending: true })
+      .order('start_time', { ascending: true });
+    if (endDate && typeof endDate === 'string') {
+      query = query.lte('blocked_date', endDate);
+    }
+    const { data, error } = await query;
+    if (error) {
+      return res.status(500).json({ error: 'Erreur lors de la récupération des créneaux bloqués', details: error.message });
+    }
+    return res.json(data);
+  }
+
+  if (req.method === 'POST') {
+    const auth = await verifyAuth(req, supabase);
+    if (!auth.authenticated || !auth.isAdmin) {
+      return res.status(auth.authenticated ? 403 : 401).json({
+        error: auth.authenticated ? 'Forbidden: Admin access required' : 'Unauthorized'
+      });
+    }
+    const { blocked_date, start_time, reason } = req.body || {};
+    if (!blocked_date || !start_time) {
+      return res.status(400).json({ error: 'blocked_date et start_time sont requis' });
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(blocked_date)) {
+      return res.status(400).json({ error: 'blocked_date doit être au format YYYY-MM-DD' });
+    }
+    const timeMatch = start_time.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+    if (!timeMatch) {
+      return res.status(400).json({ error: 'start_time doit être au format HH:MM ou HH:MM:SS' });
+    }
+    const normalizedTime = `${timeMatch[1].padStart(2, '0')}:${timeMatch[2].padStart(2, '0')}:00`;
+    const { data, error } = await supabase
+      .from('blocked_slots')
+      .insert([{ blocked_date, start_time: normalizedTime, reason: reason || null }])
+      .select('*')
+      .single();
+    if (error) {
+      return res.status(500).json({ error: 'Erreur lors de la création du créneau bloqué', details: error.message });
+    }
+    return res.status(201).json(data);
+  }
+
+  if (req.method === 'DELETE') {
+    const auth = await verifyAuth(req, supabase);
+    if (!auth.authenticated || !auth.isAdmin) {
+      return res.status(auth.authenticated ? 403 : 401).json({
+        error: auth.authenticated ? 'Forbidden: Admin access required' : 'Unauthorized'
+      });
+    }
+    const { id } = req.query;
+    if (!id || typeof id !== 'string') {
+      return res.status(400).json({ error: 'id est requis' });
+    }
+    const { error } = await supabase.from('blocked_slots').delete().eq('id', id);
+    if (error) {
+      return res.status(500).json({ error: 'Erreur lors de la suppression', details: error.message });
+    }
+    return res.status(204).end();
+  }
+
   return res.status(405).json({ error: 'Method not allowed' });
 }
 
@@ -707,6 +796,22 @@ async function handleAppointments(req: VercelRequest, res: VercelResponse, supab
           });
         }
       }
+    }
+
+    // Vérifier si le créneau est bloqué manuellement (indisponibilité)
+    const timeForBlockCheck = appointment_time.length === 5 ? appointment_time + ':00' : appointment_time;
+    const { data: blockedSlot } = await supabase
+      .from('blocked_slots')
+      .select('id')
+      .eq('blocked_date', appointment_date)
+      .eq('start_time', timeForBlockCheck)
+      .maybeSingle();
+
+    if (blockedSlot) {
+      return res.status(409).json({
+        error: 'Ce créneau n\'est pas disponible',
+        message: 'Ce créneau a été bloqué par le praticien.'
+      });
     }
 
     const { data, error } = await supabase

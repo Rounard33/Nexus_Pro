@@ -1,0 +1,93 @@
+<div class="blocked-slots">
+  <div class="page-header">
+    <h1 class="page-title">Créneaux indisponibles</h1>
+  </div>
+
+  <p class="page-description">
+    Bloquez des créneaux lorsque vous êtes indisponible. Les clients ne pourront pas réserver ces créneaux.
+  </p>
+
+  <!-- Messages -->
+  <div class="message-success" *ngIf="saveSuccess">
+    <span>✓</span>
+    <p>Modification enregistrée avec succès !</p>
+  </div>
+
+  <div class="message-error" *ngIf="saveError">
+    <span>⚠️</span>
+    <p>{{ saveError }}</p>
+  </div>
+
+  <div class="loading-state" *ngIf="isLoading">
+    <p>Chargement...</p>
+  </div>
+
+  <div class="blocked-slots-content" *ngIf="!isLoading">
+    <div class="date-section">
+      <label class="form-label" for="date-picker">Sélectionner une date</label>
+      <input
+        id="date-picker"
+        type="date"
+        class="form-input date-input"
+        [(ngModel)]="selectedDate"
+        (ngModelChange)="onDateChange()"
+        [min]="todayStr">
+    </div>
+
+    <div class="slots-section" *ngIf="selectedDate">
+      <h2 class="section-title">{{ formatDateDisplay(selectedDate) }}</h2>
+
+      <div class="slots-empty" *ngIf="getSlotsForSelectedDate().length === 0">
+        <p>Aucun créneau défini pour ce jour ({{ getDayName(selectedDate) }}).</p>
+        <p class="hint">Configurez les créneaux dans la section Horaires ou Available Slots.</p>
+      </div>
+
+      <div class="slots-grid" *ngIf="getSlotsForSelectedDate().length > 0">
+        <div
+          class="slot-card"
+          *ngFor="let slot of getSlotsForSelectedDate()"
+          [class.blocked]="isSlotBlocked(slot.time)">
+          <div class="slot-info">
+            <span class="slot-time">{{ slot.label }}</span>
+            <span class="slot-status" *ngIf="isSlotBlocked(slot.time)">
+              Indisponible
+            </span>
+          </div>
+          <div class="slot-actions">
+            <button
+              *ngIf="!isSlotBlocked(slot.time)"
+              class="btn btn-block"
+              (click)="blockSlot(slot.time)"
+              [disabled]="isSaving">
+              Bloquer
+            </button>
+            <button
+              *ngIf="isSlotBlocked(slot.time)"
+              class="btn btn-unblock"
+              (click)="unblockSlot(getBlockedSlot(slot.time)!)"
+              [disabled]="isSaving">
+              Débloquer
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="upcoming-blocked" *ngIf="blockedSlots.length > 0">
+      <h3 class="subsection-title">Créneaux bloqués à venir</h3>
+      <div class="blocked-list">
+        <div class="blocked-item" *ngFor="let bs of blockedSlots">
+          <span class="blocked-date">{{ formatDateDisplay(bs.blocked_date) }}</span>
+          <span class="blocked-time">{{ bs.start_time.substring(0, 5) }}</span>
+          <span class="blocked-reason" *ngIf="bs.reason">{{ bs.reason }}</span>
+          <button
+            class="btn btn-unblock small"
+            (click)="unblockSlot(bs)"
+            [disabled]="isSaving">
+            Débloquer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

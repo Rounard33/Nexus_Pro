@@ -53,6 +53,10 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/admin/hours/hours.component').then(m => m.HoursComponent) 
       },
       { 
+        path: 'blocked-slots', 
+        loadComponent: () => import('./pages/admin/blocked-slots/blocked-slots.component').then(m => m.BlockedSlotsComponent) 
+      },
+      { 
         path: 'clients', 
         loadComponent: () => import('./pages/admin/clients/clients.component').then(m => m.ClientsComponent) 
       },

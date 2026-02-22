@@ -569,6 +569,75 @@ const server = http.createServer(async (req, res) => {
         res.end(JSON.stringify({ error: 'Method not allowed' }));
       }
     }
+    // NOUVELLE ROUTE : Créneaux bloqués
+    else if (pathname === '/api/blocked-slots') {
+      if (req.method === 'GET') {
+        const { startDate, endDate } = parsedUrl.query;
+        const today = new Date().toISOString().split('T')[0];
+        let query = supabase
+          .from('blocked_slots')
+          .select('*')
+          .gte('blocked_date', startDate || today)
+          .order('blocked_date', { ascending: true })
+          .order('start_time', { ascending: true });
+        if (endDate) {
+          query = query.lte('blocked_date', endDate);
+        }
+        const { data, error } = await query;
+        if (error) throw error;
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(data));
+      } else if (req.method === 'POST') {
+        const auth = await verifyAuth(req, supabaseAuth);
+        if (!auth.authenticated) {
+          res.writeHead(401, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Unauthorized' }));
+          return;
+        }
+        try {
+          const body = await readBody(req);
+          const { blocked_date, start_time, reason } = body || {};
+          if (!blocked_date || !start_time) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'blocked_date et start_time sont requis' }));
+            return;
+          }
+          const timeMatch = String(start_time).match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+          const normalizedTime = timeMatch ? `${timeMatch[1].padStart(2, '0')}:${timeMatch[2].padStart(2, '0')}:00` : start_time;
+          const { data, error } = await supabase
+            .from('blocked_slots')
+            .insert([{ blocked_date, start_time: normalizedTime, reason: reason || null }])
+            .select('*')
+            .single();
+          if (error) throw error;
+          res.writeHead(201, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(data));
+        } catch (err) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: err.message || 'Erreur serveur' }));
+        }
+      } else if (req.method === 'DELETE') {
+        const auth = await verifyAuth(req, supabaseAuth);
+        if (!auth.authenticated) {
+          res.writeHead(401, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Unauthorized' }));
+          return;
+        }
+        const { id } = parsedUrl.query;
+        if (!id) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'id est requis' }));
+          return;
+        }
+        const { error } = await supabase.from('blocked_slots').delete().eq('id', id);
+        if (error) throw error;
+        res.writeHead(204);
+        res.end();
+      } else {
+        res.writeHead(405, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Method not allowed' }));
+      }
+    }
     // NOUVELLE ROUTE : Rendez-vous
     else if (pathname === '/api/appointments') {
       // GET : Récupérer les rendez-vous
@@ -818,6 +887,24 @@ const server = http.createServer(async (req, res) => {
               return;
             }
           }
+        }
+
+        // Vérifier si le créneau est bloqué manuellement (indisponibilité)
+        const timeForBlockCheck = appointment_time.length === 5 ? appointment_time + ':00' : appointment_time;
+        const { data: blockedSlot } = await supabase
+          .from('blocked_slots')
+          .select('id')
+          .eq('blocked_date', appointment_date)
+          .eq('start_time', timeForBlockCheck)
+          .maybeSingle();
+
+        if (blockedSlot) {
+          res.writeHead(409, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({
+            error: 'Ce créneau n\'est pas disponible',
+            message: 'Ce créneau a été bloqué par le praticien.'
+          }));
+          return;
         }
 
         // Insérer uniquement les champs autorisés et validés
@@ -1603,6 +1690,7 @@ server.listen(PORT, () => {
       console.log(`   - http://localhost:${PORT}/api/opening-hours (GET, PATCH)`);
   console.log(`   - http://localhost:${PORT}/api/available-slots (GET)`);
   console.log(`   - http://localhost:${PORT}/api/blocked-dates (GET)`);
+  console.log(`   - http://localhost:${PORT}/api/blocked-slots (GET, POST, DELETE)`);
   console.log(`   - http://localhost:${PORT}/api/appointments (GET, POST, PATCH)`);
   console.log(`   - http://localhost:${PORT}/api/clients (GET, POST, PATCH) - PROTÉGÉ`);
   console.log(`   - http://localhost:${PORT}/api/contact (POST) - Formulaire de contact`);

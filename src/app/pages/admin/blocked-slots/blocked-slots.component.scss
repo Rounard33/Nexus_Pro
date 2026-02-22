@@ -1,0 +1,256 @@
+.blocked-slots {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-header {
+  margin-bottom: 1rem;
+}
+
+.page-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.page-description {
+  color: var(--text-secondary);
+  margin-bottom: 2rem;
+  font-size: 0.95rem;
+}
+
+.message-success,
+.message-error {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  font-size: 0.95rem;
+}
+
+.message-success {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.message-error {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.loading-state {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-secondary);
+}
+
+.date-section {
+  margin-bottom: 2rem;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.form-input {
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--primary-200);
+  border-radius: 8px;
+  font-size: 1rem;
+  color: var(--text-primary);
+  background: white;
+  transition: all 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary-500);
+    box-shadow: 0 0 0 3px rgba(139, 122, 98, 0.1);
+  }
+}
+
+.date-input {
+  max-width: 220px;
+}
+
+.section-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 1rem 0;
+  text-transform: capitalize;
+}
+
+.subsection-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 2rem 0 1rem 0;
+}
+
+.slots-empty {
+  padding: 2rem;
+  background: #f9f9f9;
+  border-radius: 12px;
+  color: var(--text-secondary);
+  text-align: center;
+
+  .hint {
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+    opacity: 0.8;
+  }
+}
+
+.slots-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.slot-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid var(--primary-200);
+  transition: all 0.2s ease;
+
+  &.blocked {
+    background: #fef2f2;
+    border-color: #fecaca;
+  }
+}
+
+.slot-info {
+  margin-bottom: 0.75rem;
+}
+
+.slot-time {
+  font-weight: 600;
+  color: var(--text-primary);
+  display: block;
+}
+
+.slot-status {
+  font-size: 0.8rem;
+  color: #dc2626;
+  font-weight: 500;
+}
+
+.slot-actions {
+  margin-top: auto;
+}
+
+.btn {
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.btn-block {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+
+  &:hover:not(:disabled) {
+    background: #fee2e2;
+  }
+}
+
+.btn-unblock {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+
+  &:hover:not(:disabled) {
+    background: #c3e6cb;
+  }
+
+  &.small {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.8rem;
+    width: auto;
+  }
+}
+
+.upcoming-blocked {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.blocked-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.blocked-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: #f9f9f9;
+  border-radius: 8px;
+  flex-wrap: wrap;
+
+  .blocked-date {
+    flex: 1;
+    min-width: 180px;
+    font-weight: 500;
+    text-transform: capitalize;
+  }
+
+  .blocked-time {
+    font-weight: 600;
+    color: var(--primary-700);
+  }
+
+  .blocked-reason {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    font-style: italic;
+  }
+}
+
+@media (max-width: 768px) {
+  .slots-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .blocked-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

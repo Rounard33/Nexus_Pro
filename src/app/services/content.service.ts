@@ -1,7 +1,7 @@
 import {HttpClient, HttpHeaders} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
-import {from, Observable} from 'rxjs';
-import {switchMap} from 'rxjs/operators';
+import {from, Observable, of} from 'rxjs';
+import {catchError, switchMap} from 'rxjs/operators';
 import {environment} from '../../environments/environment';
 import {AuthService} from './auth.service';
 
@@ -75,6 +75,14 @@ export interface BlockedDate {
   id?: string;
   blocked_date: string;
   reason?: string;
+}
+
+export interface BlockedSlot {
+  id?: string;
+  blocked_date: string;
+  start_time: string;
+  reason?: string;
+  created_at?: string;
 }
 
 export interface Client {
@@ -162,6 +170,39 @@ export class ContentService {
   // Dates bloquées
   getBlockedDates(): Observable<BlockedDate[]> {
     return this.http.get<BlockedDate[]>(`${API_URL}/blocked-dates`);
+  }
+
+  // Créneaux bloqués
+  getBlockedSlots(startDate?: string, endDate?: string): Observable<BlockedSlot[]> {
+    const params: Record<string, string> = {};
+    if (startDate) params['startDate'] = startDate;
+    if (endDate) params['endDate'] = endDate;
+    return this.http.get<BlockedSlot[]>(`${API_URL}/blocked-slots`, { params }).pipe(
+      catchError(() => of([]))
+    );
+  }
+
+  createBlockedSlot(slot: { blocked_date: string; start_time: string; reason?: string }): Observable<BlockedSlot> {
+    return from(this.authService.getSessionToken()).pipe(
+      switchMap(token => {
+        const headers = new HttpHeaders({
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        });
+        return this.http.post<BlockedSlot>(`${API_URL}/blocked-slots`, slot, { headers });
+      })
+    );
+  }
+
+  deleteBlockedSlot(id: string): Observable<void> {
+    return from(this.authService.getSessionToken()).pipe(
+      switchMap(token => {
+        const headers = new HttpHeaders({
+          'Authorization': `Bearer ${token}`
+        });
+        return this.http.delete<void>(`${API_URL}/blocked-slots?id=${id}`, { headers });
+      })
+    );
   }
 
   // Rendez-vous
