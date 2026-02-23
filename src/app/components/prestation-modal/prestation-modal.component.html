@@ -32,15 +32,11 @@
           Durée : {{ prestation.duration }}
         </div>
       </div>
-      <div class="booking-notice">
-        <span class="booking-notice-icon">⏳</span>
-        <span class="booking-notice-text">Réservation bientôt disponible en ligne</span>
-      </div>
       <div class="modal-actions">
         <button 
           class="btn btn-primary btn-lg" 
           (click)="onBook()" 
-          [disabled]="true"
+          [disabled]="false"
         >
           {{ prestation.requiresContact ? 'Contacter' : 'Réserver' }}
         </button>

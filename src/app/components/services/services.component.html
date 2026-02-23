@@ -39,10 +39,6 @@
               Durée : {{ prestation.duration }}
             </div>
           </div>
-          <div class="booking-notice">
-            <span class="booking-notice-icon">⏳</span>
-            <span class="booking-notice-text">Réservation bientôt disponible en ligne</span>
-          </div>
           <div class="prestation-buttons">
             <button class="btn btn-outline prestation-btn-more" (click)="openDetails.emit(prestation)">
               En savoir plus
@@ -51,7 +47,7 @@
               <button 
                 class="btn btn-primary prestation-btn" 
                 (click)="onBookingClick(prestation)" 
-                [disabled]="true"
+                [disabled]="false"
               >
                 {{ prestation.requiresContact ? 'Contacter' : 'Réserver' }}
               </button>
