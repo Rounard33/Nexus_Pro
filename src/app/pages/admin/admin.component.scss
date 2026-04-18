@@ -103,6 +103,25 @@
   // position: absolute;
 }
 
+.nav-section {
+  margin-bottom: 1.35rem;
+
+  &:last-of-type {
+    margin-bottom: 0.5rem;
+  }
+}
+
+.nav-section-title {
+  margin: 0;
+  padding: 0.35rem 1.5rem 0.5rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary, #888);
+  line-height: 1.2;
+}
+
 .nav-item {
   display: flex;
   align-items: center;
@@ -111,7 +130,6 @@
   color: var(--text-secondary);
   text-decoration: none;
   transition: all 0.2s ease;
-  border-left: 3px solid transparent;
 
   svg {
     flex-shrink: 0;
@@ -263,10 +281,15 @@
   min-height: 0;
 }
 
+  .nav-section-title {
+    padding-left: 1rem;
+    padding-right: 1rem;
+    font-size: 0.65rem;
+  }
+
   .nav-item {
     padding: 0.75rem 1rem;
     font-size: 0.9rem;
-    border-left: 3px solid transparent;
 
     svg {
       width: 18px;

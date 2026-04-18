@@ -1,6 +1,13 @@
 <div class="appointments">
   <div class="page-header">
     <h1 class="page-title">Gestion des rendez-vous</h1>
+    <button class="btn btn-create" (click)="openCreateModal()" type="button">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <line x1="12" y1="5" x2="12" y2="19"/>
+        <line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+      Nouveau RDV
+    </button>
   </div>
 
   <!-- Filtres -->
@@ -96,7 +103,7 @@
             </td>
             <td class="payment-cell">
               <span *ngIf="appointment.payment_method" class="payment-badge">
-                {{ getPaymentMethodLabel(appointment.payment_method) }}
+                {{ getPaymentMethodDisplay(appointment) }}
               </span>
               <span *ngIf="!appointment.payment_method" class="text-muted">-</span>
             </td>
@@ -153,6 +160,17 @@
                     <polyline points="22 4 12 14.01 9 11.01"/>
                   </svg>
                   <span *ngIf="isUpdating(appointment)" class="spinner" aria-hidden="true"></span>
+                </button>
+                <button 
+                  class="btn-action btn-delete" 
+                  (click)="confirmDeleteAppointment(appointment)"
+                  [disabled]="isUpdating(appointment)"
+                  title="Supprimer"
+                  type="button">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                  </svg>
                 </button>
               </div>
             </td>
@@ -213,7 +231,7 @@
           <span class="appointment-card-label">Paiement:</span>
           <span class="appointment-card-value">
             <span *ngIf="appointment.payment_method" class="payment-badge-small">
-              {{ getPaymentMethodLabel(appointment.payment_method) }}
+              {{ getPaymentMethodDisplay(appointment) }}
             </span>
             <span *ngIf="!appointment.payment_method" class="text-muted">Non renseigné</span>
           </span>
@@ -228,7 +246,6 @@
             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
             <circle cx="12" cy="12" r="3"/>
           </svg>
-          Détails
         </button>
         <button 
           *ngIf="appointment.status === 'pending'"
@@ -242,7 +259,6 @@
             <polyline points="22 4 12 14.01 9 11.01"/>
           </svg>
           <span *ngIf="isUpdating(appointment)" class="spinner" aria-hidden="true"></span>
-          <span *ngIf="!isUpdating(appointment)">Accepter</span>
         </button>
         <button 
           *ngIf="appointment.status === 'pending'"
@@ -257,7 +273,6 @@
             <line x1="9" y1="9" x2="15" y2="15"/>
           </svg>
           <span *ngIf="isUpdating(appointment)" class="spinner" aria-hidden="true"></span>
-          <span *ngIf="!isUpdating(appointment)">Refuser</span>
         </button>
         <button 
           *ngIf="appointment.status === 'accepted' && isAppointmentPast(appointment)"
@@ -271,7 +286,17 @@
             <polyline points="22 4 12 14.01 9 11.01"/>
           </svg>
           <span *ngIf="isUpdating(appointment)" class="spinner" aria-hidden="true"></span>
-          <span *ngIf="!isUpdating(appointment)">Terminé</span>
+        </button>
+        <button 
+          class="appointment-card-action-btn appointment-card-action-btn-delete" 
+          (click)="confirmDeleteAppointment(appointment)"
+          [disabled]="isUpdating(appointment)"
+          [attr.aria-label]="'Supprimer le rendez-vous de ' + appointment.client_name"
+          type="button">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+          </svg>
         </button>
       </div>
     </div>
@@ -345,10 +370,26 @@
             <option value="carte">Carte bancaire</option>
             <option value="virement">Virement</option>
             <option value="chèque">Chèque</option>
+            <option value="carte_cadeau">Carte cadeau (solde)</option>
+            <option value="mixte">Mixte (carte + autre)</option>
           </select>
           <span *ngIf="isUpdating(selectedAppointment)" class="updating-indicator">
             <span class="spinner-small" aria-hidden="true"></span>
           </span>
+        </div>
+        <div class="detail-row detail-row-editable" *ngIf="selectedAppointment.payment_method === 'mixte'">
+          <strong>Complément (hors solde carte)&nbsp;:</strong>
+          <select
+            class="payment-select"
+            [ngModel]="selectedAppointment.mixte_complement_payment_method || 'espèces'"
+            (ngModelChange)="updateMixteComplementOnly(selectedAppointment, $event)"
+            [disabled]="isUpdating(selectedAppointment)"
+            aria-label="Moyen de paiement du complément">
+            <option value="espèces">Espèces</option>
+            <option value="carte">Carte bancaire</option>
+            <option value="virement">Virement</option>
+            <option value="chèque">Chèque</option>
+          </select>
         </div>
         <div class="detail-row" *ngIf="selectedAppointment.notes">
           <strong>Notes:</strong>
@@ -391,6 +432,280 @@
           aria-label="Marquer ce rendez-vous comme terminé">
           <span *ngIf="isUpdating(selectedAppointment)">Mise à jour...</span>
           <span *ngIf="!isUpdating(selectedAppointment)">✓ Marquer comme terminé</span>
+        </button>
+        <button 
+          class="btn btn-danger-outline" 
+          (click)="confirmDeleteAppointment(selectedAppointment)"
+          [disabled]="isUpdating(selectedAppointment) || isDeletingAppointment"
+          aria-label="Supprimer ce rendez-vous">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+          </svg>
+          Supprimer
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modale : terminer le RDV (paiement + carte cadeau) -->
+  <div class="modal-overlay" *ngIf="showCompleteModal && completeTarget" (click)="closeCompleteModal()">
+    <div class="modal-content modal-content--complete" (click)="$event.stopPropagation()">
+      <button class="modal-close" type="button" (click)="closeCompleteModal()" aria-label="Fermer">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 6L6 18M6 6l12 12"/>
+        </svg>
+      </button>
+      <h2 class="modal-title">Terminer le rendez-vous</h2>
+      <p class="complete-lead" *ngIf="completeTarget">
+        <span class="complete-lead-name">{{ completeTarget.client_name }}</span>
+        <span class="complete-lead-presta">{{ getPrestationDisplayName(completeTarget) }}</span>
+      </p>
+      <div class="modal-body">
+        <div class="complete-amounts">
+          <div class="complete-amount-row">
+            <span class="complete-amount-label">Prix séance (catalogue)</span>
+            <span class="complete-amount-value">{{ getCompletePrestationPriceEuro() | number:'1.2-2':'fr' }} €</span>
+          </div>
+          <div class="complete-amount-row" *ngIf="giftBalanceHint != null">
+            <span class="complete-amount-label">Solde cartes cadeau (total)</span>
+            <span class="complete-amount-value complete-amount-value--muted">{{ giftBalanceHint | number:'1.2-2':'fr' }} €</span>
+          </div>
+          <ng-container *ngIf="canShowGiftCardProjection()">
+            <div class="complete-amount-row">
+              <span class="complete-amount-label">Prélèvement estimé (cartes)</span>
+              <span class="complete-amount-value">{{ getPlannedGiftDeductionEur() | number:'1.2-2':'fr' }} €</span>
+            </div>
+            <div class="complete-amount-row complete-amount-row--after">
+              <span class="complete-amount-label">Solde cartes après</span>
+              <span class="complete-amount-value">{{ getProjectedGiftRemainingTotalEur() | number:'1.2-2':'fr' }} €</span>
+            </div>
+          </ng-container>
+        </div>
+        <p class="complete-no-gift-hint" *ngIf="giftBalanceHint == null">
+          Solde cartes : chargement ou fiche sans email — impossible d’afficher le total.
+        </p>
+        <div class="form-group complete-payment-group">
+          <label class="form-label" for="complete-payment">Mode de paiement</label>
+          <select id="complete-payment" class="form-input complete-payment-select" [(ngModel)]="completeForm.payment_method">
+            <option value="espèces">Espèces</option>
+            <option value="carte">Carte bancaire</option>
+            <option value="virement">Virement</option>
+            <option value="chèque">Chèque</option>
+            <option value="carte_cadeau">Carte cadeau (solde)</option>
+            <option value="mixte">Mixte (carte + autre)</option>
+          </select>
+        </div>
+        <div class="form-group" *ngIf="completeForm.payment_method === 'mixte'">
+          <label class="form-label" for="complete-mixte">Montant sur carte cadeau (€)</label>
+          <input
+            id="complete-mixte"
+            type="number"
+            min="0.01"
+            step="0.01"
+            class="form-input"
+            [(ngModel)]="completeForm.mixteGiftEur"
+            placeholder="ex. 40"
+          />
+        </div>
+        <div class="form-group" *ngIf="completeForm.payment_method === 'mixte'">
+          <label class="form-label" for="complete-mixte-complement">Complément payé par</label>
+          <select id="complete-mixte-complement" class="form-input complete-payment-select" [(ngModel)]="completeForm.mixteComplementMethod">
+            <option value="espèces">Espèces</option>
+            <option value="carte">Carte bancaire</option>
+            <option value="virement">Virement</option>
+            <option value="chèque">Chèque</option>
+          </select>
+        </div>
+        <p class="complete-mixte-pending" *ngIf="completeForm.payment_method === 'mixte' && giftBalanceHint != null && giftBalanceHint > 0 && (completeForm.mixteGiftEur ?? 0) <= 0">
+          Indiquez le montant prélevé sur la carte pour afficher le solde restant.
+        </p>
+        <p class="complete-help" *ngIf="completeForm.payment_method === 'carte_cadeau' || completeForm.payment_method === 'mixte'">
+          Débit FIFO sur les cartes. La confirmation est refusée si le solde ne couvre pas le montant (carte seule) ou le prélèvement indiqué (mixte).
+        </p>
+        <ng-container *ngIf="getCompleteModalPaymentError() as payErr">
+          <p class="complete-pay-error">{{ payErr }}</p>
+        </ng-container>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" (click)="closeCompleteModal()">Annuler</button>
+        <button
+          type="button"
+          class="btn btn-complete"
+          (click)="submitComplete()"
+          [disabled]="updatingAppointmentId === completeTarget?.id || isCompleteModalPaymentBlocked()">
+          Confirmer
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal création manuelle -->
+  <div class="modal-overlay" *ngIf="showCreateModal" (click)="closeCreateModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <button class="modal-close" (click)="closeCreateModal()" aria-label="Fermer">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 6L6 18M6 6l12 12"/>
+        </svg>
+      </button>
+
+      <h2 class="modal-title">Nouveau rendez-vous</h2>
+
+      <div class="modal-body">
+        <div class="form-group client-picker">
+          <span class="form-label">Client *</span>
+          <p class="client-field-hint">Choisissez une fiche existante ou créez un nouveau client.</p>
+          <div class="picker-shell">
+            <button
+              type="button"
+              class="picker-trigger form-input"
+              [class.placeholder]="!newAppointment.client_name"
+              (click)="toggleClientPicker($event)"
+              [attr.aria-expanded]="clientPickerOpen">
+              {{ newAppointment.client_name ? (newAppointment.client_email ? newAppointment.client_name + ' — ' + newAppointment.client_email : newAppointment.client_name) : '— Choisir un client —' }}
+              <svg class="picker-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+            <div class="picker-panel" *ngIf="clientPickerOpen" (click)="$event.stopPropagation()">
+              <input
+                type="search"
+                class="form-input picker-search"
+                [(ngModel)]="clientFilter"
+                placeholder="Rechercher par nom, e-mail ou téléphone…"
+                (click)="$event.stopPropagation()"
+                autocomplete="off"/>
+              <ul class="picker-list" role="listbox">
+                <li *ngFor="let c of filteredCreateClients" role="option" (click)="selectClientForAppointment(c, $event)">
+                  {{ clientLabel(c) }}
+                </li>
+                <li *ngIf="filteredCreateClients.length === 0" class="picker-empty">Aucun client ne correspond.</li>
+              </ul>
+              <button type="button" class="picker-new-client" (click)="openNewClientModal($event)">
+                + Nouveau client
+              </button>
+            </div>
+          </div>
+          <button *ngIf="newAppointment.client_name" type="button" class="link-clear-client" (click)="clearSelectedClient()">
+            Effacer la sélection
+          </button>
+        </div>
+
+        <div class="form-group">
+          <label for="create-prestation" class="form-label">Prestation *</label>
+          <select id="create-prestation" [(ngModel)]="newAppointment.prestation_id" class="form-input" required>
+            <option value="" disabled>Choisir une prestation</option>
+            <option *ngFor="let p of prestations" [value]="p.id">{{ p.name }}</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="create-date" class="form-label">Date *</label>
+            <input type="date" id="create-date" [(ngModel)]="newAppointment.appointment_date" 
+                   class="form-input" required>
+          </div>
+          <div class="form-group">
+            <label for="create-time" class="form-label">Heure *</label>
+            <input type="time" id="create-time" [(ngModel)]="newAppointment.appointment_time" 
+                   class="form-input" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="create-notes" class="form-label">Notes</label>
+          <textarea id="create-notes" [(ngModel)]="newAppointment.notes" 
+                    class="form-input form-textarea" placeholder="Notes..." rows="3"></textarea>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-cancel" (click)="closeCreateModal()" type="button">Annuler</button>
+        <button class="btn btn-submit" (click)="submitNewAppointment()" [disabled]="isCreating" type="button">
+          <span *ngIf="isCreating">Création...</span>
+          <span *ngIf="!isCreating">Créer le RDV</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modale création client (au-dessus du formulaire RDV) -->
+  <div class="modal-overlay modal-nested" *ngIf="showCreateModal && showNewClientModal" (click)="closeNewClientModal()">
+    <div class="modal-content modal-new-client" (click)="$event.stopPropagation()">
+      <button class="modal-close" (click)="closeNewClientModal()" aria-label="Fermer" type="button">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 6L6 18M6 6l12 12"/>
+        </svg>
+      </button>
+
+      <h2 class="modal-title">Nouveau client</h2>
+      <div class="modal-body">
+        <p class="modal-hint">Le client sera enregistré dans votre base et sélectionné pour ce rendez-vous.</p>
+
+        <div class="form-group">
+          <label for="nc-name" class="form-label">Nom *</label>
+          <input id="nc-name" type="text" [(ngModel)]="newClient.name" class="form-input" placeholder="Nom Prénom"/>
+        </div>
+        <div class="form-group">
+          <label for="nc-email" class="form-label">E-mail</label>
+          <input id="nc-email" type="email" [(ngModel)]="newClient.email" class="form-input" placeholder="email@exemple.com"/>
+        </div>
+        <div class="form-group">
+          <label for="nc-phone" class="form-label">Téléphone</label>
+          <input id="nc-phone" type="tel" [(ngModel)]="newClient.phone" class="form-input" placeholder="06 12 34 56 78"/>
+        </div>
+        <div class="form-group">
+          <label for="nc-notes" class="form-label">Notes</label>
+          <textarea id="nc-notes" [(ngModel)]="newClient.notes" class="form-input form-textarea" rows="2" placeholder="Optionnel"></textarea>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-cancel" type="button" (click)="closeNewClientModal()" [disabled]="isCreatingClient">Annuler</button>
+        <button class="btn btn-submit" type="button" (click)="submitNewClient()" [disabled]="isCreatingClient || !newClient.name.trim()">
+          <span *ngIf="isCreatingClient">Création…</span>
+          <span *ngIf="!isCreatingClient">Créer le client</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal suppression rendez-vous -->
+  <div class="modal-overlay" *ngIf="showDeleteModal && appointmentToDelete" (click)="closeDeleteModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <button class="modal-close" (click)="closeDeleteModal()" aria-label="Fermer">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 6L6 18M6 6l12 12"/>
+        </svg>
+      </button>
+
+      <h2 class="modal-title">Supprimer ce rendez-vous</h2>
+
+      <div class="modal-body">
+        <div class="confirm-message">
+          <div class="confirm-icon confirm-icon-danger">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+              <line x1="10" y1="11" x2="10" y2="17"/>
+              <line x1="14" y1="11" x2="14" y2="17"/>
+            </svg>
+          </div>
+          <p class="confirm-text">
+            Supprimer le rendez-vous de <strong>{{ appointmentToDelete.client_name }}</strong>
+            du {{ appointmentToDelete.appointment_date | date:'dd/MM/yyyy' }}
+            à {{ appointmentToDelete.appointment_time }} ?
+          </p>
+          <p class="confirm-warning">Cette action est irréversible.</p>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-cancel" (click)="closeDeleteModal()" [disabled]="isDeletingAppointment" type="button">
+          Annuler
+        </button>
+        <button class="btn btn-danger" (click)="executeDeleteAppointment()" [disabled]="isDeletingAppointment" type="button">
+          <span *ngIf="isDeletingAppointment">Suppression...</span>
+          <span *ngIf="!isDeletingAppointment">Supprimer</span>
         </button>
       </div>
     </div>

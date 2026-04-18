@@ -35,6 +35,18 @@
   }
 }
 
+.prestation-group-teaser {
+  margin: 0 0 1rem;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--gray-600);
+  font-weight: 300;
+}
+
+.prestation-buttons--single {
+  justify-content: center;
+}
+
 .coming-soon-overlay {
   position: absolute;
   inset: 0;
@@ -207,7 +219,6 @@
   margin-top: auto; // Pousse le message vers le bas
   margin-bottom: 0.75rem; // Espacement juste au-dessus des boutons
   background: linear-gradient(135deg, rgba(212, 165, 116, 0.1) 0%, rgba(212, 165, 116, 0.05) 100%);
-  border-left: 3px solid #d4a574;
   border-radius: 8px;
   font-size: 0.85rem;
   color: var(--primary-800);
@@ -374,6 +385,33 @@
 
   .prestation-duration {
     font-size: 0.875rem;
+  }
+}
+
+.forfait-link {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+  background: linear-gradient(135deg, var(--primary-50) 0%, var(--primary-100) 100%);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--primary-700);
+  font-weight: 500;
+
+  &:hover {
+    background: var(--primary-200);
+    color: var(--primary-800);
+  }
+
+  svg {
+    flex-shrink: 0;
+    margin-top: 0.15rem;
+    color: var(--primary-600);
   }
 }
 

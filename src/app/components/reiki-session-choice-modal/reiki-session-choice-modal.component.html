@@ -1,0 +1,31 @@
+<div class="modal-overlay" *ngIf="group as g" (click)="onOverlayClick($event)">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <button type="button" class="modal-close" (click)="closeModal()" aria-label="Fermer">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 6L6 18M6 6l12 12"/>
+        </svg>
+      </button>
+      <h2 class="modal-title">Choisir votre séance</h2>
+      <p class="modal-lead">Sélectionnez le format de Reiki pour continuer vers la réservation.</p>
+    </div>
+    <div class="modal-body">
+      <ul class="choice-list" role="list">
+        <li *ngFor="let v of g.variants">
+          <button type="button" class="choice-row" (click)="pickVariant(v)">
+            <span class="choice-badge">{{ tabLabel(v) }}</span>
+            <span class="choice-main">
+              <span class="choice-name">{{ v.name }}</span>
+              <span class="choice-meta">
+                <span class="choice-price">{{ v.price }}</span>
+                <span *ngIf="v.duration" class="choice-sep">·</span>
+                <span *ngIf="v.duration" class="choice-duration">Durée : {{ v.duration }}</span>
+              </span>
+            </span>
+            <span class="choice-arrow" aria-hidden="true">→</span>
+          </button>
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>

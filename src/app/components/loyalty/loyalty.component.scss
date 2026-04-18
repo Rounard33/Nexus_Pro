@@ -136,7 +136,6 @@
   padding: 1.5rem;
   background: var(--primary-50);
   border-radius: 12px;
-  border-left: 4px solid var(--primary-600);
 }
 
 .price-old {
@@ -173,7 +172,6 @@
   padding: 1.5rem;
   background: var(--primary-50);
   border-radius: 12px;
-  border-left: 4px solid var(--primary-600);
   margin-top: 1rem;
   
   svg {
@@ -192,6 +190,39 @@
       color: var(--primary-800);
       font-weight: 600;
     }
+  }
+}
+
+.btn-voir-forfaits {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+  padding: 0.875rem 1.75rem;
+  background: var(--primary-700);
+  color: white;
+  border: none;
+  border-radius: 50px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(139, 122, 98, 0.2);
+  align-self: center;
+
+  &:hover {
+    background: var(--primary-800);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(139, 122, 98, 0.3);
+  }
+
+  svg {
+    transition: transform 0.3s ease;
+  }
+
+  &:hover svg {
+    transform: translateY(2px);
   }
 }
 

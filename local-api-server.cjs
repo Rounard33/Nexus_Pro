@@ -87,7 +87,7 @@ const { createClient } = require('@supabase/supabase-js');
 const http = require('http');
 const url = require('url');
 const { setSecurityHeaders } = require('./local-api-server-utils.cjs');
-const { validateAppointment, sanitizeAppointment } = require('./local-api-server-validation.cjs');
+const { validateAppointment, validateAppointmentAdmin, sanitizeAppointment } = require('./local-api-server-validation.cjs');
 const { applyRateLimit } = require('./local-api-server-rate-limiter.cjs');
 
 let supabase;
@@ -164,7 +164,7 @@ function generateContactEmailHtml(data) {
                 <td style="padding: 30px;">
                   
                   <!-- Sujet -->
-                  <div style="background: linear-gradient(135deg, #faf8f3 0%, #f5f1e8 100%); border-radius: 8px; padding: 20px; margin: 0 0 20px 0; border-left: 4px solid #8b7a62;">
+                  <div style="background: linear-gradient(135deg, #faf8f3 0%, #f5f1e8 100%); border-radius: 8px; padding: 20px; margin: 0 0 20px 0">
                     <h2 style="font-family: Georgia, serif; font-size: 18px; color: #4a3f35; margin: 0;">
                       ${safeSubject}
                     </h2>
@@ -638,6 +638,368 @@ const server = http.createServer(async (req, res) => {
         res.end(JSON.stringify({ error: 'Method not allowed' }));
       }
     }
+    // Cartes cadeaux (admin)
+    else if (pathname === '/api/gift-cards') {
+      const requireGiftCardsAdmin = async () => {
+        const auth = await verifyAuth(req, supabaseAuth);
+        if (!auth.authenticated) {
+          return { ok: false, status: 401, body: { error: 'Unauthorized' } };
+        }
+        const adminCheck = await verifyAdmin(auth.user, supabase);
+        if (!adminCheck.isAdmin) {
+          return { ok: false, status: 403, body: { error: 'Forbidden: Admin access required' } };
+        }
+        return { ok: true };
+      };
+
+      if (req.method === 'GET') {
+        const gate = await requireGiftCardsAdmin();
+        if (!gate.ok) {
+          res.writeHead(gate.status, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(gate.body));
+          return;
+        }
+        const { data, error } = await supabase
+          .from('gift_cards')
+          .select('*')
+          .order('purchase_date', { ascending: false });
+        if (error) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: error.message }));
+          return;
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(data || []));
+      } else if (req.method === 'POST') {
+        const gate = await requireGiftCardsAdmin();
+        if (!gate.ok) {
+          res.writeHead(gate.status, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(gate.body));
+          return;
+        }
+        try {
+          const body = await readBody(req);
+          const buyer_name = typeof body.buyer_name === 'string' ? body.buyer_name.trim() : '';
+          const recipient_name = typeof body.recipient_name === 'string' ? body.recipient_name.trim() : '';
+          const purchase_date = typeof body.purchase_date === 'string' ? body.purchase_date.trim() : '';
+          const valid_until = typeof body.valid_until === 'string' ? body.valid_until.trim() : '';
+          const service_label = typeof body.service_label === 'string' ? body.service_label.trim() : '';
+          if (!buyer_name || !recipient_name || !purchase_date || !valid_until || !service_label) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Champs requis: buyer_name, recipient_name, purchase_date, valid_until, service_label' }));
+            return;
+          }
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(purchase_date) || !/^\d{4}-\d{2}-\d{2}$/.test(valid_until)) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Les dates doivent être au format YYYY-MM-DD' }));
+            return;
+          }
+          const buyer_email = typeof body.buyer_email === 'string' ? body.buyer_email.trim().toLowerCase() : '';
+          const recipient_email = typeof body.recipient_email === 'string' ? body.recipient_email.trim().toLowerCase() : '';
+          const row = {
+            buyer_name,
+            recipient_name,
+            purchase_date,
+            valid_until,
+            service_label,
+            used: !!body.used,
+            notes: typeof body.notes === 'string' && body.notes.trim() ? body.notes.trim() : null,
+            buyer_email: buyer_email || null,
+            recipient_email: recipient_email || null
+          };
+          const { data, error } = await supabase.from('gift_cards').insert([row]).select('*').single();
+          if (error) throw error;
+          let amount_eur = null;
+          if (body.amount_eur != null && body.amount_eur !== '') {
+            const n = typeof body.amount_eur === 'number' ? body.amount_eur : parseFloat(String(body.amount_eur).replace(',', '.').trim());
+            if (!Number.isNaN(n) && n > 0) amount_eur = Math.round(n * 100) / 100;
+          }
+
+          const parseAdditionalSalesFromNotes = (notes) => {
+            if (!notes) return [];
+            try {
+              const regex = new RegExp('\\[ADDITIONAL_SALES\\](.*?)\\[/ADDITIONAL_SALES\\]', 's');
+              const match = notes.match(regex);
+              if (match) {
+                const parsed = JSON.parse(match[1]);
+                return Array.isArray(parsed) ? parsed : [];
+              }
+            } catch (e) { /* ignore */ }
+            return [];
+          };
+          const formatNotesWithAdditionalSales = (originalNotes, sales) => {
+            let notes = originalNotes || '';
+            const regex = new RegExp('\\[ADDITIONAL_SALES\\].*?\\[/ADDITIONAL_SALES\\]', 's');
+            notes = notes.replace(regex, '').trim();
+            if (sales.length > 0) {
+              const salesJson = JSON.stringify(sales);
+              const block = '[ADDITIONAL_SALES]' + salesJson + '[/ADDITIONAL_SALES]';
+              notes = notes ? notes + '\n\n' + block : block;
+            }
+            return notes;
+          };
+
+          if (buyer_email || recipient_email) {
+            const recipientLine =
+              `Carte cadeau reçue : ${service_label} (valide jusqu'au ${valid_until}). Acheteur : ${buyer_name}.`;
+            const appendRecipientLine = async (email, line) => {
+              if (!email || !email.includes('@')) return;
+              const { data: client, error: fetchErr } = await supabase
+                .from('clients')
+                .select('id, notes')
+                .eq('email', email)
+                .maybeSingle();
+              if (fetchErr || !client?.id) return;
+              const prev = (client.notes && String(client.notes).trim()) || '';
+              const newNotes = prev ? `${prev}\n\n${line}` : line;
+              await supabase.from('clients').update({ notes: newNotes }).eq('id', client.id);
+            };
+            const appendBuyerAdditionalSale = async () => {
+              if (!buyer_email) return;
+              const { data: client, error: fetchErr } = await supabase
+                .from('clients')
+                .select('id, notes')
+                .eq('email', buyer_email)
+                .maybeSingle();
+              if (fetchErr || !client?.id) return;
+              const existing = parseAdditionalSalesFromNotes(client.notes);
+              const sale = {
+                date: purchase_date,
+                type: 'gift_card',
+                gift_card_id: data.id,
+                notes: `${service_label} — bénéficiaire : ${recipient_name}, valide jusqu'au ${valid_until}`
+              };
+              if (amount_eur != null && amount_eur > 0) sale.giftCardAmount = amount_eur;
+              const newNotes = formatNotesWithAdditionalSales(client.notes, [...existing, sale]);
+              await supabase.from('clients').update({ notes: newNotes }).eq('id', client.id);
+            };
+            try {
+              if (buyer_email && recipient_email && buyer_email === recipient_email) {
+                await appendBuyerAdditionalSale();
+              } else {
+                if (buyer_email) await appendBuyerAdditionalSale();
+                if (recipient_email && recipient_email !== buyer_email) await appendRecipientLine(recipient_email, recipientLine);
+              }
+            } catch (e) {
+              console.error('[gift-cards] Notes client:', e?.message || e);
+            }
+          }
+
+          res.writeHead(201, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(data));
+        } catch (err) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: err.message || 'Erreur serveur' }));
+        }
+      } else if (req.method === 'PATCH') {
+        const gate = await requireGiftCardsAdmin();
+        if (!gate.ok) {
+          res.writeHead(gate.status, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(gate.body));
+          return;
+        }
+        const { id } = parsedUrl.query;
+        if (!id) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'id est requis' }));
+          return;
+        }
+        try {
+          const { data: oldRow, error: fetchErr } = await supabase.from('gift_cards').select('*').eq('id', id).single();
+          if (fetchErr || !oldRow) {
+            res.writeHead(404, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Carte introuvable' }));
+            return;
+          }
+
+          const body = await readBody(req);
+          const updateData = {};
+          const strFields = ['buyer_name', 'recipient_name', 'purchase_date', 'valid_until', 'service_label', 'notes'];
+          for (const key of strFields) {
+            if (body[key] !== undefined) {
+              if (key === 'notes') {
+                updateData[key] = body[key] === null || body[key] === '' ? null : String(body[key]).trim();
+              } else if (key === 'purchase_date' || key === 'valid_until') {
+                const d = String(body[key]).trim();
+                if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) {
+                  res.writeHead(400, { 'Content-Type': 'application/json' });
+                  res.end(JSON.stringify({ error: `${key} doit être au format YYYY-MM-DD` }));
+                  return;
+                }
+                updateData[key] = d;
+              } else {
+                updateData[key] = String(body[key]).trim();
+              }
+            }
+          }
+          if (body.buyer_email !== undefined) {
+            updateData.buyer_email =
+              typeof body.buyer_email === 'string' && body.buyer_email.trim()
+                ? String(body.buyer_email).trim().toLowerCase()
+                : null;
+          }
+          if (body.recipient_email !== undefined) {
+            updateData.recipient_email =
+              typeof body.recipient_email === 'string' && body.recipient_email.trim()
+                ? String(body.recipient_email).trim().toLowerCase()
+                : null;
+          }
+          if (body.used !== undefined) {
+            updateData.used = !!body.used;
+          }
+          if (Object.keys(updateData).length === 0) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Aucun champ à mettre à jour' }));
+            return;
+          }
+          const { data, error } = await supabase
+            .from('gift_cards')
+            .update(updateData)
+            .eq('id', id)
+            .select('*')
+            .single();
+          if (error) throw error;
+
+          const wasUsed = !!oldRow.used;
+          const becameUsed = updateData.used === true && !wasUsed;
+          if (becameUsed && data) {
+            const parseAdditionalSalesFromNotes = (notes) => {
+              if (!notes) return [];
+              try {
+                const regex = new RegExp('\\[ADDITIONAL_SALES\\](.*?)\\[/ADDITIONAL_SALES\\]', 's');
+                const match = notes.match(regex);
+                if (match) {
+                  const parsed = JSON.parse(match[1]);
+                  return Array.isArray(parsed) ? parsed : [];
+                }
+              } catch (e) { /* ignore */ }
+              return [];
+            };
+            const formatNotesWithAdditionalSales = (originalNotes, sales) => {
+              let notes = originalNotes || '';
+              const regex = new RegExp('\\[ADDITIONAL_SALES\\].*?\\[/ADDITIONAL_SALES\\]', 's');
+              notes = notes.replace(regex, '').trim();
+              if (sales.length > 0) {
+                const salesJson = JSON.stringify(sales);
+                const block = '[ADDITIONAL_SALES]' + salesJson + '[/ADDITIONAL_SALES]';
+                notes = notes ? notes + '\n\n' + block : block;
+              }
+              return notes;
+            };
+            const usageDate = new Date().toISOString().slice(0, 10);
+            const gid = id;
+            const be = (data.buyer_email || oldRow.buyer_email || '').trim().toLowerCase();
+            const re = (data.recipient_email || oldRow.recipient_email || '').trim().toLowerCase();
+            const bn = data.buyer_name;
+            const rn = data.recipient_name;
+            const pd = data.purchase_date;
+            const sl = data.service_label;
+            try {
+              if (be && be.includes('@')) {
+                const { data: client, error: fe } = await supabase
+                  .from('clients')
+                  .select('id, notes')
+                  .eq('email', be)
+                  .maybeSingle();
+                if (!fe && client?.id) {
+                  let sales = parseAdditionalSalesFromNotes(client.notes);
+                  sales = sales.filter(
+                    (s) =>
+                      !(
+                        s.type === 'gift_card' &&
+                        !s.gift_card_id &&
+                        typeof s.notes === 'string' &&
+                        s.notes.includes('Carte cadeau utilisée —')
+                      )
+                  );
+                  let idx = sales.findIndex((s) => s.type === 'gift_card' && s.gift_card_id === gid);
+                  if (idx === -1) {
+                    idx = sales.findIndex(
+                      (s) =>
+                        s.type === 'gift_card' &&
+                        s.date === pd &&
+                        typeof s.notes === 'string' &&
+                        s.notes.includes(sl)
+                    );
+                  }
+                  if (idx !== -1) {
+                    const next = [...sales];
+                    next[idx] = {
+                      ...next[idx],
+                      used_at: usageDate,
+                      gift_card_id: next[idx].gift_card_id || gid
+                    };
+                    const newNotes = formatNotesWithAdditionalSales(client.notes, next);
+                    await supabase.from('clients').update({ notes: newNotes }).eq('id', client.id);
+                  }
+                }
+              }
+              if (re && re.includes('@') && re !== be) {
+                const { data: rClient, error: rErr } = await supabase
+                  .from('clients')
+                  .select('id, notes')
+                  .eq('email', re)
+                  .maybeSingle();
+                if (!rErr && rClient?.id) {
+                  let rsales = parseAdditionalSalesFromNotes(rClient.notes);
+                  const before = rsales.length;
+                  rsales = rsales.filter(
+                    (s) =>
+                      !(
+                        s.type === 'gift_card' &&
+                        typeof s.notes === 'string' &&
+                        s.notes.startsWith('Soin offert utilisé') &&
+                        s.notes.includes(sl)
+                      )
+                  );
+                  let rnotes = rClient.notes;
+                  if (rsales.length !== before) {
+                    rnotes = formatNotesWithAdditionalSales(rnotes, rsales);
+                  }
+                  const marker = `→ Carte cadeau « ${sl} » utilisée le ${usageDate}`;
+                  if (!rnotes.includes(marker)) {
+                    rnotes = (rnotes || '') + `\n\n${marker}.`;
+                    await supabase.from('clients').update({ notes: rnotes }).eq('id', rClient.id);
+                  }
+                }
+              }
+            } catch (e) {
+              console.error('[gift-cards] Vente utilisation:', e?.message || e);
+            }
+          }
+
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(data));
+        } catch (err) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: err.message || 'Erreur serveur' }));
+        }
+      } else if (req.method === 'DELETE') {
+        const gate = await requireGiftCardsAdmin();
+        if (!gate.ok) {
+          res.writeHead(gate.status, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(gate.body));
+          return;
+        }
+        const { id } = parsedUrl.query;
+        if (!id) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'id est requis' }));
+          return;
+        }
+        const { error } = await supabase.from('gift_cards').delete().eq('id', id);
+        if (error) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: error.message }));
+          return;
+        }
+        res.writeHead(204);
+        res.end();
+      } else {
+        res.writeHead(405, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Method not allowed' }));
+      }
+    }
     // NOUVELLE ROUTE : Rendez-vous
     else if (pathname === '/api/appointments') {
       // GET : Récupérer les rendez-vous
@@ -655,7 +1017,7 @@ const server = http.createServer(async (req, res) => {
           return;
         }
         
-        const validStatuses = ['pending', 'accepted', 'rejected', 'cancelled'];
+        const validStatuses = ['pending', 'accepted', 'completed', 'rejected', 'cancelled'];
         if (status && !validStatuses.includes(status)) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'Invalid status value' }));
@@ -731,8 +1093,22 @@ const server = http.createServer(async (req, res) => {
         
         const body = await readBody(req);
 
-        // Valider les données d'entrée
-        const validation = validateAppointment(body);
+        // Vérifier si c'est une création admin (authentifié = pas de captcha requis, email optionnel)
+        let isAdminCreation = false;
+        if (req.headers.authorization) {
+          const authCheck = await verifyAuth(req, supabaseAuth);
+          if (authCheck.authenticated) {
+            const adminCheck = await verifyAdmin(authCheck.user, supabase);
+            if (adminCheck.isAdmin) {
+              isAdminCreation = true;
+            }
+          }
+        }
+
+        // Valider les données d'entrée (mode admin = email optionnel)
+        const validation = isAdminCreation
+          ? validateAppointmentAdmin(body)
+          : validateAppointment(body);
         if (!validation.valid) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ 
@@ -1089,7 +1465,7 @@ const server = http.createServer(async (req, res) => {
         
         // Gérer le statut si fourni
         if (body.status !== undefined) {
-          const validStatuses = ['pending', 'accepted', 'rejected', 'cancelled'];
+          const validStatuses = ['pending', 'accepted', 'completed', 'rejected', 'cancelled'];
           const status = body.status?.toLowerCase()?.trim();
           if (!status || !validStatuses.includes(status)) {
             res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -1106,7 +1482,7 @@ const server = http.createServer(async (req, res) => {
         
         // Gérer le mode de paiement si fourni
         if (body.payment_method !== undefined) {
-          const validPaymentMethods = ['espèces', 'carte', 'virement', 'chèque', null];
+          const validPaymentMethods = ['espèces', 'carte', 'virement', 'chèque', 'carte_cadeau', 'mixte', null];
           if (body.payment_method !== null && !validPaymentMethods.includes(body.payment_method)) {
             res.writeHead(400, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ 
@@ -1115,6 +1491,22 @@ const server = http.createServer(async (req, res) => {
             return;
           }
           updateData.payment_method = body.payment_method;
+        }
+
+        // Complément hors carte pour les RDV « mixte » (colonne à ajouter en base si besoin)
+        if (body.mixte_complement_payment_method !== undefined) {
+          const validMixteComp = ['espèces', 'carte', 'virement', 'chèque', null];
+          if (
+            body.mixte_complement_payment_method !== null &&
+            !validMixteComp.includes(body.mixte_complement_payment_method)
+          ) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({
+              error: `Invalid mixte_complement_payment_method. Must be one of: ${validMixteComp.filter((m) => m !== null).join(', ')}, or null`
+            }));
+            return;
+          }
+          updateData.mixte_complement_payment_method = body.mixte_complement_payment_method;
         }
         
         // Vérifier qu'au moins un champ est fourni
@@ -1161,6 +1553,34 @@ const server = http.createServer(async (req, res) => {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(data));
       }
+      else if (req.method === 'DELETE') {
+        const auth = await verifyAuth(req, supabaseAuth);
+        if (!auth.authenticated) {
+          res.writeHead(401, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Unauthorized' }));
+          return;
+        }
+        const adminCheck = await verifyAdmin(auth.user, supabase);
+        if (!adminCheck.isAdmin) {
+          res.writeHead(403, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Forbidden: Admin access required' }));
+          return;
+        }
+        const { id } = parsedUrl.query;
+        if (!id) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'id est requis' }));
+          return;
+        }
+        const { error } = await supabase.from('appointments').delete().eq('id', id);
+        if (error) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Erreur lors de la suppression', details: error.message }));
+          return;
+        }
+        res.writeHead(204);
+        res.end();
+      }
       else {
         res.writeHead(405, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Method not allowed' }));
@@ -1201,9 +1621,20 @@ const server = http.createServer(async (req, res) => {
         
         const { email, id, clientId } = parsedUrl.query;
 
+        // Liste complète de tous les clients (sans filtre)
         if (!email && !id && !clientId) {
-          res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: 'Email, ID ou clientId requis' }));
+          const { data: allClients, error: listError } = await supabase
+            .from('clients')
+            .select('*')
+            .order('name', { ascending: true });
+
+          if (listError) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Erreur lors de la récupération des clients', details: listError.message }));
+            return;
+          }
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(allClients || []));
           return;
         }
 
@@ -1514,6 +1945,92 @@ const server = http.createServer(async (req, res) => {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(data));
       }
+      else if (req.method === 'DELETE') {
+        const { id } = parsedUrl.query;
+        if (!id) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'id est requis' }));
+          return;
+        }
+        const { data: clientRow, error: fetchError } = await supabase
+          .from('clients')
+          .select('email, name, phone')
+          .eq('id', id)
+          .single();
+        if (fetchError || !clientRow) {
+          res.writeHead(404, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Client non trouvé' }));
+          return;
+        }
+        const normalizedEmail = (clientRow.email || '').trim().toLowerCase();
+        if (normalizedEmail) {
+          const { error: delAptError } = await supabase
+            .from('appointments')
+            .delete()
+            .eq('client_email', normalizedEmail);
+          if (delAptError) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({
+              error: 'Erreur lors de la suppression des rendez-vous associés',
+              details: delAptError.message
+            }));
+            return;
+          }
+        } else {
+          const name = (clientRow.name || '').trim();
+          const phone = (clientRow.phone || '').trim();
+          if (phone) {
+            const { error: delAptError } = await supabase
+              .from('appointments')
+              .delete()
+              .eq('client_name', name)
+              .eq('client_phone', phone);
+            if (delAptError) {
+              res.writeHead(500, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({
+                error: 'Erreur lors de la suppression des rendez-vous associés',
+                details: delAptError.message
+              }));
+              return;
+            }
+          } else {
+            const { error: e1 } = await supabase
+              .from('appointments')
+              .delete()
+              .eq('client_name', name)
+              .is('client_email', null);
+            if (e1) {
+              res.writeHead(500, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({
+                error: 'Erreur lors de la suppression des rendez-vous associés',
+                details: e1.message
+              }));
+              return;
+            }
+            const { error: e2 } = await supabase
+              .from('appointments')
+              .delete()
+              .eq('client_name', name)
+              .eq('client_email', '');
+            if (e2) {
+              res.writeHead(500, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({
+                error: 'Erreur lors de la suppression des rendez-vous associés',
+                details: e2.message
+              }));
+              return;
+            }
+          }
+        }
+        const { error } = await supabase.from('clients').delete().eq('id', id);
+        if (error) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Erreur lors de la suppression du client', details: error.message }));
+          return;
+        }
+        res.writeHead(204);
+        res.end();
+      }
       else {
         res.writeHead(405, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Method not allowed' }));
@@ -1691,6 +2208,7 @@ server.listen(PORT, () => {
   console.log(`   - http://localhost:${PORT}/api/available-slots (GET)`);
   console.log(`   - http://localhost:${PORT}/api/blocked-dates (GET)`);
   console.log(`   - http://localhost:${PORT}/api/blocked-slots (GET, POST, DELETE)`);
+  console.log(`   - http://localhost:${PORT}/api/gift-cards (GET, POST, PATCH, DELETE)`);
   console.log(`   - http://localhost:${PORT}/api/appointments (GET, POST, PATCH)`);
   console.log(`   - http://localhost:${PORT}/api/clients (GET, POST, PATCH) - PROTÉGÉ`);
   console.log(`   - http://localhost:${PORT}/api/contact (POST) - Formulaire de contact`);

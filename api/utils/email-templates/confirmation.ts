@@ -49,7 +49,7 @@ export function generateConfirmationEmail(data: ConfirmationData): string {
         </p>
         
         <!-- Détails du rendez-vous -->
-        <div style="background: linear-gradient(135deg, #faf8f3 0%, #f5f1e8 100%); border-radius: 12px; padding: 25px; margin: 0 0 30px 0; border-left: 4px solid #8b7a62;">
+        <div style="background: linear-gradient(135deg, #faf8f3 0%, #f5f1e8 100%); border-radius: 12px; padding: 25px; margin: 0 0 30px 0">
           <h3 style="font-family: 'Georgia', serif; font-size: 14px; color: #8b7a62; margin: 0 0 20px 0; text-transform: uppercase; letter-spacing: 2px;">
             Détails de votre demande
           </h3>

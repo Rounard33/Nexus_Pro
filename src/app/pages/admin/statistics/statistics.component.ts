@@ -1,8 +1,14 @@
 import {CommonModule} from '@angular/common';
 import {Component, OnInit} from '@angular/core';
+import {forkJoin} from 'rxjs';
 import {PrestationStats, StatCard} from '../../../models/statistics.model';
+import {AdditionalSalesService} from '../../../services/additional-sales.service';
 import {Appointment, ContentService, Prestation} from '../../../services/content.service';
 import {StatisticsService} from '../../../services/statistics.service';
+import {
+  collectForfaitCountedAppointmentIds,
+  collectGiftCardCoverageEuroByAppointment
+} from '../../../utils/accounting-revenue.utils';
 
 @Component({
   selector: 'app-statistics',
@@ -22,7 +28,8 @@ export class StatisticsComponent implements OnInit {
 
   constructor(
     private contentService: ContentService,
-    private statisticsService: StatisticsService
+    private statisticsService: StatisticsService,
+    private additionalSalesService: AdditionalSalesService
   ) {}
 
   ngOnInit(): void {
@@ -35,23 +42,27 @@ export class StatisticsComponent implements OnInit {
     const startOfYear = `${currentYear}-01-01`;
     const endOfYear = `${currentYear}-12-31`;
 
-    // Charger les rendez-vous et les prestations en parallèle
-    this.contentService.getAppointments(undefined, startOfYear, endOfYear).subscribe({
-      next: (appointments) => {
-        this.contentService.getPrestations().subscribe({
-          next: (prestations) => {
-            this.calculateStats(appointments);
-            this.calculateTopPrestations(appointments);
-            this.calculatePaymentMethods(appointments);
-            this.calculateAverageClientVisits(appointments);
-            this.calculateAverageBasket(appointments, prestations);
-            this.calculateTimeSlotStats(appointments);
-            this.isLoading = false;
-          },
-          error: () => {
-            this.isLoading = false;
-          }
-        });
+    forkJoin({
+      appointments: this.contentService.getAppointments(undefined, startOfYear, endOfYear),
+      prestations: this.contentService.getPrestations(),
+      clients: this.contentService.getAllClients()
+    }).subscribe({
+      next: ({ appointments, prestations, clients }) => {
+        const forfaitCountedIds = collectForfaitCountedAppointmentIds(
+          (notes) => this.additionalSalesService.parseAdditionalSales(notes),
+          clients
+        );
+        const giftCov = collectGiftCardCoverageEuroByAppointment(
+          (notes) => this.additionalSalesService.parseAdditionalSales(notes),
+          clients
+        );
+        this.calculateStats(appointments);
+        this.calculateTopPrestations(appointments);
+        this.calculatePaymentMethods(appointments);
+        this.calculateAverageClientVisits(appointments);
+        this.calculateAverageBasket(appointments, prestations, forfaitCountedIds, giftCov);
+        this.calculateTimeSlotStats(appointments);
+        this.isLoading = false;
       },
       error: () => {
         this.isLoading = false;
@@ -116,8 +127,18 @@ export class StatisticsComponent implements OnInit {
     this.averageClientVisits = this.statisticsService.calculateAverageClientVisits(appointments);
   }
 
-  private calculateAverageBasket(appointments: Appointment[], prestations: Prestation[]): void {
-    this.averageBasket = this.statisticsService.calculateAverageBasket(appointments, prestations);
+  private calculateAverageBasket(
+    appointments: Appointment[],
+    prestations: Prestation[],
+    forfaitCountedIds: Set<string>,
+    giftCov: Map<string, number>
+  ): void {
+    this.averageBasket = this.statisticsService.calculateAverageBasket(
+      appointments,
+      prestations,
+      forfaitCountedIds,
+      giftCov
+    );
   }
 
   getPaymentMethodLabel(method: string): string {

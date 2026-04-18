@@ -73,6 +73,14 @@
   to { transform: rotate(360deg); }
 }
 
+.revenue-breakdown {
+  margin-top: 0.75rem;
+  font-size: 0.9rem;
+  color: var(--primary-600, #8a7d6a);
+  line-height: 1.45;
+  max-width: 32rem;
+}
+
 // Contenu principal
 .dashboard-content {
   display: flex;

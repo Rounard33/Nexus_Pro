@@ -1,7 +1,16 @@
 <div class="clients">
   <div class="clients-header">
-    <h1 class="clients-title">Fiches clients</h1>
-    <p class="clients-subtitle">Gérez vos clients et consultez leur historique</p>
+    <div>
+      <h1 class="clients-title">Fiches clients</h1>
+      <p class="clients-subtitle">Gérez vos clients et consultez leur historique</p>
+    </div>
+    <button class="btn-create-client" (click)="openCreateClientModal()" type="button">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <line x1="12" y1="5" x2="12" y2="19"/>
+        <line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+      Nouveau client
+    </button>
   </div>
 
   <!-- Barre de recherche -->
@@ -73,7 +82,8 @@
             <circle cx="12" cy="12" r="10"/>
             <path d="M12 6v6l4 2"/>
           </svg>
-          <span>Dernier RDV : {{ formatDate(client.lastAppointmentDate) }}</span>
+          <span *ngIf="client.lastAppointmentDate">Dernier RDV : {{ formatDate(client.lastAppointmentDate) }}</span>
+          <span *ngIf="!client.lastAppointmentDate">Aucun RDV</span>
         </div>
         <button class="view-details-btn">
           Voir la fiche
@@ -93,6 +103,53 @@
     </svg>
     <p *ngIf="searchTerm">Aucun client trouvé pour "{{ searchTerm }}"</p>
     <p *ngIf="!searchTerm">Aucun client pour le moment</p>
+  </div>
+
+  <!-- Modal création client -->
+  <div class="modal-overlay" *ngIf="showCreateModal" (click)="closeCreateClientModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <button class="modal-close" (click)="closeCreateClientModal()" aria-label="Fermer">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 6L6 18M6 6l12 12"/>
+        </svg>
+      </button>
+
+      <h2 class="modal-title">Nouveau client</h2>
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="client-name" class="form-label">Nom *</label>
+          <input type="text" id="client-name" [(ngModel)]="newClient.name"
+                 class="form-input" placeholder="Nom Prénom" required>
+        </div>
+
+        <div class="form-group">
+          <label for="client-email" class="form-label">Email</label>
+          <input type="email" id="client-email" [(ngModel)]="newClient.email"
+                 class="form-input" placeholder="email@exemple.com">
+        </div>
+
+        <div class="form-group">
+          <label for="client-phone" class="form-label">Téléphone</label>
+          <input type="tel" id="client-phone" [(ngModel)]="newClient.phone"
+                 class="form-input" placeholder="06 12 34 56 78">
+        </div>
+
+        <div class="form-group">
+          <label for="client-notes" class="form-label">Notes</label>
+          <textarea id="client-notes" [(ngModel)]="newClient.notes"
+                    class="form-input form-textarea" placeholder="Notes..." rows="3"></textarea>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-cancel" (click)="closeCreateClientModal()" type="button">Annuler</button>
+        <button class="btn btn-submit" (click)="submitNewClient()" [disabled]="isCreating || !newClient.name.trim()" type="button">
+          <span *ngIf="isCreating">Création...</span>
+          <span *ngIf="!isCreating">Créer le client</span>
+        </button>
+      </div>
+    </div>
   </div>
 </div>
 

@@ -57,7 +57,7 @@ export function generateAdminNotificationEmail(data: AdminNotificationData): str
 
   // Générer le bloc fidélité
   const loyaltyBlock = `
-    <div style="background: ${hasReachedReward ? '#e8f5e9' : isCloseToReward ? '#fff3e0' : '#f3e5f5'}; border-radius: 8px; padding: 20px; margin: 0 0 20px 0; border-left: 4px solid ${hasReachedReward ? '#4caf50' : isCloseToReward ? '#ff9800' : '#9c27b0'};">
+    <div style="background: ${hasReachedReward ? '#e8f5e9' : isCloseToReward ? '#fff3e0' : '#f3e5f5'}; border-radius: 8px; padding: 20px; margin: 0 0 20px 0">
       <h3 style="font-family: Arial, sans-serif; font-size: 12px; color: ${hasReachedReward ? '#2e7d32' : isCloseToReward ? '#e65100' : '#7b1fa2'}; margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 1px;">
         💜 Carte fidélité
       </h3>
@@ -85,7 +85,7 @@ export function generateAdminNotificationEmail(data: AdminNotificationData): str
 
   // Générer le bloc parrainage si applicable
   const referralBlock = isReferral ? `
-    <div style="background: #e3f2fd; border-radius: 8px; padding: 20px; margin: 0 0 20px 0; border-left: 4px solid #2196f3;">
+    <div style="background: #e3f2fd; border-radius: 8px; padding: 20px; margin: 0 0 20px 0">
       <h3 style="font-family: Arial, sans-serif; font-size: 12px; color: #1565c0; margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 1px;">
         🤝 Parrainage
       </h3>
@@ -181,7 +181,7 @@ export function generateAdminNotificationEmail(data: AdminNotificationData): str
                   
                   ${safeNotes ? `
                   <!-- Notes -->
-                  <div style="background: #fff9e6; border-radius: 8px; padding: 20px; margin: 0 0 20px 0; border-left: 4px solid #f5a623;">
+                  <div style="background: #fff9e6; border-radius: 8px; padding: 20px; margin: 0 0 20px 0">
                     <h3 style="font-family: Arial, sans-serif; font-size: 12px; color: #b8860b; margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 1px;">
                       📝 Notes du client
                     </h3>

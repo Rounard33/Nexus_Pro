@@ -60,7 +60,7 @@ export function validateCaptchaToken(token: string | undefined | null): boolean 
 /**
  * Valide les données d'un rendez-vous
  */
-export function validateAppointment(data: any): ValidationResult {
+export function validateAppointment(data: any, isAdminCreation: boolean = false): ValidationResult {
   const errors: string[] = [];
 
   // Validation client_name
@@ -76,17 +76,25 @@ export function validateAppointment(data: any): ValidationResult {
     }
   }
 
-  // Validation client_email
-  if (!data.client_email || typeof data.client_email !== 'string') {
-    errors.push('L\'email est requis');
-  } else {
+  // Validation client_email (optionnel pour les créations admin)
+  if (!isAdminCreation) {
+    if (!data.client_email || typeof data.client_email !== 'string') {
+      errors.push('L\'email est requis');
+    } else {
+      const email = data.client_email.trim().toLowerCase();
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        errors.push('Format d\'email invalide');
+      }
+      if (email.length > 255) {
+        errors.push('L\'email ne doit pas dépasser 255 caractères');
+      }
+    }
+  } else if (data.client_email && typeof data.client_email === 'string' && data.client_email.trim()) {
     const email = data.client_email.trim().toLowerCase();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       errors.push('Format d\'email invalide');
-    }
-    if (email.length > 255) {
-      errors.push('L\'email ne doit pas dépasser 255 caractères');
     }
   }
 

@@ -1,0 +1,151 @@
+<div class="modal-overlay" *ngIf="visible" (click)="closeModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <h2>{{ editingId ? 'Modifier la carte' : 'Nouvelle carte cadeau' }}</h2>
+
+      <div class="field buyer-locked" *ngIf="fixedBuyer">
+        <span class="label-text">Acheteur (fiche en cours)</span>
+        <p class="buyer-locked-text">{{ fixedBuyer.name }} — {{ fixedBuyer.email }}</p>
+      </div>
+
+      <div class="field client-picker" *ngIf="!fixedBuyer">
+        <span class="label-text">Nom de l’acheteur *</span>
+        <div class="picker-shell">
+          <button
+            type="button"
+            class="picker-trigger input"
+            [class.placeholder]="!form.buyer_name"
+            (click)="toggleBuyerPicker($event)"
+            [attr.aria-expanded]="buyerPickerOpen">
+            {{ form.buyer_name || '— Choisir un client —' }}
+            <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
+          <div class="picker-panel" *ngIf="buyerPickerOpen" (click)="$event.stopPropagation()">
+            <input
+              type="search"
+              class="input picker-search"
+              [(ngModel)]="buyerFilter"
+              placeholder="Rechercher par nom, e-mail ou téléphone…"
+              (click)="$event.stopPropagation()"
+              autocomplete="off"/>
+            <ul class="picker-list" role="listbox">
+              <li *ngFor="let c of filteredBuyers" role="option" (click)="selectBuyer(c, $event)">
+                {{ clientLabel(c) }}
+              </li>
+              <li *ngIf="filteredBuyers.length === 0" class="picker-empty">Aucun client ne correspond.</li>
+            </ul>
+            <button type="button" class="picker-new-client" (click)="openNewClientFromPicker('buyer', $event)">
+              + Nouveau client
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="field client-picker">
+        <span class="label-text">Nom du bénéficiaire *</span>
+        <div class="picker-shell">
+          <button
+            type="button"
+            class="picker-trigger input"
+            [class.placeholder]="!form.recipient_name"
+            (click)="toggleRecipientPicker($event)"
+            [attr.aria-expanded]="recipientPickerOpen">
+            {{ form.recipient_name || '— Choisir un client —' }}
+            <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
+          <div class="picker-panel" *ngIf="recipientPickerOpen" (click)="$event.stopPropagation()">
+            <input
+              type="search"
+              class="input picker-search"
+              [(ngModel)]="recipientFilter"
+              placeholder="Rechercher par nom, e-mail ou téléphone…"
+              (click)="$event.stopPropagation()"
+              autocomplete="off"/>
+            <ul class="picker-list" role="listbox">
+              <li *ngFor="let c of filteredRecipients" role="option" (click)="selectRecipient(c, $event)">
+                {{ clientLabel(c) }}
+              </li>
+              <li *ngIf="filteredRecipients.length === 0" class="picker-empty">Aucun client ne correspond.</li>
+            </ul>
+            <button type="button" class="picker-new-client" (click)="openNewClientFromPicker('recipient', $event)">
+              + Nouveau client
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="row-2">
+        <div class="field">
+          <label for="gcfm-purchase">Date d’achat *</label>
+          <input id="gcfm-purchase" type="date" [(ngModel)]="form.purchase_date" class="input"/>
+        </div>
+        <div class="field">
+          <label for="gcfm-valid">Valide jusqu’au *</label>
+          <input id="gcfm-valid" type="date" [(ngModel)]="form.valid_until" class="input"/>
+        </div>
+      </div>
+      <div class="field">
+        <label for="gcfm-amount">Montant (€)</label>
+        <input
+          id="gcfm-amount"
+          type="number"
+          min="0"
+          step="0.01"
+          class="input"
+          [ngModel]="form.amount_eur"
+          (ngModelChange)="form.amount_eur = $event === '' || $event == null ? null : +$event"
+          placeholder="Optionnel — pour la vente additionnelle de l’acheteur"/>
+        <p class="field-hint">Si renseigné, apparaît sur la fiche client (ventes additionnelles).</p>
+      </div>
+      <div class="field">
+        <label class="check-wrap">
+          <input type="checkbox" [(ngModel)]="form.used"/>
+          <span>Déjà utilisée</span>
+        </label>
+      </div>
+      <div class="field">
+        <label for="gcfm-notes">Notes</label>
+        <textarea id="gcfm-notes" [(ngModel)]="form.notes" class="input textarea" rows="2"></textarea>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" (click)="closeModal()" [disabled]="saving">Annuler</button>
+        <button type="button" class="btn-primary" (click)="save()" [disabled]="saving">
+          {{ saving ? 'Enregistrement…' : 'Enregistrer' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay modal-nested" *ngIf="showNewClientModal" (click)="closeNewClientModal()">
+    <div class="modal modal-new-client" (click)="$event.stopPropagation()">
+      <h2>Nouveau client</h2>
+      <p class="modal-hint">Le client sera ajouté à votre base et sélectionné pour ce champ.</p>
+
+      <div class="field">
+        <label for="gcfm-nc-name">Nom *</label>
+        <input id="gcfm-nc-name" type="text" [(ngModel)]="newClient.name" class="input" placeholder="Nom Prénom"/>
+      </div>
+      <div class="field">
+        <label for="gcfm-nc-email">E-mail</label>
+        <input id="gcfm-nc-email" type="email" [(ngModel)]="newClient.email" class="input" placeholder="email@exemple.com"/>
+      </div>
+      <div class="field">
+        <label for="gcfm-nc-phone">Téléphone</label>
+        <input id="gcfm-nc-phone" type="tel" [(ngModel)]="newClient.phone" class="input" placeholder="06 12 34 56 78"/>
+      </div>
+      <div class="field">
+        <label for="gcfm-nc-notes">Notes</label>
+        <textarea id="gcfm-nc-notes" [(ngModel)]="newClient.notes" class="input textarea" rows="2"></textarea>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" (click)="closeNewClientModal()" [disabled]="isCreatingClient">Annuler</button>
+        <button type="button" class="btn-primary" (click)="submitNewClient()" [disabled]="isCreatingClient || !newClient.name.trim()">
+          {{ isCreatingClient ? 'Création…' : 'Créer le client' }}
+        </button>
+      </div>
+    </div>
+  </div>

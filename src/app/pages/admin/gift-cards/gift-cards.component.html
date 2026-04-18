@@ -1,0 +1,78 @@
+<div class="gift-cards">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Cartes cadeaux</h1>
+      <p class="page-subtitle">Enregistrez les cartes vendues et cochez lorsqu’elles sont utilisées.</p>
+    </div>
+    <button type="button" class="btn-primary" (click)="openCreate()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="12" y1="5" x2="12" y2="19"/>
+        <line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+      Nouvelle carte
+    </button>
+  </div>
+
+  <div class="loading" *ngIf="isLoading">Chargement…</div>
+
+  <div class="table-wrap" *ngIf="!isLoading">
+    <table class="gc-table" *ngIf="cards.length > 0">
+      <thead>
+        <tr>
+          <th>Acheteur</th>
+          <th>Bénéficiaire</th>
+          <th>Date d’achat</th>
+          <th>Valide jusqu’au</th>
+          <th>Libellé</th>
+          <th>Utilisée</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let c of cards" [class.row-expired]="isExpired(c)" [class.row-used]="c.used">
+          <td>{{ c.buyer_name }}</td>
+          <td>{{ c.recipient_name }}</td>
+          <td>{{ c.purchase_date | date:'dd/MM/yyyy' }}</td>
+          <td>
+            {{ c.valid_until | date:'dd/MM/yyyy' }}
+            <span class="badge-expired" *ngIf="isExpired(c)">Expirée</span>
+          </td>
+          <td>{{ c.service_label }}</td>
+          <td>
+            <label class="check-wrap">
+              <input
+                type="checkbox"
+                [checked]="c.used"
+                (change)="toggleUsed(c, $any($event.target).checked)"/>
+              <span class="check-label">{{ c.used ? 'Oui' : 'Non' }}</span>
+            </label>
+          </td>
+          <td class="actions">
+            <button type="button" class="btn-icon" (click)="openEdit(c)" title="Modifier" aria-label="Modifier">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+            </button>
+            <button type="button" class="btn-icon btn-danger" (click)="confirmDelete(c)" title="Supprimer" aria-label="Supprimer">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+              </svg>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p class="empty" *ngIf="cards.length === 0">Aucune carte cadeau enregistrée.</p>
+  </div>
+
+  <app-gift-card-form-modal
+    [visible]="showModal"
+    [editingCard]="editingCard"
+    [fixedBuyer]="null"
+    (closed)="closeModal()"
+    (saved)="loadCards()">
+  </app-gift-card-form-modal>
+</div>

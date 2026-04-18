@@ -8,56 +8,99 @@
     </app-section-header>
     
     <div class="prestations-grid">
-      <div class="prestation-card" *ngFor="let prestation of prestations; let i = index">
-        <div class="prestation-image-wrapper">
-          <div class="prestation-image" [style.background-image]="'url(' + prestation.image + ')'">
-          </div>
-          <div class="prestation-image-overlay" *ngIf="prestation.shortDescription">
-            <p class="prestation-short-description">{{ prestation.shortDescription }}</p>
-          </div>
-          <!-- Badge contre-indications -->
-          <div class="contraindication-badge" *ngIf="prestation.hasContraindications" title="Cette prestation comporte des contre-indications">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="12" y1="8" x2="12" y2="12"/>
-              <line x1="12" y1="16" x2="12.01" y2="16"/>
-            </svg>
-            <span>Contre-indications</span>
-          </div>
-        </div>
-        <div class="prestation-info">
-          <h3 class="prestation-name">{{ prestation.name }}</h3>
-          <div class="prestation-details">
-            <div class="prestation-price">{{ prestation.price }}</div>
-            <div class="prestation-price" *ngIf="prestation.priceOption">
-              {{ prestation.priceOption }}
+      <!-- Carte groupe Reiki (Usui / Animaux / À distance dans la modale) -->
+      <div class="prestation-card prestation-card--group" *ngFor="let item of prestations; let i = index">
+        <ng-container *ngIf="isGroup(item); else singleCard">
+          <div class="prestation-image-wrapper">
+            <div class="prestation-image" [style.background-image]="'url(' + item.image + ')'">
             </div>
-            <div class="prestation-price" *ngIf="prestation.atHome">
-              {{ prestation.atHome }}
-            </div>
-            <div class="prestation-duration" *ngIf="prestation.duration">
-              Durée : {{ prestation.duration }}
+            <div class="prestation-image-overlay" *ngIf="item.shortDescription">
+              <p class="prestation-short-description">{{ item.shortDescription }}</p>
             </div>
           </div>
-          <div class="booking-notice">
-            <span class="booking-notice-icon">⏳</span>
-            <span class="booking-notice-text">Réservation bientôt disponible en ligne</span>
-          </div>
-          <div class="prestation-buttons">
-            <button class="btn btn-outline prestation-btn-more" (click)="openDetails.emit(prestation)">
-              En savoir plus
-            </button>
-            <div class="booking-button-container">
-              <button 
-                class="btn btn-primary prestation-btn" 
-                (click)="onBookingClick(prestation)" 
-                [disabled]="true"
-              >
-                {{ prestation.requiresContact ? 'Contacter' : 'Réserver' }}
+          <div class="prestation-info">
+            <h3 class="prestation-name">{{ item.cardTitle }}</h3>
+            <p class="prestation-group-teaser">Trois formats : cabinet (Usui), sur les animaux, ou à distance — tarifs et durées dans la fenêtre détail.</p>
+            <div class="booking-notice">
+              <span class="booking-notice-icon">⏳</span>
+              <span class="booking-notice-text">Réservation bientôt disponible en ligne</span>
+            </div>
+            <div class="forfait-link" *ngIf="item.forfaitSuggestion" (click)="scrollToForfaits()">
+              <span>{{ item.forfaitSuggestion }}</span>
+            </div>
+            <div class="prestation-buttons">
+              <button class="btn btn-outline prestation-btn-more" type="button" (click)="onGroupDetails(item)">
+                En savoir plus
               </button>
+              <div class="booking-button-container">
+                <button
+                  class="btn btn-primary prestation-btn"
+                  type="button"
+                  (click)="onGroupBookingClick(item)"
+                >
+                  Réserver
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </ng-container>
+        <ng-template #singleCard>
+          <ng-container *ngIf="asSingle(item) as prestation">
+          <div class="prestation-image-wrapper">
+            <div class="prestation-image" [style.background-image]="'url(' + prestation.image + ')'">
+            </div>
+            <div class="prestation-image-overlay" *ngIf="prestation.shortDescription">
+              <p class="prestation-short-description">{{ prestation.shortDescription }}</p>
+            </div>
+            <!-- Badge contre-indications -->
+            <div class="contraindication-badge" *ngIf="prestation.hasContraindications" title="Cette prestation comporte des contre-indications">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              <span>Contre-indications</span>
+            </div>
+          </div>
+          <div class="prestation-info">
+            <h3 class="prestation-name">{{ prestation.name }}</h3>
+            <div class="prestation-details">
+              <div class="prestation-price">{{ prestation.price }}</div>
+              <div class="prestation-price" *ngIf="prestation.priceOption">
+                {{ prestation.priceOption }}
+              </div>
+              <div class="prestation-price" *ngIf="prestation.atHome">
+                {{ prestation.atHome }}
+              </div>
+              <div class="prestation-duration" *ngIf="prestation.duration">
+                Durée : {{ prestation.duration }}
+              </div>
+            </div>
+            <div class="booking-notice">
+              <span class="booking-notice-icon">⏳</span>
+              <span class="booking-notice-text">Réservation bientôt disponible en ligne</span>
+            </div>
+            <div class="forfait-link" *ngIf="prestation.forfaitSuggestion" (click)="scrollToForfaits()">
+              <span>{{ prestation.forfaitSuggestion }}</span>
+            </div>
+            <div class="prestation-buttons">
+              <button class="btn btn-outline prestation-btn-more" type="button" (click)="openDetails.emit(prestation)">
+                En savoir plus
+              </button>
+              <div class="booking-button-container">
+                <button 
+                  class="btn btn-primary prestation-btn" 
+                  type="button"
+                  (click)="onBookingClick(prestation)" 
+                  [disabled]="true"
+                >
+                  {{ prestation.requiresContact ? 'Contacter' : 'Réserver' }}
+                </button>
+              </div>
+            </div>
+          </div>
+          </ng-container>
+        </ng-template>
       </div>
     </div>
   </div>

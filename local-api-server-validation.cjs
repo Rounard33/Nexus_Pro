@@ -193,8 +193,87 @@ function sanitizeAppointment(data) {
   return sanitized;
 }
 
+/**
+ * Valide les données d'un rendez-vous créé par un admin (email optionnel, pas de captcha)
+ */
+function validateAppointmentAdmin(data) {
+  const errors = [];
+
+  // Validation client_name (toujours requis)
+  if (!data.client_name || typeof data.client_name !== 'string') {
+    errors.push('Le nom du client est requis');
+  } else {
+    const name = data.client_name.trim();
+    if (name.length < 2 || name.length > 100) {
+      errors.push('Le nom doit contenir entre 2 et 100 caractères');
+    }
+    if (!/^[a-zA-ZÀ-ÿ\s'-]+$/.test(name)) {
+      errors.push('Le nom ne doit contenir que des lettres, espaces, tirets et apostrophes');
+    }
+  }
+
+  // Validation client_email (optionnel mais doit être valide si fourni)
+  if (data.client_email && typeof data.client_email === 'string' && data.client_email.trim()) {
+    const email = data.client_email.trim().toLowerCase();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      errors.push('Format d\'email invalide');
+    }
+  }
+
+  // Validation client_phone (optionnel)
+  if (data.client_phone !== undefined && data.client_phone !== null) {
+    if (typeof data.client_phone !== 'string') {
+      errors.push('Le format du téléphone est invalide');
+    } else {
+      const phone = data.client_phone.trim();
+      if (phone.length > 20) {
+        errors.push('Le téléphone ne doit pas dépasser 20 caractères');
+      }
+    }
+  }
+
+  // Validation prestation_id
+  if (!data.prestation_id || typeof data.prestation_id !== 'string') {
+    errors.push('L\'ID de la prestation est requis');
+  } else {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(data.prestation_id)) {
+      errors.push('Format d\'ID de prestation invalide (UUID attendu)');
+    }
+  }
+
+  // Validation appointment_date
+  if (!data.appointment_date || typeof data.appointment_date !== 'string') {
+    errors.push('La date de rendez-vous est requise');
+  } else {
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(data.appointment_date)) {
+      errors.push('Format de date invalide (YYYY-MM-DD attendu)');
+    }
+  }
+
+  // Validation appointment_time
+  if (!data.appointment_time || typeof data.appointment_time !== 'string') {
+    errors.push('L\'heure de rendez-vous est requise');
+  } else {
+    const timeRegex = /^\d{2}:\d{2}$/;
+    if (!timeRegex.test(data.appointment_time)) {
+      errors.push('Format d\'heure invalide (HH:MM attendu)');
+    }
+  }
+
+  // Validation notes (optionnel)
+  if (data.notes !== undefined && data.notes !== null && typeof data.notes === 'string' && data.notes.length > 500) {
+    errors.push('Les notes ne doivent pas dépasser 500 caractères');
+  }
+
+  return { valid: errors.length === 0, errors };
+}
+
 module.exports = {
   validateAppointment,
+  validateAppointmentAdmin,
   sanitizeAppointment
 };
 

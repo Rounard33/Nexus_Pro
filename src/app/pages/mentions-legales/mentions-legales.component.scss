@@ -249,7 +249,6 @@
 // Info box
 .info-box {
   background: var(--primary-100);
-  border-left: 3px solid var(--primary-700);
   padding: 1.5rem;
   border-radius: 0 12px 12px 0;
   margin: 1.5rem 0;
@@ -274,7 +273,6 @@
 // Warning box
 .warning-box {
   background: linear-gradient(135deg, rgba(212, 165, 116, 0.15) 0%, rgba(212, 165, 116, 0.08) 100%);
-  border-left: 4px solid #d4a574;
   padding: 1.5rem;
   border-radius: 0 12px 12px 0;
   margin: 1.5rem 0;

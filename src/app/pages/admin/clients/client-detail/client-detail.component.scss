@@ -97,7 +97,38 @@
   font-size: 2rem;
   font-weight: 700;
   color: var(--text-primary, #1a1a1a);
-  margin: 0 0 1rem 0;
+  margin: 0 0 0.5rem 0;
+}
+
+.btn-delete-client {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  background: transparent;
+  color: #c53030;
+  border: 1px solid #c53030;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 0.5rem;
+
+  &:hover:not(:disabled) {
+    background: #fff5f5;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
 }
 
 .client-contact-info {
@@ -794,11 +825,13 @@
 
 .sale-type-selector {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.75rem;
 }
 
 .type-btn {
-  flex: 1;
+  flex: 1 1 calc(33.333% - 0.5rem);
+  min-width: 5.5rem;
   padding: 0.75rem 1rem;
   background: white;
   border: 2px solid var(--primary-200, #e8e3d8);
@@ -945,6 +978,18 @@
   color: #155724;
 }
 
+.sale-forfait {
+  background: #ede7f6;
+  color: #4527a0;
+}
+
+.form-hint.forfait-hint {
+  margin: 0.5rem 0 0;
+  font-size: 0.82rem;
+  color: var(--text-secondary, #666);
+  line-height: 1.35;
+}
+
 .sale-details {
   flex: 1;
   display: flex;
@@ -1082,7 +1127,6 @@
   padding: 0.75rem;
   background: white;
   border-radius: 8px;
-  border-left: 3px solid var(--primary-500, #b8a889);
 
   strong {
     color: var(--text-primary, #1a1a1a);
@@ -1324,6 +1368,16 @@
   justify-content: center;
   margin-bottom: 1rem;
   color: #dc3545;
+
+  &.confirm-icon-danger {
+    margin: 0 auto 1.5rem;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    align-items: center;
+    background: #fff5f5;
+    color: #c53030;
+  }
 }
 
 .confirm-text {

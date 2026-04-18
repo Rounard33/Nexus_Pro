@@ -3,9 +3,9 @@
  * Envoyé à l'admin quand quelqu'un utilise le formulaire de contact
  */
 
-import { 
+import {
   escapeHtml,
-  SITE_NAME 
+  SITE_NAME
 } from './common.js';
 
 export interface ContactMessageData {
@@ -56,7 +56,7 @@ export function generateContactMessageEmail(data: ContactMessageData): string {
                 <td style="padding: 30px;">
                   
                   <!-- Sujet -->
-                  <div style="background: linear-gradient(135deg, #faf8f3 0%, #f5f1e8 100%); border-radius: 8px; padding: 20px; margin: 0 0 20px 0; border-left: 4px solid #8b7a62;">
+                  <div style="background: linear-gradient(135deg, #faf8f3 0%, #f5f1e8 100%); border-radius: 8px; padding: 20px; margin: 0 0 20px 0">
                     <h2 style="font-family: 'Georgia', serif; font-size: 18px; color: #4a3f35; margin: 0;">
                       ${safeSubject}
                     </h2>

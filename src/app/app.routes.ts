@@ -63,6 +63,10 @@ export const routes: Routes = [
       { 
         path: 'clients/:id', 
         loadComponent: () => import('./pages/admin/clients/client-detail/client-detail.component').then(m => m.ClientDetailComponent) 
+      },
+      {
+        path: 'gift-cards',
+        loadComponent: () => import('./pages/admin/gift-cards/gift-cards.component').then(m => m.GiftCardsComponent)
       }
     ]
   },

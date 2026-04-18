@@ -16,13 +16,19 @@ import {Appointment, Client, ContentService, Creation, Prestation} from '../../.
 import {LoyaltyService} from '../../../../services/loyalty.service';
 import {NotificationService} from '../../../../services/notification.service';
 import {StatisticsService} from '../../../../services/statistics.service';
+import {
+  collectForfaitCountedAppointmentIds,
+  collectGiftCardCoverageEuroByAppointment
+} from '../../../../utils/accounting-revenue.utils';
 import {BirthdayUtils} from '../../../../utils/birthday.utils';
 import {FormatUtils} from '../../../../utils/format.utils';
+import {GiftCardFormModalComponent} from '../../../../components/gift-card-form-modal/gift-card-form-modal.component';
+import {FORFAITS_CATALOG} from '../../../../data/forfaits.catalog';
 
 @Component({
   selector: 'app-client-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, GiftCardFormModalComponent],
   templateUrl: './client-detail.component.html',
   styleUrl: './client-detail.component.scss'
 })
@@ -37,15 +43,20 @@ export class ClientDetailComponent implements OnInit {
   
   // Ventes additionnelles
   creations: Creation[] = [];
+  readonly forfaitsCatalog = FORFAITS_CATALOG;
   isAddingSale = false;
-  saleType: 'creation' | 'gift_card' = 'creation';
+  saleType: 'creation' | 'gift_card' | 'forfait' = 'creation';
   selectedCreationId: string = '';
-  giftCardAmount: number = 0;
+  selectedForfaitId: string = '';
   saleNotes: string = '';
+  showGiftCardModal = false;
 
-  // Modal de confirmation de suppression
+  // Modal de confirmation de suppression de vente
   showDeleteConfirmModal = false;
   saleToDelete: AdditionalSale | null = null;
+
+  // Modal de confirmation de suppression client
+  showDeleteClientModal = false;
 
   // Statistiques client
   prestations: Prestation[] = [];
@@ -322,40 +333,80 @@ export class ClientDetailComponent implements OnInit {
     this.isAddingSale = true;
     this.saleType = 'creation';
     this.selectedCreationId = '';
-    this.giftCardAmount = 0;
+    this.selectedForfaitId = '';
     this.saleNotes = '';
+    this.showGiftCardModal = false;
   }
 
   cancelAddSale(): void {
     this.isAddingSale = false;
     this.saleType = 'creation';
     this.selectedCreationId = '';
-    this.giftCardAmount = 0;
+    this.selectedForfaitId = '';
     this.saleNotes = '';
+    this.showGiftCardModal = false;
+  }
+
+  selectCreationSale(): void {
+    this.saleType = 'creation';
+    this.showGiftCardModal = false;
+  }
+
+  selectForfaitSale(): void {
+    this.saleType = 'forfait';
+    this.showGiftCardModal = false;
+  }
+
+  openGiftCardSale(): void {
+    this.saleType = 'gift_card';
+    this.showGiftCardModal = true;
+  }
+
+  onGiftCardModalClosed(): void {
+    this.showGiftCardModal = false;
+  }
+
+  onGiftCardModalSaved(): void {
+    this.showGiftCardModal = false;
+    this.loadClientDetails();
+    this.cancelAddSale();
+  }
+
+  get giftCardFixedBuyer(): { name: string; email: string } | null {
+    if (!this.client) return null;
+    return { name: this.client.name, email: this.client.email };
   }
 
   saveSale(): void {
     if (!this.client) return;
 
-    // Validation
     if (this.saleType === 'creation' && !this.selectedCreationId) {
       this.notificationService.error('Veuillez sélectionner une création');
       return;
     }
-
-    if (this.saleType === 'gift_card' && (!this.giftCardAmount || this.giftCardAmount <= 0)) {
-      this.notificationService.error('Veuillez saisir un montant valide pour la carte cadeau');
+    if (this.saleType === 'forfait' && !this.selectedForfaitId) {
+      this.notificationService.error('Veuillez sélectionner un forfait');
       return;
     }
 
-    const selectedCreation = this.creations.find(c => c.id === this.selectedCreationId);
-    const newSale = this.additionalSalesService.createSale(
-      this.saleType,
-      this.saleType === 'creation' ? this.selectedCreationId : undefined,
-      this.saleType === 'creation' ? selectedCreation?.name : undefined,
-      this.saleType === 'gift_card' ? this.giftCardAmount : undefined,
-      this.saleNotes || undefined
-    );
+    const newSale =
+      this.saleType === 'creation'
+        ? this.additionalSalesService.createSale({
+            type: 'creation',
+            creationId: this.selectedCreationId,
+            creationName: this.creations.find((c) => c.id === this.selectedCreationId)?.name || '',
+            notes: this.saleNotes || undefined
+          })
+        : this.additionalSalesService.createSale({
+            type: 'forfait',
+            forfaitId: this.selectedForfaitId,
+            forfaitName:
+              this.forfaitsCatalog.find((f) => f.id === this.selectedForfaitId)?.name || '',
+            forfaitPriceLabel: this.forfaitsCatalog.find((f) => f.id === this.selectedForfaitId)?.price,
+            sessionsTotal:
+              this.forfaitsCatalog.find((f) => f.id === this.selectedForfaitId)?.sessionsTotal ?? 1,
+            notes: this.saleNotes || undefined
+          });
 
     const updatedSales = [...(this.client.additionalSales || []), newSale];
     
@@ -386,9 +437,32 @@ export class ClientDetailComponent implements OnInit {
   getSaleDescription(sale: AdditionalSale): string {
     if (sale.type === 'creation') {
       return sale.creationName || 'Création';
-    } else {
-      return `Carte cadeau - ${sale.giftCardAmount}€`;
     }
+    if (sale.type === 'forfait') {
+      const name = sale.forfaitName || 'Forfait';
+      const price = sale.forfaitPriceLabel ? ` — ${sale.forfaitPriceLabel}` : '';
+      const cap = sale.forfait_sessions_total;
+      const used = sale.forfait_sessions_used;
+      const progress =
+        cap != null && cap > 0 && used != null
+          ? ` (${used}/${cap} séance${cap > 1 ? 's' : ''})`
+          : '';
+      return `Forfait : ${name}${price}${progress}`;
+    }
+    const initial = sale.giftCardAmount;
+    const rem =
+      sale.gift_card_remaining_eur != null
+        ? Math.max(0, Math.round(sale.gift_card_remaining_eur * 100) / 100)
+        : initial != null && initial > 0
+          ? initial
+          : null;
+    if (initial != null && initial > 0) {
+      if (rem != null && Math.abs(rem - initial) > 0.005) {
+        return `${initial} € → reste ${rem} €`;
+      }
+      return `${initial} €`;
+    }
+    return rem != null ? `Solde ${rem} €` : 'Carte cadeau';
   }
 
   // Statistiques client
@@ -397,7 +471,20 @@ export class ClientDetailComponent implements OnInit {
 
     // Calculer le panier moyen pour ce client (basé sur les RDV terminés)
     const clientAppointments = this.client.appointments.filter(a => a.status === 'completed');
-    this.clientAverageBasket = this.statisticsService.calculateAverageBasket(clientAppointments, this.prestations);
+    const forfaitIds = collectForfaitCountedAppointmentIds(
+      (notes) => this.additionalSalesService.parseAdditionalSales(notes),
+      [{notes: this.client.notes}]
+    );
+    const giftCov = collectGiftCardCoverageEuroByAppointment(
+      (notes) => this.additionalSalesService.parseAdditionalSales(notes),
+      [{notes: this.client.notes}]
+    );
+    this.clientAverageBasket = this.statisticsService.calculateAverageBasket(
+      clientAppointments,
+      this.prestations,
+      forfaitIds,
+      giftCov
+    );
   }
 
   getClientVisitsCount(): number {
@@ -453,5 +540,38 @@ export class ClientDetailComponent implements OnInit {
     if ((event.target as HTMLElement).classList.contains('modal-overlay')) {
       this.closeDeleteConfirmModal();
     }
+  }
+
+  confirmDeleteClient(): void {
+    this.showDeleteClientModal = true;
+  }
+
+  closeDeleteClientModal(): void {
+    this.showDeleteClientModal = false;
+  }
+
+  onDeleteClientModalOverlayClick(event: MouseEvent): void {
+    if ((event.target as HTMLElement).classList.contains('modal-overlay')) {
+      this.closeDeleteClientModal();
+    }
+  }
+
+  executeDeleteClient(): void {
+    if (!this.clientData?.id) return;
+
+    this.isSaving = true;
+    this.contentService.deleteClient(this.clientData.id).subscribe({
+      next: () => {
+        this.isSaving = false;
+        this.closeDeleteClientModal();
+        this.notificationService.success('Fiche client supprimée avec succès');
+        this.router.navigate(['/admin/clients']);
+      },
+      error: (error) => {
+        this.isSaving = false;
+        const msg = error.error?.error || 'Erreur lors de la suppression du client';
+        this.notificationService.error(msg);
+      }
+    });
   }
 }

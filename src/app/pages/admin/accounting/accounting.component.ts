@@ -3,12 +3,26 @@ import localeFr from '@angular/common/locales/fr';
 import {Component, LOCALE_ID, OnInit} from '@angular/core';
 import {RouterModule} from '@angular/router';
 import {forkJoin} from 'rxjs';
-import {Appointment, ContentService, Prestation} from '../../../services/content.service';
+import {AdditionalSalesService} from '../../../services/additional-sales.service';
+import {Appointment, Client, ContentService, Prestation} from '../../../services/content.service';
+import {
+  appointmentUnitPortionEur,
+  collectForfaitCountedAppointmentIds,
+  collectGiftCardCoverageEuroByAppointment,
+  sumAdditionalSalesInDateRange,
+  sumAppointmentUnitRevenue
+} from '../../../utils/accounting-revenue.utils';
 
 registerLocaleData(localeFr);
 
 interface MonthlyStats {
   revenue: number;
+  /** CA séances à l’unité (hors séances prépayées via forfait). */
+  revenueAppointmentsUnit: number;
+  /** Ventes de forfaits encaissées ce mois (date de vente). */
+  revenueForfaits: number;
+  /** Ventes de cartes cadeaux ce mois (date de vente). */
+  revenueGiftCards: number;
   revenueLastMonth: number;
   revenueChange: number;
   completedAppointments: number;
@@ -33,6 +47,9 @@ export class AccountingComponent implements OnInit {
   currentMonth: Date = new Date();
   stats: MonthlyStats = {
     revenue: 0,
+    revenueAppointmentsUnit: 0,
+    revenueForfaits: 0,
+    revenueGiftCards: 0,
     revenueLastMonth: 0,
     revenueChange: 0,
     completedAppointments: 0,
@@ -47,8 +64,15 @@ export class AccountingComponent implements OnInit {
   private appointments: Appointment[] = [];
   private prestations: Prestation[] = [];
   private allClients: Set<string> = new Set();
+  /** RDV dont le prix est déjà couvert par un forfait vendu. */
+  private forfaitCountedAppointmentIds = new Set<string>();
+  /** Montants prélevés sur cartes cadeaux par ID de RDV. */
+  private giftCoverageByAppointment = new Map<string, number>();
 
-  constructor(private contentService: ContentService) {}
+  constructor(
+    private contentService: ContentService,
+    private additionalSalesService: AdditionalSalesService
+  ) {}
 
   ngOnInit(): void {
     this.loadData();
@@ -61,11 +85,20 @@ export class AccountingComponent implements OnInit {
     forkJoin({
       appointments: this.contentService.getAppointments(undefined, startOfLastMonth, endOfCurrentMonth),
       prestations: this.contentService.getPrestations(),
-      allAppointments: this.contentService.getAppointments()
+      allAppointments: this.contentService.getAppointments(),
+      clients: this.contentService.getAllClients()
     }).subscribe({
-      next: ({ appointments, prestations, allAppointments }) => {
+      next: ({ appointments, prestations, allAppointments, clients }) => {
         this.appointments = appointments;
         this.prestations = prestations;
+        this.forfaitCountedAppointmentIds = collectForfaitCountedAppointmentIds(
+          (notes) => this.additionalSalesService.parseAdditionalSales(notes),
+          clients
+        );
+        this.giftCoverageByAppointment = collectGiftCardCoverageEuroByAppointment(
+          (notes) => this.additionalSalesService.parseAdditionalSales(notes),
+          clients
+        );
         
         // Collecter tous les emails clients historiques
         allAppointments.forEach(apt => {
@@ -74,7 +107,7 @@ export class AccountingComponent implements OnInit {
           }
         });
 
-        this.calculateStats();
+        this.calculateStats(clients);
         this.isLoading = false;
       },
       error: () => {
@@ -83,11 +116,14 @@ export class AccountingComponent implements OnInit {
     });
   }
 
-  private calculateStats(): void {
+  private calculateStats(clients: Client[]): void {
     const currentMonthStart = this.getFirstDayOfMonth(0);
     const currentMonthEnd = this.getLastDayOfMonth(0);
     const lastMonthStart = this.getFirstDayOfMonth(-1);
     const lastMonthEnd = this.getLastDayOfMonth(-1);
+
+    const parseSales = (notes: string | undefined) =>
+      this.additionalSalesService.parseAdditionalSales(notes);
 
     // Filtrer les RDV du mois courant et du mois précédent
     const currentMonthApts = this.appointments.filter(apt => 
@@ -101,11 +137,33 @@ export class AccountingComponent implements OnInit {
     const completedThisMonth = currentMonthApts.filter(apt => apt.status === 'completed');
     const completedLastMonth = lastMonthApts.filter(apt => apt.status === 'completed');
 
-    // Calcul du CA
-    this.stats.revenue = this.calculateRevenue(completedThisMonth);
-    this.stats.revenueLastMonth = this.calculateRevenue(completedLastMonth);
-    this.stats.revenueChange = this.stats.revenueLastMonth > 0
-      ? Math.round(((this.stats.revenue - this.stats.revenueLastMonth) / this.stats.revenueLastMonth) * 100)
+    const salesCurrent = sumAdditionalSalesInDateRange(parseSales, clients, currentMonthStart, currentMonthEnd);
+    const salesLast = sumAdditionalSalesInDateRange(parseSales, clients, lastMonthStart, lastMonthEnd);
+
+    const giftCov = this.giftCoverageByAppointment;
+
+    const unitRevThis = sumAppointmentUnitRevenue(
+      completedThisMonth,
+      this.prestations,
+      this.forfaitCountedAppointmentIds,
+      giftCov
+    );
+    const unitRevLast = sumAppointmentUnitRevenue(
+      completedLastMonth,
+      this.prestations,
+      this.forfaitCountedAppointmentIds,
+      giftCov
+    );
+
+    this.stats.revenueAppointmentsUnit = unitRevThis;
+    this.stats.revenueForfaits = salesCurrent.forfaits;
+    this.stats.revenueGiftCards = salesCurrent.giftCards;
+    this.stats.revenue = Math.round((unitRevThis + salesCurrent.total) * 100) / 100;
+
+    const revLastTotal = Math.round((unitRevLast + salesLast.total) * 100) / 100;
+    this.stats.revenueLastMonth = revLastTotal;
+    this.stats.revenueChange = revLastTotal > 0
+      ? Math.round(((this.stats.revenue - revLastTotal) / revLastTotal) * 100)
       : (this.stats.revenue > 0 ? 100 : 0);
 
     // RDV terminés
@@ -114,10 +172,12 @@ export class AccountingComponent implements OnInit {
     // Nouveaux clients ce mois
     this.stats.newClients = this.countNewClients(currentMonthApts, currentMonthStart);
 
-    // Panier moyen
-    this.stats.averageBasket = completedThisMonth.length > 0
-      ? Math.round(this.stats.revenue / completedThisMonth.length)
-      : 0;
+    const completedUnitCount = completedThisMonth.filter((apt) =>
+      appointmentUnitPortionEur(apt, this.prestations, this.forfaitCountedAppointmentIds, giftCov) > 0
+    ).length;
+
+    this.stats.averageBasket =
+      completedUnitCount > 0 ? Math.round(unitRevThis / completedUnitCount) : 0;
 
     // Taux d'annulation
     const totalBooked = currentMonthApts.filter(apt => 
@@ -131,24 +191,8 @@ export class AccountingComponent implements OnInit {
     // Top prestation
     this.stats.topPrestation = this.getTopPrestation(completedThisMonth);
 
-    // Modes de paiement
-    this.stats.paymentMethods = this.calculatePaymentMethods(completedThisMonth);
-  }
-
-  private calculateRevenue(appointments: Appointment[]): number {
-    let total = 0;
-    appointments.forEach(apt => {
-      if (apt.prestation_id) {
-        const prestation = this.prestations.find(p => p.id === apt.prestation_id);
-        if (prestation?.price) {
-          const price = parseFloat(prestation.price.replace(/[^\d,.]/g, '').replace(',', '.'));
-          if (!isNaN(price)) {
-            total += price;
-          }
-        }
-      }
-    });
-    return total;
+    // Modes de paiement (séances à l’unité + lignes forfaits / cartes)
+    this.stats.paymentMethods = this.calculatePaymentMethods(completedThisMonth, salesCurrent, giftCov);
   }
 
   private countNewClients(monthApts: Appointment[], monthStart: string): number {
@@ -187,33 +231,51 @@ export class AccountingComponent implements OnInit {
     return sorted.length > 0 ? sorted[0] : null;
   }
 
-  private calculatePaymentMethods(appointments: Appointment[]): { method: string; amount: number; percentage: number }[] {
+  private calculatePaymentMethods(
+    appointments: Appointment[],
+    salesMonth: { forfaits: number; giftCards: number },
+    giftCoverageByAppointment: Map<string, number>
+  ): { method: string; amount: number; percentage: number }[] {
     const methods: { [key: string]: number } = {
-      'carte': 0,
-      'espèces': 0,
-      'virement': 0,
-      'chèque': 0
+      carte: 0,
+      espèces: 0,
+      virement: 0,
+      chèque: 0,
+      forfaits: salesMonth.forfaits,
+      cartes_cadeaux: salesMonth.giftCards
     };
 
-    appointments.forEach(apt => {
-      const method = apt.payment_method?.toLowerCase() || 'espèces';
-      if (apt.prestation_id) {
-        const prestation = this.prestations.find(p => p.id === apt.prestation_id);
-        if (prestation?.price) {
-          const price = parseFloat(prestation.price.replace(/[^\d,.]/g, '').replace(',', '.'));
-          if (!isNaN(price)) {
-            if (methods[method] !== undefined) {
-              methods[method] += price;
-            } else {
-              methods['espèces'] += price;
-            }
-          }
-        }
+    appointments.forEach((apt) => {
+      const alloc = appointmentUnitPortionEur(
+        apt,
+        this.prestations,
+        this.forfaitCountedAppointmentIds,
+        giftCoverageByAppointment
+      );
+      if (alloc <= 0) {
+        return;
       }
+      const raw = apt.payment_method?.toLowerCase() || 'espèces';
+      let bucket: 'carte' | 'espèces' | 'virement' | 'chèque';
+      if (raw === 'mixte') {
+        const comp = (apt.mixte_complement_payment_method || 'espèces').toLowerCase();
+        if (['carte', 'espèces', 'virement', 'chèque'].includes(comp)) {
+          bucket = comp as 'carte' | 'espèces' | 'virement' | 'chèque';
+        } else {
+          bucket = 'espèces';
+        }
+      } else if (raw === 'carte_cadeau') {
+        bucket = 'espèces';
+      } else if (['carte', 'espèces', 'virement', 'chèque'].includes(raw)) {
+        bucket = raw as 'carte' | 'espèces' | 'virement' | 'chèque';
+      } else {
+        bucket = 'espèces';
+      }
+      methods[bucket] += alloc;
     });
 
     const total = Object.values(methods).reduce((sum, val) => sum + val, 0);
-    
+
     return Object.entries(methods)
       .map(([method, amount]) => ({
         method,
@@ -262,6 +324,8 @@ export class AccountingComponent implements OnInit {
       case 'espèces': return '💵';
       case 'virement': return '🏦';
       case 'chèque': return '📝';
+      case 'forfaits': return '📦';
+      case 'cartes_cadeaux': return '🎁';
       default: return '💰';
     }
   }
@@ -272,6 +336,8 @@ export class AccountingComponent implements OnInit {
       case 'espèces': return 'Espèces';
       case 'virement': return 'Virement';
       case 'chèque': return 'Chèque';
+      case 'forfaits': return 'Ventes forfaits';
+      case 'cartes_cadeaux': return 'Cartes cadeaux';
       default: return method;
     }
   }

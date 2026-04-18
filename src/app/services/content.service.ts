@@ -107,7 +107,15 @@ export interface Appointment {
   appointment_date: string;
   appointment_time: string;
   status: 'pending' | 'accepted' | 'completed' | 'rejected' | 'cancelled';
-  payment_method?: 'espèces' | 'carte' | 'virement' | 'chèque' | null;
+  /** `carte_cadeau` = séance entièrement couverte par solde carte ; `mixte` = partie carte + complément (cf. prélèvement en notes client). */
+  payment_method?: 'espèces' | 'carte' | 'virement' | 'chèque' | 'carte_cadeau' | 'mixte' | null;
+  /** Moyen de paiement du complément hors solde carte lorsque `payment_method` = `mixte`. Colonne Supabase : `mixte_complement_payment_method`. */
+  mixte_complement_payment_method?:
+    | 'espèces'
+    | 'carte'
+    | 'virement'
+    | 'chèque'
+    | null;
   notes?: string;
   referral_source?: string; // Source de référence : search, social, friend, advertisement, other
   referral_friend_name?: string; // Nom de la personne qui a recommandé (si referral_source = friend)
@@ -118,6 +126,21 @@ export interface Appointment {
     name: string;
     duration?: string;
   } | null; // Peut être null si la relation n'est pas chargée ou si la prestation n'existe plus
+}
+
+export interface GiftCard {
+  id?: string;
+  buyer_name: string;
+  recipient_name: string;
+  /** Stockés en base pour relier la carte aux fiches clients (ventes additionnelles). */
+  buyer_email?: string | null;
+  recipient_email?: string | null;
+  purchase_date: string;
+  valid_until: string;
+  service_label: string;
+  used: boolean;
+  notes?: string | null;
+  created_at?: string;
 }
 
 @Injectable({
@@ -205,6 +228,28 @@ export class ContentService {
     );
   }
 
+  deleteAppointment(id: string): Observable<void> {
+    return from(this.authService.getSessionToken()).pipe(
+      switchMap(token => {
+        const headers = new HttpHeaders({
+          'Authorization': `Bearer ${token}`
+        });
+        return this.http.delete<void>(`${API_URL}/appointments?id=${id}`, { headers });
+      })
+    );
+  }
+
+  deleteClient(id: string): Observable<void> {
+    return from(this.authService.getSessionToken()).pipe(
+      switchMap(token => {
+        const headers = new HttpHeaders({
+          'Authorization': `Bearer ${token}`
+        });
+        return this.http.delete<void>(`${API_URL}/clients?id=${id}`, { headers });
+      })
+    );
+  }
+
   // Rendez-vous
   getAppointments(status?: string, startDate?: string, endDate?: string): Observable<Appointment[]> {
     const params: any = {};
@@ -214,9 +259,22 @@ export class ContentService {
     return this.http.get<Appointment[]>(`${API_URL}/appointments`, { params });
   }
 
-  // Créer un rendez-vous
+  // Créer un rendez-vous (public, nécessite captcha)
   createAppointment(appointment: Partial<Appointment>): Observable<Appointment> {
     return this.http.post<Appointment>(`${API_URL}/appointments`, appointment);
+  }
+
+  // Créer un rendez-vous depuis l'admin (pas de captcha, email optionnel)
+  createAdminAppointment(appointment: Partial<Appointment>): Observable<Appointment> {
+    return from(this.authService.getSessionToken()).pipe(
+      switchMap(token => {
+        const headers = new HttpHeaders({
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        });
+        return this.http.post<Appointment>(`${API_URL}/appointments`, appointment, { headers });
+      })
+    );
   }
 
   // Mettre à jour un rendez-vous (requiert authentification)
@@ -244,6 +302,17 @@ export class ContentService {
   }
 
   // Clients
+  getAllClients(): Observable<Client[]> {
+    return from(this.authService.getSessionToken()).pipe(
+      switchMap(token => {
+        const headers = new HttpHeaders({
+          'Authorization': `Bearer ${token}`
+        });
+        return this.http.get<Client[]>(`${API_URL}/clients`, { headers });
+      })
+    );
+  }
+
   getClientByEmail(email: string): Observable<Client> {
     return from(this.authService.getSessionToken()).pipe(
       switchMap(token => {
@@ -287,6 +356,60 @@ export class ContentService {
           'Authorization': `Bearer ${token}`
         });
         return this.http.patch<Client>(`${API_URL}/clients?email=${encodeURIComponent(email)}`, updates, {headers});
+      })
+    );
+  }
+
+  // Cartes cadeaux (admin)
+  getGiftCards(): Observable<GiftCard[]> {
+    return from(this.authService.getSessionToken()).pipe(
+      switchMap(token => {
+        const headers = new HttpHeaders({
+          'Authorization': `Bearer ${token}`
+        });
+        return this.http.get<GiftCard[]>(`${API_URL}/gift-cards`, { headers });
+      })
+    );
+  }
+
+  /** buyer_email / recipient_email / amount_eur : optionnels, pour mettre à jour les fiches clients (création uniquement côté API). */
+  createGiftCard(
+    card: Partial<GiftCard> & {
+      buyer_email?: string | null;
+      recipient_email?: string | null;
+      amount_eur?: number | null;
+    }
+  ): Observable<GiftCard> {
+    return from(this.authService.getSessionToken()).pipe(
+      switchMap(token => {
+        const headers = new HttpHeaders({
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        });
+        return this.http.post<GiftCard>(`${API_URL}/gift-cards`, card, { headers });
+      })
+    );
+  }
+
+  updateGiftCard(id: string, updates: Partial<GiftCard>): Observable<GiftCard> {
+    return from(this.authService.getSessionToken()).pipe(
+      switchMap(token => {
+        const headers = new HttpHeaders({
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        });
+        return this.http.patch<GiftCard>(`${API_URL}/gift-cards?id=${id}`, updates, { headers });
+      })
+    );
+  }
+
+  deleteGiftCard(id: string): Observable<void> {
+    return from(this.authService.getSessionToken()).pipe(
+      switchMap(token => {
+        const headers = new HttpHeaders({
+          'Authorization': `Bearer ${token}`
+        });
+        return this.http.delete<void>(`${API_URL}/gift-cards?id=${id}`, { headers });
       })
     );
   }

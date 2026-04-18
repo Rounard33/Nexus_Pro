@@ -3,10 +3,13 @@
 <app-about></app-about>
 
 <app-services 
-  [prestations]="prestations"
+  [prestations]="prestationCards"
   (openDetails)="openDetailsModal($event)"
-  (openBooking)="openBookingModal($event)">
+  (openBooking)="openBookingModal($event)"
+  (openGroupBooking)="openReikiSessionChoice($event)">
 </app-services>
+
+<app-forfaits (scrollToPrestation)="openPrestationByKeyword($event)"></app-forfaits>
 
 <app-products [creations]="creations"></app-products>
 
@@ -22,9 +25,16 @@
 
 <app-prestation-modal 
   [prestation]="selectedPrestation"
+  [initialReikiTab]="modalInitialReikiTab"
   (close)="closeDetailsModal()"
   (book)="openBookingModal($event)">
 </app-prestation-modal>
+
+<app-reiki-session-choice-modal
+  [group]="reikiSessionChoiceGroup"
+  (close)="closeReikiSessionChoice()"
+  (choose)="onReikiSessionChosen($event)">
+</app-reiki-session-choice-modal>
 
 <app-booking 
   [prestation]="selectedPrestationForBooking"

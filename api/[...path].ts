@@ -4,6 +4,11 @@ import {findClientById, generateClientId, verifyClientId} from './utils/client-i
 import {rateLimitMiddleware} from './utils/rate-limiter.js';
 import {applyRateLimit, getAllowedOrigins, setCORSHeaders, setSecurityHeaders} from './utils/security-helpers.js';
 import {sanitizeAppointment, validateAppointment, validateAppointmentQuery, validateCaptchaToken} from './utils/validation.js';
+import {
+  formatNotesWithAdditionalSales,
+  parseAdditionalSalesFromNotes,
+  type AdditionalSaleRecord
+} from './utils/additional-sales-notes.js';
 
 /**
  * Détermine l'origine CORS à autoriser
@@ -235,6 +240,9 @@ export default async function handler(
 
       case 'blocked-slots':
         return await handleBlockedSlots(req, res, supabase);
+
+      case 'gift-cards':
+        return await handleGiftCards(req, res, supabase);
       
       case 'opening-hours':
         return await handleOpeningHours(req, res, supabase);
@@ -531,6 +539,384 @@ async function handleBlockedSlots(req: VercelRequest, res: VercelResponse, supab
   return res.status(405).json({ error: 'Method not allowed' });
 }
 
+function parseGiftCardAmountEur(body: Record<string, unknown>): number | null {
+  const v = body['amount_eur'];
+  if (v == null || v === '') return null;
+  if (typeof v === 'number' && !Number.isNaN(v) && v > 0) {
+    return Math.round(v * 100) / 100;
+  }
+  if (typeof v === 'string') {
+    const n = parseFloat(v.replace(',', '.').trim());
+    if (!Number.isNaN(n) && n > 0) return Math.round(n * 100) / 100;
+  }
+  return null;
+}
+
+/**
+ * Met à jour les fiches clients après création d'une carte cadeau :
+ * — acheteur : vente additionnelle (bloc [ADDITIONAL_SALES]) ;
+ * — bénéficiaire (autre e-mail) : ligne libre dans les notes.
+ */
+async function appendGiftCardPurchaseToClientNotes(
+  supabase: any,
+  opts: {
+    gift_card_id: string;
+    buyer_email?: string;
+    recipient_email?: string;
+    buyer_name: string;
+    recipient_name: string;
+    purchase_date: string;
+    valid_until: string;
+    service_label: string;
+    amount_eur?: number | null;
+  }
+): Promise<void> {
+  const appendRecipientLine = async (email: string, line: string) => {
+    const normalized = email.trim().toLowerCase();
+    if (!normalized || !normalized.includes('@')) return;
+    const { data: client, error } = await supabase
+      .from('clients')
+      .select('id, notes')
+      .eq('email', normalized)
+      .maybeSingle();
+    if (error || !client?.id) return;
+    const prev = (client.notes && String(client.notes).trim()) || '';
+    const newNotes = prev ? `${prev}\n\n${line}` : line;
+    const { error: upErr } = await supabase.from('clients').update({ notes: newNotes }).eq('id', client.id);
+    if (upErr) {
+      console.error('[gift-cards] Notes bénéficiaire:', upErr.message);
+    }
+  };
+
+  const buyerEmail = (opts.buyer_email || '').trim().toLowerCase();
+  const recipientEmail = (opts.recipient_email || '').trim().toLowerCase();
+
+  const recipientLine =
+    `Carte cadeau reçue : ${opts.service_label} (valide jusqu'au ${opts.valid_until}). Acheteur : ${opts.buyer_name}.`;
+
+  const appendBuyerAdditionalSale = async (): Promise<void> => {
+    if (!buyerEmail) return;
+    const { data: client, error } = await supabase
+      .from('clients')
+      .select('id, notes')
+      .eq('email', buyerEmail)
+      .maybeSingle();
+    if (error || !client?.id) return;
+
+    const existing = parseAdditionalSalesFromNotes(client.notes);
+    const sale: AdditionalSaleRecord = {
+      date: opts.purchase_date,
+      type: 'gift_card',
+      gift_card_id: opts.gift_card_id,
+      notes: `${opts.service_label} — bénéficiaire : ${opts.recipient_name}, valide jusqu'au ${opts.valid_until}`
+    };
+    if (opts.amount_eur != null && opts.amount_eur > 0) {
+      sale.giftCardAmount = opts.amount_eur;
+    }
+    const updatedSales = [...existing, sale];
+    const newNotes = formatNotesWithAdditionalSales(client.notes, updatedSales);
+    const { error: upErr } = await supabase.from('clients').update({ notes: newNotes }).eq('id', client.id);
+    if (upErr) {
+      console.error('[gift-cards] Ventes additionnelles (acheteur):', upErr.message);
+    }
+  };
+
+  if (buyerEmail && recipientEmail && buyerEmail === recipientEmail) {
+    await appendBuyerAdditionalSale();
+    return;
+  }
+  if (buyerEmail) await appendBuyerAdditionalSale();
+  if (recipientEmail && recipientEmail !== buyerEmail) await appendRecipientLine(recipientEmail, recipientLine);
+}
+
+/**
+ * Marque la vente carte cadeau existante comme utilisée (même ligne) + note bénéficiaire hors bloc si besoin.
+ */
+async function markGiftCardUsedInClientNotes(
+  supabase: any,
+  opts: {
+    gift_card_id: string;
+    buyer_email?: string | null;
+    recipient_email?: string | null;
+    buyer_name: string;
+    recipient_name: string;
+    purchase_date: string;
+    service_label: string;
+  }
+): Promise<void> {
+  const usageDate = new Date().toISOString().slice(0, 10);
+  const gid = opts.gift_card_id;
+
+  const updateBuyer = async (): Promise<void> => {
+    const email = (opts.buyer_email || '').trim().toLowerCase();
+    if (!email || !email.includes('@')) return;
+    const { data: client, error } = await supabase
+      .from('clients')
+      .select('id, notes')
+      .eq('email', email)
+      .maybeSingle();
+    if (error || !client?.id) return;
+
+    let sales = parseAdditionalSalesFromNotes(client.notes);
+    // Anciennes lignes « utilisation » ajoutées comme 2e vente (sans gift_card_id)
+    sales = sales.filter(
+      (s) =>
+        !(
+          s.type === 'gift_card' &&
+          !s.gift_card_id &&
+          typeof s.notes === 'string' &&
+          s.notes.includes('Carte cadeau utilisée —')
+        )
+    );
+    let idx = sales.findIndex((s) => s.type === 'gift_card' && s.gift_card_id === gid);
+    if (idx === -1) {
+      idx = sales.findIndex(
+        (s) =>
+          s.type === 'gift_card' &&
+          s.date === opts.purchase_date &&
+          typeof s.notes === 'string' &&
+          s.notes.includes(opts.service_label)
+      );
+    }
+    if (idx === -1) return;
+    const next = [...sales];
+    next[idx] = {
+      ...next[idx],
+      used_at: usageDate,
+      gift_card_id: next[idx].gift_card_id || gid
+    };
+    const newNotes = formatNotesWithAdditionalSales(client.notes, next);
+    await supabase.from('clients').update({ notes: newNotes }).eq('id', client.id);
+  };
+
+  const appendRecipientPlain = async (): Promise<void> => {
+    const be = (opts.buyer_email || '').trim().toLowerCase();
+    const re = (opts.recipient_email || '').trim().toLowerCase();
+    if (!re || !re.includes('@') || re === be) return;
+    const { data: client, error } = await supabase
+      .from('clients')
+      .select('id, notes')
+      .eq('email', re)
+      .maybeSingle();
+    if (error || !client?.id) return;
+
+    let sales = parseAdditionalSalesFromNotes(client.notes);
+    const before = sales.length;
+    sales = sales.filter(
+      (s) =>
+        !(
+          s.type === 'gift_card' &&
+          typeof s.notes === 'string' &&
+          s.notes.startsWith('Soin offert utilisé') &&
+          s.notes.includes(opts.service_label)
+        )
+    );
+    let notes = client.notes;
+    if (sales.length !== before) {
+      notes = formatNotesWithAdditionalSales(notes, sales);
+    }
+    const marker = `→ Carte cadeau « ${opts.service_label} » utilisée le ${usageDate}`;
+    if (notes.includes(marker)) return;
+    const suffix = `\n\n${marker}.`;
+    await supabase.from('clients').update({ notes: (notes || '') + suffix }).eq('id', client.id);
+  };
+
+  await updateBuyer();
+  await appendRecipientPlain();
+}
+
+async function handleGiftCards(req: VercelRequest, res: VercelResponse, supabase: any) {
+  setCORSHeaders(res, req.headers.origin as string, 'GET, POST, PATCH, DELETE, OPTIONS', 'Content-Type, Authorization');
+  res.setHeader('Content-Type', 'application/json');
+
+  const rateLimit = rateLimitMiddleware(req, 100, 60000);
+  Object.entries(rateLimit.headers).forEach(([key, value]) => {
+    res.setHeader(key, value);
+  });
+  if (!rateLimit.allowed) {
+    const resetTimeStr = rateLimit.headers['X-RateLimit-Reset'];
+    const retryAfter = Math.ceil((new Date(resetTimeStr as string).getTime() - Date.now()) / 1000);
+    res.setHeader('Retry-After', Math.max(1, retryAfter).toString());
+    return res.status(429).json({ error: 'Trop de requêtes', retryAfter: Math.max(1, retryAfter) });
+  }
+
+  const requireAdmin = async () => {
+    const auth = await verifyAuth(req, supabase);
+    if (!auth.authenticated || !auth.isAdmin) {
+      return {
+        ok: false as const,
+        status: auth.authenticated ? 403 : 401,
+        body: { error: auth.authenticated ? 'Forbidden: Admin access required' : 'Unauthorized' }
+      };
+    }
+    return { ok: true as const };
+  };
+
+  if (req.method === 'GET') {
+    const gate = await requireAdmin();
+    if (!gate.ok) return res.status(gate.status).json(gate.body);
+    const { data, error } = await supabase
+      .from('gift_cards')
+      .select('*')
+      .order('purchase_date', { ascending: false });
+    if (error) {
+      return res.status(500).json({ error: 'Erreur lors de la lecture des cartes cadeaux', details: error.message });
+    }
+    return res.json(data || []);
+  }
+
+  if (req.method === 'POST') {
+    const gate = await requireAdmin();
+    if (!gate.ok) return res.status(gate.status).json(gate.body);
+    const body = req.body || {};
+    const buyer_name = typeof body.buyer_name === 'string' ? body.buyer_name.trim() : '';
+    const recipient_name = typeof body.recipient_name === 'string' ? body.recipient_name.trim() : '';
+    const purchase_date = typeof body.purchase_date === 'string' ? body.purchase_date.trim() : '';
+    const valid_until = typeof body.valid_until === 'string' ? body.valid_until.trim() : '';
+    const service_label = typeof body.service_label === 'string' ? body.service_label.trim() : '';
+    if (!buyer_name || !recipient_name || !purchase_date || !valid_until || !service_label) {
+      return res.status(400).json({
+        error: 'Champs requis: buyer_name, recipient_name, purchase_date, valid_until, service_label'
+      });
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(purchase_date) || !/^\d{4}-\d{2}-\d{2}$/.test(valid_until)) {
+      return res.status(400).json({ error: 'Les dates doivent être au format YYYY-MM-DD' });
+    }
+    const buyer_email = typeof body.buyer_email === 'string' ? body.buyer_email.trim().toLowerCase() : '';
+    const recipient_email = typeof body.recipient_email === 'string' ? body.recipient_email.trim().toLowerCase() : '';
+    const row: any = {
+      buyer_name,
+      recipient_name,
+      purchase_date,
+      valid_until,
+      service_label,
+      used: !!body.used,
+      notes: typeof body.notes === 'string' && body.notes.trim() ? body.notes.trim() : null,
+      buyer_email: buyer_email || null,
+      recipient_email: recipient_email || null
+    };
+    const { data, error } = await supabase.from('gift_cards').insert([row]).select('*').single();
+    if (error) {
+      return res.status(500).json({ error: 'Erreur lors de la création', details: error.message });
+    }
+    const amount_eur = parseGiftCardAmountEur(body as Record<string, unknown>);
+    if (buyer_email || recipient_email) {
+      try {
+        await appendGiftCardPurchaseToClientNotes(supabase, {
+          gift_card_id: data.id,
+          buyer_email,
+          recipient_email,
+          buyer_name,
+          recipient_name,
+          purchase_date,
+          valid_until,
+          service_label,
+          amount_eur
+        });
+      } catch (e: any) {
+        console.error('[gift-cards] Notes client:', e?.message || e);
+      }
+    }
+
+    return res.status(201).json(data);
+  }
+
+  if (req.method === 'PATCH') {
+    const gate = await requireAdmin();
+    if (!gate.ok) return res.status(gate.status).json(gate.body);
+    const { id } = req.query;
+    if (!id || typeof id !== 'string') {
+      return res.status(400).json({ error: 'id est requis' });
+    }
+    const { data: oldRow, error: fetchErr } = await supabase.from('gift_cards').select('*').eq('id', id).single();
+    if (fetchErr || !oldRow) {
+      return res.status(404).json({ error: 'Carte introuvable' });
+    }
+
+    const body = req.body || {};
+    const updateData: Record<string, unknown> = {};
+    const strings = ['buyer_name', 'recipient_name', 'purchase_date', 'valid_until', 'service_label', 'notes'] as const;
+    for (const key of strings) {
+      if (body[key] !== undefined) {
+        if (key === 'notes') {
+          updateData[key] = body[key] === null || body[key] === '' ? null : String(body[key]).trim();
+        } else if (key === 'purchase_date' || key === 'valid_until') {
+          const d = String(body[key]).trim();
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) {
+            return res.status(400).json({ error: `${key} doit être au format YYYY-MM-DD` });
+          }
+          updateData[key] = d;
+        } else {
+          updateData[key] = String(body[key]).trim();
+        }
+      }
+    }
+    if (body.buyer_email !== undefined) {
+      updateData['buyer_email'] =
+        typeof body.buyer_email === 'string' && body.buyer_email.trim()
+          ? String(body.buyer_email).trim().toLowerCase()
+          : null;
+    }
+    if (body.recipient_email !== undefined) {
+      updateData['recipient_email'] =
+        typeof body.recipient_email === 'string' && body.recipient_email.trim()
+          ? String(body.recipient_email).trim().toLowerCase()
+          : null;
+    }
+    if (body.used !== undefined) {
+      updateData['used'] = !!body.used;
+    }
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ error: 'Aucun champ à mettre à jour' });
+    }
+    const { data, error } = await supabase
+      .from('gift_cards')
+      .update(updateData)
+      .eq('id', id)
+      .select('*')
+      .single();
+    if (error) {
+      return res.status(500).json({ error: 'Erreur lors de la mise à jour', details: error.message });
+    }
+
+    const wasUsed = !!oldRow.used;
+    const becameUsed = updateData['used'] === true && !wasUsed;
+    if (becameUsed && data) {
+      try {
+        await markGiftCardUsedInClientNotes(supabase, {
+          gift_card_id: id,
+          buyer_email: data.buyer_email ?? oldRow.buyer_email,
+          recipient_email: data.recipient_email ?? oldRow.recipient_email,
+          buyer_name: data.buyer_name,
+          recipient_name: data.recipient_name,
+          purchase_date: data.purchase_date,
+          service_label: data.service_label
+        });
+      } catch (e: any) {
+        console.error('[gift-cards] Vente utilisation:', e?.message || e);
+      }
+    }
+
+    return res.json(data);
+  }
+
+  if (req.method === 'DELETE') {
+    const gate = await requireAdmin();
+    if (!gate.ok) return res.status(gate.status).json(gate.body);
+    const { id } = req.query;
+    if (!id || typeof id !== 'string') {
+      return res.status(400).json({ error: 'id est requis' });
+    }
+    const { error } = await supabase.from('gift_cards').delete().eq('id', id);
+    if (error) {
+      return res.status(500).json({ error: 'Erreur lors de la suppression', details: error.message });
+    }
+    return res.status(204).end();
+  }
+
+  return res.status(405).json({ error: 'Method not allowed' });
+}
+
 // ==================== HANDLERS COMPLEXES ====================
 
 async function handleOpeningHours(req: VercelRequest, res: VercelResponse, supabase: any) {
@@ -618,7 +1004,7 @@ async function handleOpeningHours(req: VercelRequest, res: VercelResponse, supab
 }
 
 async function handleAppointments(req: VercelRequest, res: VercelResponse, supabase: any) {
-  setCORSHeaders(res, req.headers.origin as string, 'GET, POST, PATCH, OPTIONS', 'Content-Type, Authorization');
+  setCORSHeaders(res, req.headers.origin as string, 'GET, POST, PATCH, DELETE, OPTIONS', 'Content-Type, Authorization');
   res.setHeader('Content-Type', 'application/json');
   
   let maxRequests = 100;
@@ -683,19 +1069,29 @@ async function handleAppointments(req: VercelRequest, res: VercelResponse, supab
   }
   
   if (req.method === 'POST') {
-    const validation = validateAppointment(req.body);
+    // Vérifier si c'est une création admin (authentifié = pas de captcha requis)
+    let isAdminCreation = false;
+    if (req.headers.authorization) {
+      const auth = await verifyAuth(req, supabase);
+      if (auth.authenticated && auth.isAdmin) {
+        isAdminCreation = true;
+      }
+    }
+
+    const validation = validateAppointment(req.body, isAdminCreation);
     if (!validation.valid) {
       return res.status(400).json({ error: 'Données invalides', details: validation.errors });
     }
 
-    // Valider le token captcha anti-spam
-    const captchaToken = req.body.captcha_token;
-    if (!validateCaptchaToken(captchaToken)) {
-      console.warn('[Appointments POST] ⚠️ Captcha invalide ou manquant');
-      return res.status(400).json({ 
-        error: 'Vérification anti-spam échouée', 
-        details: ['Veuillez compléter la vérification anti-spam'] 
-      });
+    if (!isAdminCreation) {
+      const captchaToken = req.body.captcha_token;
+      if (!validateCaptchaToken(captchaToken)) {
+        console.warn('[Appointments POST] ⚠️ Captcha invalide ou manquant');
+        return res.status(400).json({ 
+          error: 'Vérification anti-spam échouée', 
+          details: ['Veuillez compléter la vérification anti-spam'] 
+        });
+      }
     }
 
     const sanitizedData = sanitizeAppointment(req.body);
@@ -1094,13 +1490,26 @@ async function handleAppointments(req: VercelRequest, res: VercelResponse, supab
     
     // Gérer le mode de paiement si fourni
     if (req.body.payment_method !== undefined) {
-      const validPaymentMethods = ['espèces', 'carte', 'virement', 'chèque', null];
+      const validPaymentMethods = ['espèces', 'carte', 'virement', 'chèque', 'carte_cadeau', 'mixte', null];
       if (req.body.payment_method !== null && !validPaymentMethods.includes(req.body.payment_method)) {
         return res.status(400).json({ 
           error: `Invalid payment_method. Must be one of: ${validPaymentMethods.filter(m => m !== null).join(', ')}, or null` 
         });
       }
       updateData.payment_method = req.body.payment_method;
+    }
+
+    if (req.body.mixte_complement_payment_method !== undefined) {
+      const validMixteComp = ['espèces', 'carte', 'virement', 'chèque', null];
+      if (
+        req.body.mixte_complement_payment_method !== null &&
+        !validMixteComp.includes(req.body.mixte_complement_payment_method)
+      ) {
+        return res.status(400).json({
+          error: `Invalid mixte_complement_payment_method. Must be one of: ${validMixteComp.filter((m) => m !== null).join(', ')}, or null`
+        });
+      }
+      updateData.mixte_complement_payment_method = req.body.mixte_complement_payment_method;
     }
     
     // Vérifier qu'au moins un champ est fourni
@@ -1159,12 +1568,30 @@ async function handleAppointments(req: VercelRequest, res: VercelResponse, supab
 
     return res.json(data);
   }
+
+  if (req.method === 'DELETE') {
+    const auth = await verifyAuth(req, supabase);
+    if (!auth.authenticated || !auth.isAdmin) {
+      return res.status(auth.authenticated ? 403 : 401).json({
+        error: auth.authenticated ? 'Forbidden: Admin access required' : 'Unauthorized'
+      });
+    }
+    const { id } = req.query;
+    if (!id || typeof id !== 'string') {
+      return res.status(400).json({ error: 'id est requis' });
+    }
+    const { error } = await supabase.from('appointments').delete().eq('id', id);
+    if (error) {
+      return res.status(500).json({ error: 'Erreur lors de la suppression du rendez-vous', details: error.message });
+    }
+    return res.status(204).end();
+  }
   
   return res.status(405).json({ error: 'Method not allowed' });
 }
 
 async function handleClients(req: VercelRequest, res: VercelResponse, supabase: any) {
-  setCORSHeaders(res, req.headers.origin as string, 'GET, POST, PATCH, OPTIONS', 'Content-Type, Authorization');
+  setCORSHeaders(res, req.headers.origin as string, 'GET, POST, PATCH, DELETE, OPTIONS', 'Content-Type, Authorization');
   res.setHeader('Content-Type', 'application/json');
   
   let maxRequests = 100;
@@ -1210,8 +1637,17 @@ async function handleClients(req: VercelRequest, res: VercelResponse, supabase: 
 
     console.log('[Clients GET] Params:', { email, id, clientId, rawQuery: req.query });
 
+    // Liste complète de tous les clients (sans filtre)
     if (!email && !id && !clientId) {
-      return res.status(400).json({ error: 'Email, ID ou clientId requis' });
+      const { data: allClients, error: listError } = await supabase
+        .from('clients')
+        .select('*')
+        .order('name', { ascending: true });
+
+      if (listError) {
+        return res.status(500).json({ error: 'Erreur lors de la récupération des clients', details: listError.message });
+      }
+      return res.json(allClients || []);
     }
 
     let data;
@@ -1527,7 +1963,79 @@ async function handleClients(req: VercelRequest, res: VercelResponse, supabase: 
     }
 
     return res.json(data);
-}
+  }
+
+  if (req.method === 'DELETE') {
+    const { id } = req.query;
+    if (!id || typeof id !== 'string') {
+      return res.status(400).json({ error: 'id est requis' });
+    }
+    const { data: clientRow, error: fetchError } = await supabase
+      .from('clients')
+      .select('email, name, phone')
+      .eq('id', id)
+      .single();
+    if (fetchError || !clientRow) {
+      return res.status(404).json({ error: 'Client non trouvé' });
+    }
+    const normalizedEmail = (clientRow.email || '').trim().toLowerCase();
+    if (normalizedEmail) {
+      const { error: delAptError } = await supabase
+        .from('appointments')
+        .delete()
+        .eq('client_email', normalizedEmail);
+      if (delAptError) {
+        return res.status(500).json({
+          error: 'Erreur lors de la suppression des rendez-vous associés',
+          details: delAptError.message
+        });
+      }
+    } else {
+      const name = (clientRow.name || '').trim();
+      const phone = (clientRow.phone || '').trim();
+      if (phone) {
+        const { error: delAptError } = await supabase
+          .from('appointments')
+          .delete()
+          .eq('client_name', name)
+          .eq('client_phone', phone);
+        if (delAptError) {
+          return res.status(500).json({
+            error: 'Erreur lors de la suppression des rendez-vous associés',
+            details: delAptError.message
+          });
+        }
+      } else {
+        const { error: e1 } = await supabase
+          .from('appointments')
+          .delete()
+          .eq('client_name', name)
+          .is('client_email', null);
+        if (e1) {
+          return res.status(500).json({
+            error: 'Erreur lors de la suppression des rendez-vous associés',
+            details: e1.message
+          });
+        }
+        const { error: e2 } = await supabase
+          .from('appointments')
+          .delete()
+          .eq('client_name', name)
+          .eq('client_email', '');
+        if (e2) {
+          return res.status(500).json({
+            error: 'Erreur lors de la suppression des rendez-vous associés',
+            details: e2.message
+          });
+        }
+      }
+    }
+    const { error } = await supabase.from('clients').delete().eq('id', id);
+    if (error) {
+      return res.status(500).json({ error: 'Erreur lors de la suppression du client', details: error.message });
+    }
+    return res.status(204).end();
+  }
 
   return res.status(405).json({ error: 'Méthode non autorisée' });
 }

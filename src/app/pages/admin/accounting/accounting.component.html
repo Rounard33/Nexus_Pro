@@ -35,6 +35,11 @@
         <span class="card-title">Chiffre d'affaires</span>
       </div>
       <div class="card-value-large">{{ stats.revenue | number:'1.0-0':'fr' }}€</div>
+      <div class="revenue-breakdown" *ngIf="stats.revenue > 0">
+        <span>Séances à l’unité : <strong>{{ stats.revenueAppointmentsUnit | number:'1.0-0':'fr' }}€</strong></span>
+        <span *ngIf="stats.revenueForfaits > 0"> · Forfaits vendus : <strong>{{ stats.revenueForfaits | number:'1.0-0':'fr' }}€</strong></span>
+        <span *ngIf="stats.revenueGiftCards > 0"> · Cartes cadeaux : <strong>{{ stats.revenueGiftCards | number:'1.0-0':'fr' }}€</strong></span>
+      </div>
       <div class="card-change" [class.positive]="stats.revenueChange >= 0" [class.negative]="stats.revenueChange < 0">
         <svg *ngIf="stats.revenueChange >= 0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="18 15 12 9 6 15"/>
@@ -68,7 +73,7 @@
         <div class="stat-icon">🛒</div>
         <div class="stat-info">
           <span class="stat-value">{{ stats.averageBasket | number:'1.0-0':'fr' }}€</span>
-          <span class="stat-label">Panier moyen</span>
+          <span class="stat-label">Panier moyen (séances à l’unité)</span>
         </div>
       </div>
 
@@ -124,8 +129,9 @@
       </div>
       <div class="summary-content">
         <p *ngIf="stats.revenue > 0">
-          Ce mois, <strong>{{ stats.completedAppointments }} rendez-vous</strong> ont généré 
-          <strong>{{ stats.revenue | number:'1.0-0':'fr' }}€</strong> de chiffre d'affaires
+          Ce mois, le CA total est de <strong>{{ stats.revenue | number:'1.0-0':'fr' }}€</strong>
+          (séances à l’unité + ventes de forfaits et cartes cadeaux à la date d’enregistrement).
+          <strong>{{ stats.completedAppointments }} rendez-vous</strong> terminés
           <span *ngIf="stats.newClients > 0">, dont <strong>{{ stats.newClients }} nouveau{{ stats.newClients > 1 ? 'x' : '' }} client{{ stats.newClients > 1 ? 's' : '' }}</strong></span>.
         </p>
         <p *ngIf="stats.revenue === 0">

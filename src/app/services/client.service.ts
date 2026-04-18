@@ -42,17 +42,41 @@ export class ClientService {
     email: string
   ): ClientDetail | null {
     const clientAppointments = appointments.filter(
-      apt => apt.client_email.toLowerCase().trim() === email.toLowerCase().trim()
+      apt => apt.client_email?.toLowerCase().trim() === email.toLowerCase().trim()
     );
 
-    if (clientAppointments.length === 0) return null;
+    // Client sans rendez-vous mais avec des données en base
+    if (clientAppointments.length === 0) {
+      if (!clientData) return null;
+
+      const { nextBirthday, age } = BirthdayUtils.calculateBirthdayInfo(clientData.birthdate);
+      return {
+        id: clientData.id,
+        clientId: clientData.clientId,
+        email: clientData.email || email,
+        name: clientData.name || email,
+        phone: clientData.phone,
+        birthdate: clientData.birthdate,
+        notes: clientData.notes,
+        appointments: [],
+        totalAppointments: 0,
+        acceptedAppointments: 0,
+        completedAppointments: 0,
+        pendingAppointments: 0,
+        rejectedAppointments: 0,
+        cancelledAppointments: 0,
+        lastAppointmentDate: null,
+        firstAppointmentDate: null,
+        nextBirthday,
+        age,
+        eligibleTreatments: 0
+      };
+    }
 
     const acceptedAppointments = clientAppointments.filter(a => a.status === 'accepted');
     const completedAppointments = clientAppointments.filter(a => a.status === 'completed');
-    // Les RDV confirmés incluent accepted + completed
     const confirmedAppointments = clientAppointments.filter(a => a.status === 'accepted' || a.status === 'completed');
     
-    // Séances éligibles pour la fidélité : terminées ET hors tirages de cartes
     const eligibleForLoyalty = completedAppointments.filter(apt => {
       const prestationName = apt.prestations?.name?.toLowerCase() || '';
       return !prestationName.includes('tirage') && !prestationName.includes('carte');
@@ -79,7 +103,6 @@ export class ClientService {
       firstAppointmentDate: this.getFirstAppointmentDate(confirmedAppointments),
       nextBirthday,
       age,
-      // Seuls les RDV terminés (hors tirages) comptent pour la fidélité
       eligibleTreatments: eligibleForLoyalty.length
     };
   }

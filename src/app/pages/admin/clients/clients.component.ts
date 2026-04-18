@@ -6,7 +6,7 @@ import {forkJoin, of, Subject} from 'rxjs';
 import {catchError, debounceTime, distinctUntilChanged, takeUntil} from 'rxjs/operators';
 import {ClientProfile} from '../../../models/clients.model';
 import {ClientService} from '../../../services/client.service';
-import {ContentService} from '../../../services/content.service';
+import {Client, ContentService} from '../../../services/content.service';
 import {BirthdayUtils} from '../../../utils/birthday.utils';
 import {generateTemporaryClientId} from '../../../utils/client-id-helper';
 import {FormatUtils} from '../../../utils/format.utils';
@@ -23,6 +23,11 @@ export class ClientsComponent implements OnInit, OnDestroy {
   filteredClients: ClientProfile[] = [];
   isLoading = false;
   searchTerm: string = '';
+
+  // Modal création client
+  showCreateModal = false;
+  isCreating = false;
+  newClient = { name: '', email: '', phone: '', notes: '' };
   
   // Gestion des désabonnements
   private destroy$ = new Subject<void>();
@@ -65,11 +70,73 @@ export class ClientsComponent implements OnInit, OnDestroy {
 
   loadClients(): void {
     this.isLoading = true;
-    
-    this.contentService.getAppointments().subscribe({
-      next: (appointments) => {
-        this.clients = this.clientService.groupAppointmentsByClient(appointments);
-        this.loadClientData();
+
+    forkJoin({
+      appointments: this.contentService.getAppointments().pipe(catchError(() => of([]))),
+      dbClients: this.contentService.getAllClients().pipe(catchError(() => of([] as Client[])))
+    })
+    .pipe(takeUntil(this.destroy$))
+    .subscribe({
+      next: ({ appointments, dbClients }) => {
+        // 1) Clients issus des rendez-vous
+        const fromAppointments = this.clientService.groupAppointmentsByClient(appointments);
+
+        // 2) Indexer par email pour la fusion
+        const clientsMap = new Map<string, ClientProfile>();
+        for (const c of fromAppointments) {
+          clientsMap.set(c.email.toLowerCase().trim(), c);
+        }
+
+        // 3) Ajouter les clients de la base qui n'ont pas de rendez-vous
+        for (const dbClient of dbClients) {
+          const email = dbClient.email.toLowerCase().trim();
+          if (clientsMap.has(email)) {
+            // Le client existe déjà via les RDV, on enrichit avec les données de la base
+            const existing = clientsMap.get(email)!;
+            this.enrichClientFromDb(existing, dbClient);
+          } else {
+            // Client sans rendez-vous : créer un profil vide
+            const profile: ClientProfile = {
+              id: dbClient.id,
+              clientId: dbClient.clientId || generateTemporaryClientId(email),
+              email: dbClient.email,
+              name: dbClient.name || email,
+              phone: dbClient.phone,
+              birthdate: dbClient.birthdate,
+              appointments: [],
+              totalAppointments: 0,
+              acceptedAppointments: 0,
+              pendingAppointments: 0,
+              lastAppointmentDate: null,
+              firstAppointmentDate: null,
+              eligibleTreatments: 0,
+              referralsCount: dbClient.referrals_count || 0
+            };
+            if (dbClient.birthdate) {
+              const { nextBirthday, age } = BirthdayUtils.calculateBirthdayInfo(dbClient.birthdate);
+              profile.nextBirthday = nextBirthday;
+              profile.age = age;
+            }
+            clientsMap.set(email, profile);
+          }
+        }
+
+        // 4) Pour les clients issus des RDV sans données en base, générer un clientId temporaire
+        for (const client of clientsMap.values()) {
+          if (!client.clientId) {
+            client.clientId = generateTemporaryClientId(client.email);
+          }
+          // Calculer eligibleTreatments
+          const eligible = client.appointments.filter(apt => {
+            if (apt.status !== 'completed') return false;
+            const name = apt.prestations?.name?.toLowerCase() || '';
+            return !name.includes('tirage') && !name.includes('carte');
+          });
+          client.eligibleTreatments = eligible.length;
+        }
+
+        this.clients = Array.from(clientsMap.values());
+        this.sortClientsList();
         this.applyFilters();
         this.isLoading = false;
       },
@@ -79,60 +146,26 @@ export class ClientsComponent implements OnInit, OnDestroy {
     });
   }
 
-  private loadClientData(): void {
-    // Charger les données clients (date de naissance) pour chaque client
-    const clientDataObservables = this.clients.map(client => 
-      this.contentService.getClientByEmail(client.email).pipe(
-        catchError(() => of(null)) // Si le client n'existe pas dans la table clients, continuer
-      )
-    );
+  private enrichClientFromDb(client: ClientProfile, dbClient: Client): void {
+    client.id = dbClient.id;
+    client.clientId = dbClient.clientId || client.clientId;
+    client.referralsCount = dbClient.referrals_count || 0;
+    if (dbClient.birthdate) {
+      client.birthdate = dbClient.birthdate;
+      const { nextBirthday, age } = BirthdayUtils.calculateBirthdayInfo(dbClient.birthdate);
+      client.nextBirthday = nextBirthday;
+      client.age = age;
+    }
+  }
 
-    if (clientDataObservables.length === 0) return;
-
-    forkJoin(clientDataObservables).subscribe({
-      next: (clientDataArray) => {
-        clientDataArray.forEach((clientData, index) => {
-          const client = this.clients[index];
-          if (client) {
-            // Calculer eligibleTreatments en filtrant les tirages de cartes
-            // Seuls les RDV terminés (completed) comptent pour la fidélité
-            const eligibleAppointments = client.appointments.filter(apt => {
-              if (apt.status !== 'completed') return false;
-              const prestationName = apt.prestations?.name?.toLowerCase() || '';
-              // Exclure les tirages de cartes
-              return !prestationName.includes('tirage') && !prestationName.includes('carte');
-            });
-            client.eligibleTreatments = eligibleAppointments.length;
-
-            if (clientData) {
-              // Stocker l'ID et le clientId (identifiant opaque) du client depuis l'API
-              client.id = clientData.id;
-              client.clientId = clientData.clientId;
-              // Récupérer le compteur de parrainages
-              client.referralsCount = clientData.referrals_count || 0;
-              if (clientData.birthdate) {
-                client.birthdate = clientData.birthdate;
-                const {nextBirthday, age} = BirthdayUtils.calculateBirthdayInfo(clientData.birthdate);
-                client.nextBirthday = nextBirthday;
-                client.age = age;
-              }
-            } else {
-              // Si le client n'existe pas encore dans la table clients,
-              // on ne peut pas générer le vrai clientId (nécessite le secret serveur)
-              // On va créer le client dans la table lors de la première navigation
-              // Pour l'instant, on utilise un identifiant temporaire basé sur l'email
-              // ⚠️ IMPORTANT: Ce clientId temporaire ne fonctionnera pas avec l'API
-              // Il faut créer le client dans la table d'abord
-              client.clientId = generateTemporaryClientId(client.email);
-              client.referralsCount = 0;
-            }
-          }
-        });
-        this.applyFilters(); // Réappliquer les filtres après chargement des données
-      },
-      error: () => {
-        // Erreur silencieuse
+  private sortClientsList(): void {
+    this.clients.sort((a, b) => {
+      if (a.lastAppointmentDate && b.lastAppointmentDate) {
+        return b.lastAppointmentDate.localeCompare(a.lastAppointmentDate);
       }
+      if (a.lastAppointmentDate) return -1;
+      if (b.lastAppointmentDate) return 1;
+      return (a.name || '').localeCompare(b.name || '');
     });
   }
 
@@ -204,5 +237,55 @@ export class ClientsComponent implements OnInit, OnDestroy {
   hasReachedReward(client: ClientProfile): boolean {
     const total = (client.eligibleTreatments || 0) + (client.referralsCount || 0);
     return total >= 10;
+  }
+
+  // ==================== Création manuelle de client ====================
+
+  openCreateClientModal(): void {
+    this.newClient = { name: '', email: '', phone: '', notes: '' };
+    this.showCreateModal = true;
+  }
+
+  closeCreateClientModal(): void {
+    this.showCreateModal = false;
+  }
+
+  submitNewClient(): void {
+    if (!this.newClient.name.trim()) {
+      return;
+    }
+
+    this.isCreating = true;
+
+    const clientData: any = {
+      name: this.newClient.name.trim()
+    };
+    if (this.newClient.email.trim()) {
+      clientData.email = this.newClient.email.trim().toLowerCase();
+    }
+    if (this.newClient.phone.trim()) {
+      clientData.phone = this.newClient.phone.trim();
+    }
+    if (this.newClient.notes.trim()) {
+      clientData.notes = this.newClient.notes.trim();
+    }
+
+    // L'API clients requiert un email, on génère un placeholder si absent
+    if (!clientData.email) {
+      clientData.email = `client-${Date.now()}@manuel.local`;
+    }
+
+    this.contentService.createOrUpdateClient(clientData)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.isCreating = false;
+          this.closeCreateClientModal();
+          this.loadClients();
+        },
+        error: () => {
+          this.isCreating = false;
+        }
+      });
   }
 }

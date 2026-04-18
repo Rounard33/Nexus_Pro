@@ -1,5 +1,6 @@
 import {Injectable} from '@angular/core';
 import {AppointmentStats} from '../models/statistics.model';
+import {appointmentUnitPortionEur} from '../utils/accounting-revenue.utils';
 import {Appointment, Prestation} from './content.service';
 
 @Injectable({ providedIn: 'root' })
@@ -125,48 +126,34 @@ export class StatisticsService {
   }
 
   /**
-   * Calcule le panier moyen (montant moyen par rendez-vous)
-   * @param appointments Liste des rendez-vous acceptés
-   * @param prestations Liste des prestations avec leurs prix
-   * @returns Panier moyen en euros
+   * Panier moyen (montant moyen par RDV payé à l’unité, après forfait et partie carte cadeau).
    */
-  calculateAverageBasket(appointments: Appointment[], prestations: Prestation[]): number {
-    // Filtrer les RDV confirmés (accepted ou completed) avec une prestation
-    const confirmed = appointments.filter(a => 
-      (a.status === 'accepted' || a.status === 'completed') && a.prestation_id
+  calculateAverageBasket(
+    appointments: Appointment[],
+    prestations: Prestation[],
+    forfaitCountedAppointmentIds?: Set<string>,
+    giftCoverageByAppointment?: Map<string, number>
+  ): number {
+    const forfaitIds = forfaitCountedAppointmentIds ?? new Set<string>();
+    const giftMap = giftCoverageByAppointment ?? new Map<string, number>();
+    const confirmed = appointments.filter(
+      (a) => a.status === 'accepted' || a.status === 'completed'
     );
-    
-    if (confirmed.length === 0) return 0;
 
-    // Créer un map des prestations par ID pour accès rapide
-    const prestationMap = new Map<string, Prestation>();
-    prestations.forEach(p => {
-      if (p.id) {
-        prestationMap.set(p.id, p);
+    let totalUnit = 0;
+    let n = 0;
+    for (const a of confirmed) {
+      const unit = appointmentUnitPortionEur(a, prestations, forfaitIds, giftMap);
+      if (unit > 0) {
+        totalUnit += unit;
+        n++;
       }
-    });
+    }
 
-    let totalAmount = 0;
-    let countWithPrice = 0;
-
-    confirmed.forEach(appointment => {
-      if (!appointment.prestation_id) return;
-      
-      const prestation = prestationMap.get(appointment.prestation_id);
-      if (!prestation || !prestation.price) return;
-
-      // Extraire le prix numérique de la chaîne (ex: "50€" -> 50)
-      const priceStr = prestation.price.replace(/[^\d,.]/g, '').replace(',', '.');
-      const price = parseFloat(priceStr);
-      
-      if (!isNaN(price)) {
-        totalAmount += price;
-        countWithPrice++;
-      }
-    });
-
-    if (countWithPrice === 0) return 0;
-    return Math.round((totalAmount / countWithPrice) * 100) / 100;
+    if (n === 0) {
+      return 0;
+    }
+    return Math.round((totalUnit / n) * 100) / 100;
   }
 
   calculateTimeSlotStats(appointments: Appointment[]): Array<{

@@ -7,12 +7,20 @@ import {AboutComponent} from '../../components/about/about.component';
 import {BookingComponent} from '../../components/booking/booking.component';
 import {CtaComponent} from '../../components/cta/cta.component';
 import {FaqComponent, FaqItem} from '../../components/faq/faq.component';
+import {ForfaitsComponent} from '../../components/forfaits/forfaits.component';
 import {LocationComponent} from '../../components/location/location.component';
 import {LoyaltyComponent} from '../../components/loyalty/loyalty.component';
 import {PrestationModalComponent} from '../../components/prestation-modal/prestation-modal.component';
+import {ReikiSessionChoiceModalComponent} from '../../components/reiki-session-choice-modal/reiki-session-choice-modal.component';
 import {Creation, ProductsComponent} from '../../components/products/products.component';
 import {ScrollToTopComponent} from '../../components/scroll-to-top/scroll-to-top.component';
-import {Prestation, ServicesComponent} from '../../components/services/services.component';
+import {
+  buildPrestationCards,
+  isPrestationGroup,
+  Prestation,
+  PrestationGroup,
+  ServicesComponent
+} from '../../components/services/services.component';
 import {Testimonial, TestimonialsComponent} from '../../components/testimonials/testimonials.component';
 import {WelcomeComponent} from '../../components/welcome/welcome.component';
 import {Appointment, ContentService} from '../../services/content.service';
@@ -31,7 +39,9 @@ gsap.registerPlugin(ScrollTrigger);
     AboutComponent,
     ServicesComponent,
     PrestationModalComponent,
+    ReikiSessionChoiceModalComponent,
     ProductsComponent,
+    ForfaitsComponent,
     LocationComponent,
     TestimonialsComponent,
     FaqComponent,
@@ -44,11 +54,17 @@ gsap.registerPlugin(ScrollTrigger);
   styleUrl: './home.component.scss'
 })
 export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
-  selectedPrestation: Prestation | null = null;
+  selectedPrestation: Prestation | PrestationGroup | null = null;
+  /** Onglet Reiki initial pour la modale (liens forfaits / FAQ). */
+  modalInitialReikiTab: number | null = null;
   selectedPrestationForBooking: Prestation | null = null;
+  /** Modale « Choisir votre séance » (carte Reiki). */
+  reikiSessionChoiceGroup: PrestationGroup | null = null;
   
   // Données chargées depuis l'API
   prestations: Prestation[] = [];
+  /** Grille : Reiki fusionné en une carte si ≥ 2 variantes. */
+  prestationCards: (Prestation | PrestationGroup)[] = [];
   creations: Creation[] = [];
   testimonials: Testimonial[] = [];
   faqs: FaqItem[] = [];
@@ -73,30 +89,42 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     this.contentService.getPrestations().subscribe({
       next: (data) => {
         this.prestations = data.map(p => {
-          // Vérifier si c'est un massage crânien (contre-indications)
           const isCranialMassage = p.name.toLowerCase().includes('crânien') || 
                                     p.name.toLowerCase().includes('cranien');
+          const nameLower = p.name.toLowerCase();
           
+          let forfaitSuggestion: string | undefined;
+          if (nameLower.includes('pnl')) {
+            forfaitSuggestion = 'Pensez au forfait Accompagnement Global';
+          } else if (nameLower.includes('reiki usui')) {
+            forfaitSuggestion = 'Pensez à consulter nos forfaits pour une continuité dans les soins et un travail plus complet et durable, et une économie sur le prix des séances';
+          } else if (isCranialMassage) {
+            forfaitSuggestion = 'Pensez au forfait "Accompagnement Global" ou "Déconnexion à Soi" pour un travail plus en profondeur et une économie sur le prix des séances';
+          }
+
           return {
-          id: p.id,
-          name: p.name,
-          price: p.price || '',
-          atHome: p.at_home,
-          priceOption: p.price_option,
-          duration: p.duration,
-          shortDescription: p.short_description,
-          description: p.description,
-          image: getPrestationImageUrl(p.image_url),
+            id: p.id,
+            name: p.name,
+            price: p.price || '',
+            atHome: p.at_home,
+            priceOption: p.price_option,
+            duration: p.duration,
+            shortDescription: p.short_description,
+            description: p.description,
+            image: getPrestationImageUrl(p.image_url),
             requiresContact: p.requires_contact || false,
             hasContraindications: isCranialMassage,
-            contraindications: isCranialMassage ? this.getCranialMassageContraindications() : undefined
+            contraindications: isCranialMassage ? this.getCranialMassageContraindications() : undefined,
+            forfaitSuggestion
           };
         });
-        this.loadingService.markDataLoaded(); // Signaler que les prestations sont chargées
+        this.prestationCards = buildPrestationCards(this.prestations);
+        this.loadingService.markDataLoaded();
       },
       error: () => {
         this.prestations = [];
-        this.loadingService.markDataLoaded(); // Signaler même en cas d'erreur
+        this.prestationCards = [];
+        this.loadingService.markDataLoaded();
       }
     });
 
@@ -107,17 +135,16 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
           name: c.name,
           price: c.price,
           description: c.description,
-          image: getCreationImageUrl(c.image_url) // Utiliser la fonction utilitaire pour construire l'URL Supabase Storage
+          image: getCreationImageUrl(c.image_url)
         }));
-        this.loadingService.markDataLoaded(); // Signaler que les créations sont chargées
+        this.loadingService.markDataLoaded();
       },
       error: () => {
         this.creations = [];
-        this.loadingService.markDataLoaded(); // Signaler même en cas d'erreur
+        this.loadingService.markDataLoaded();
       }
     });
 
-    // Charger les témoignages
     this.contentService.getTestimonials().subscribe({
       next: (data) => {
         this.testimonials = data.map(t => ({
@@ -127,11 +154,11 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
           avatar: t.avatar_url ? getTestimonialAvatarUrl(t.avatar_url) : `https://ui-avatars.com/api/?name=${encodeURIComponent(t.name)}&background=f5f1e8&color=6f5f4e&size=150`,
           age: t.age,
         }));
-        this.loadingService.markDataLoaded(); // Signaler que les témoignages sont chargés
+        this.loadingService.markDataLoaded();
       },
       error: () => {
         this.testimonials = [];
-        this.loadingService.markDataLoaded(); // Signaler même en cas d'erreur
+        this.loadingService.markDataLoaded();
       }
     });
 
@@ -173,30 +200,67 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   }
   
   private handleEscapeKey(event: KeyboardEvent): void {
-    if (event.key === 'Escape' && this.selectedPrestation) {
+    if (event.key !== 'Escape') {
+      return;
+    }
+    if (this.selectedPrestation) {
       this.closeDetailsModal();
+      return;
+    }
+    if (this.reikiSessionChoiceGroup) {
+      this.closeReikiSessionChoice();
     }
   }
 
 
   // Méthode pour ouvrir la modal de détails
-  openDetailsModal(prestation: Prestation): void {
+  openDetailsModal(prestation: Prestation | PrestationGroup, initialReikiTab?: number): void {
+    this.reikiSessionChoiceGroup = null;
     this.selectedPrestation = prestation;
+    this.modalInitialReikiTab =
+      isPrestationGroup(prestation) && initialReikiTab !== undefined ? initialReikiTab : null;
     document.body.style.overflow = 'hidden';
   }
 
   // Méthode pour fermer la modal de détails
   closeDetailsModal(): void {
     this.selectedPrestation = null;
-    document.body.style.overflow = '';
+    this.modalInitialReikiTab = null;
+    this.syncBodyScrollLock();
+  }
+
+  /** Réserver sur la carte Reiki : choix de variante puis réservation. */
+  openReikiSessionChoice(group: PrestationGroup): void {
+    this.selectedPrestation = null;
+    this.modalInitialReikiTab = null;
+    this.reikiSessionChoiceGroup = group;
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeReikiSessionChoice(): void {
+    this.reikiSessionChoiceGroup = null;
+    this.syncBodyScrollLock();
+  }
+
+  /** Choix dans la modale Reiki → ouverture du flux réservation avec la bonne prestation. */
+  onReikiSessionChosen(prestation: Prestation): void {
+    this.openBookingModal(prestation);
+  }
+
+  private syncBodyScrollLock(): void {
+    document.body.style.overflow =
+      this.selectedPrestation || this.selectedPrestationForBooking || this.reikiSessionChoiceGroup
+        ? 'hidden'
+        : '';
   }
 
   // Méthode pour ouvrir la modal de réservation
   openBookingModal(prestation: Prestation): void {
-    // Fermer la modal de détails si elle est ouverte
     if (this.selectedPrestation) {
-      this.closeDetailsModal();
+      this.selectedPrestation = null;
+      this.modalInitialReikiTab = null;
     }
+    this.reikiSessionChoiceGroup = null;
     this.selectedPrestationForBooking = prestation;
     document.body.style.overflow = 'hidden';
   }
@@ -204,12 +268,33 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   // Fermer la modal de réservation
   closeBookingModal(): void {
     this.selectedPrestationForBooking = null;
-    document.body.style.overflow = '';
+    this.syncBodyScrollLock();
   }
 
   // Gérer le succès de la réservation
   onBookingSuccess(appointment: Appointment): void {
     this.closeBookingModal();
+  }
+
+  /**
+   * Ouvre la modal de détails d'une prestation en recherchant par mot-clé
+   */
+  openPrestationByKeyword(keyword: string): void {
+    const kw = keyword.toLowerCase();
+    for (const item of this.prestationCards) {
+      if (!isPrestationGroup(item) || item.groupKey !== 'reiki') {
+        continue;
+      }
+      const idx = item.variants.findIndex(v => v.name.toLowerCase().includes(kw));
+      if (idx >= 0) {
+        this.openDetailsModal(item, idx);
+        return;
+      }
+    }
+    const prestation = this.prestations.find(p => p.name.toLowerCase().includes(kw));
+    if (prestation) {
+      this.openDetailsModal(prestation);
+    }
   }
 
   /**
@@ -231,7 +316,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private initScrollAnimations() {
     // Animation des cartes au scroll
-    gsap.utils.toArray('.prestation-card, .creation-card, .testimonial-card').forEach((element: any) => {
+    gsap.utils.toArray('.prestation-card, .creation-card, .testimonial-card, .forfait-card').forEach((element: any) => {
       gsap.fromTo(element, {
         y: 50,
         opacity: 0
