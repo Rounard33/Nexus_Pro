@@ -1,14 +1,14 @@
 import {createClient, SupabaseClient} from '@supabase/supabase-js';
 import type {VercelRequest, VercelResponse} from '@vercel/node';
-import {findClientById, generateClientId, verifyClientId} from './utils/client-id.js';
-import {rateLimitMiddleware} from './utils/rate-limiter.js';
-import {applyRateLimit, getAllowedOrigins, setCORSHeaders, setSecurityHeaders} from './utils/security-helpers.js';
-import {sanitizeAppointment, validateAppointment, validateAppointmentQuery, validateCaptchaToken} from './utils/validation.js';
+import {findClientById, generateClientId, verifyClientId} from '../lib/vercel-api-utils/client-id.js';
+import {rateLimitMiddleware} from '../lib/vercel-api-utils/rate-limiter.js';
+import {applyRateLimit, getAllowedOrigins, setCORSHeaders, setSecurityHeaders} from '../lib/vercel-api-utils/security-helpers.js';
+import {sanitizeAppointment, validateAppointment, validateAppointmentQuery, validateCaptchaToken} from '../lib/vercel-api-utils/validation.js';
 import {
   formatNotesWithAdditionalSales,
   parseAdditionalSalesFromNotes,
   type AdditionalSaleRecord
-} from './utils/additional-sales-notes.js';
+} from '../lib/vercel-api-utils/additional-sales-notes.js';
 
 /**
  * Détermine l'origine CORS à autoriser
@@ -1410,7 +1410,7 @@ async function handleAppointments(req: VercelRequest, res: VercelResponse, supab
       const { 
         sendAppointmentRequestConfirmation, 
         sendNewAppointmentNotificationToAdmin 
-      } = await import('./utils/email.js');
+      } = await import('../lib/vercel-api-utils/email.js');
       
       const appointmentData = {
         client_name: data.client_name,
@@ -1538,7 +1538,7 @@ async function handleAppointments(req: VercelRequest, res: VercelResponse, supab
     // Envoyer l'email de notification si le statut a changé (BLOQUANT)
     if (updateData.status && (updateData.status === 'accepted' || updateData.status === 'rejected')) {
       try {
-        const { sendAppointmentStatusUpdate } = await import('./utils/email.js');
+        const { sendAppointmentStatusUpdate } = await import('../lib/vercel-api-utils/email.js');
         
         const appointmentData = {
           client_name: data.client_name,
@@ -2140,7 +2140,7 @@ async function handleContact(req: VercelRequest, res: VercelResponse) {
   
   // Envoyer l'email
   try {
-    const { sendContactMessage } = await import('./utils/email.js');
+    const { sendContactMessage } = await import('../lib/vercel-api-utils/email.js');
     
     const result = await sendContactMessage({
       name: name.trim(),

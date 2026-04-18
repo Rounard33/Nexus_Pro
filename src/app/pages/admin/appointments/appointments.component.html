@@ -533,7 +533,7 @@
           type="button"
           class="btn btn-complete"
           (click)="submitComplete()"
-          [disabled]="updatingAppointmentId === completeTarget?.id || isCompleteModalPaymentBlocked()">
+          [disabled]="updatingAppointmentId === completeTarget!.id || isCompleteModalPaymentBlocked()">
           Confirmer
         </button>
       </div>
