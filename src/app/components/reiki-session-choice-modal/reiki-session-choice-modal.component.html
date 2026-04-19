@@ -12,7 +12,7 @@
     <div class="modal-body">
       <ul class="choice-list" role="list">
         <li *ngFor="let v of g.variants">
-          <button type="button" class="choice-row" (click)="pickVariant(v)">
+          <button type="button" class="choice-row" disabled (click)="pickVariant(v)">
             <span class="choice-badge">{{ tabLabel(v) }}</span>
             <span class="choice-main">
               <span class="choice-name">{{ v.name }}</span>
