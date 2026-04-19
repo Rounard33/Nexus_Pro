@@ -108,13 +108,14 @@
   <!-- Modal création client -->
   <div class="modal-overlay modal-sheet-mobile" *ngIf="showCreateModal" appBodyScrollLock (click)="closeCreateClientModal()">
     <div class="modal-content" (click)="$event.stopPropagation()">
-      <button class="modal-close" (click)="closeCreateClientModal()" aria-label="Fermer">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M18 6L6 18M6 6l12 12"/>
-        </svg>
-      </button>
-
-      <h2 class="modal-title">Nouveau client</h2>
+      <div class="modal-header">
+        <button type="button" class="modal-close" (click)="closeCreateClientModal()" aria-label="Fermer">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </button>
+        <h2 class="modal-title">Nouveau client</h2>
+      </div>
 
       <div class="modal-body">
         <div class="form-group">

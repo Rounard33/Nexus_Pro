@@ -1,0 +1,351 @@
+// =============================================================================
+// Modales du panneau admin — style unique (sous <app-admin> uniquement)
+// =============================================================================
+
+@keyframes admin-modal-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes admin-modal-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+app-admin {
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: var(--z-admin-modal);
+    overscroll-behavior: contain;
+    padding: 1rem;
+    animation: admin-modal-fade-in 0.3s ease-out;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .modal-overlay.modal-nested {
+    z-index: var(--z-admin-modal-nested);
+  }
+
+  .modal-content {
+    background: #fff;
+    border-radius: 24px;
+    max-width: 560px;
+    width: 100%;
+    position: relative;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+    animation: admin-modal-slide-up 0.4s ease-out;
+    max-height: 90vh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    margin: auto;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    overscroll-behavior-y: contain;
+
+    &.modal-content--narrow {
+      max-width: 500px;
+    }
+
+    &.modal-content--wide {
+      max-width: 600px;
+    }
+
+    &.modal-content--compact {
+      max-width: 480px;
+    }
+
+    &.modal-content--complete {
+      max-width: 520px;
+    }
+  }
+
+  .modal-close {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    background: rgba(0, 0, 0, 0.05);
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.3s ease;
+    z-index: 10;
+    color: var(--text-primary, #1a1a1a);
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.1);
+      transform: rotate(90deg);
+    }
+
+    svg {
+      display: block;
+    }
+  }
+
+  .modal-header {
+    position: relative;
+    padding: 1.75rem 1.5rem 1.25rem;
+    padding-right: 3.5rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+
+    .modal-close {
+      top: 1.25rem;
+      right: 1.25rem;
+    }
+
+    .modal-title {
+      margin: 0;
+      font-size: 1.35rem;
+      font-weight: 600;
+      line-height: 1.3;
+      letter-spacing: -0.02em;
+      color: var(--text-primary, #1a1a1a);
+      text-align: left;
+    }
+  }
+
+  .modal-body {
+    padding: 1.25rem 1.5rem 1.5rem;
+    box-sizing: border-box;
+  }
+
+  .modal-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem 1.5rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    box-sizing: border-box;
+
+    .btn-primary,
+    .btn-secondary {
+      flex: 1;
+      min-width: 0;
+      justify-content: center;
+    }
+
+    .btn {
+      padding: 0.75rem 1.25rem;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+      transition: background 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
+      font-family: inherit;
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+    }
+
+    .btn-cancel {
+      background: #f0f0f0;
+      color: var(--text-primary, #1a1a1a);
+
+      &:hover:not(:disabled) {
+        background: #e5e5e5;
+      }
+    }
+
+    .btn-submit {
+      background: linear-gradient(135deg, #8b7a62 0%, #6f5f4e 100%);
+      color: #fff;
+
+      &:hover:not(:disabled) {
+        box-shadow: 0 4px 12px rgba(139, 122, 98, 0.3);
+      }
+    }
+
+    .btn-secondary {
+      background: #f0f0f0;
+      color: var(--text-primary, #1a1a1a);
+
+      &:hover:not(:disabled) {
+        background: #e8e8e8;
+      }
+    }
+
+    .btn-danger {
+      background: #dc3545;
+      color: #fff;
+
+      &:hover:not(:disabled) {
+        background: #c82333;
+      }
+    }
+  }
+
+  /* Formulaires dans les modales */
+  .modal-content .form-group {
+    margin-bottom: 1rem;
+  }
+
+  .modal-content .form-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-secondary, #666);
+    margin-bottom: 0.375rem;
+  }
+
+  .modal-content .form-input,
+  .modal-content .form-textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--primary-200, #e8e3d8);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    color: var(--text-primary, #1a1a1a);
+    background: #fff;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    box-sizing: border-box;
+    font-family: inherit;
+
+    &:focus {
+      outline: none;
+      border-color: var(--primary-500, #b8a889);
+      box-shadow: 0 0 0 3px rgba(139, 122, 98, 0.1);
+    }
+
+    &::placeholder {
+      color: #aaa;
+    }
+  }
+
+  .modal-content .form-textarea {
+    resize: vertical;
+    min-height: 80px;
+  }
+
+  .modal-content .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Modale de confirmation (danger / suppression) */
+  .modal-content.confirm-modal {
+    display: flex;
+    flex-direction: column;
+    max-width: 500px;
+
+    .modal-header {
+      padding-bottom: 1rem;
+    }
+
+    .modal-body {
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .modal-actions {
+      padding: 1.25rem 1.5rem 1.5rem;
+    }
+
+    .btn-cancel {
+      background: #fff;
+      color: var(--text-primary, #1a1a1a);
+      border: 1px solid var(--primary-200, #e8e3d8);
+
+      &:hover:not(:disabled) {
+        background: var(--primary-50, #faf8f3);
+      }
+    }
+  }
+
+  .confirm-message {
+    text-align: center;
+  }
+
+  .confirm-icon {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1rem;
+    color: #dc3545;
+
+    &.confirm-icon-danger {
+      margin: 0 auto 1.5rem;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      align-items: center;
+      background: #fff5f5;
+      color: #c53030;
+    }
+  }
+
+  .confirm-text {
+    font-size: 1.125rem;
+    font-weight: 500;
+    color: var(--text-primary, #1a1a1a);
+    margin: 0 0 1.5rem;
+  }
+
+  .confirm-details {
+    background: var(--primary-50, #faf8f3);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin: 1rem 0;
+    text-align: left;
+  }
+
+  .confirm-detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    strong {
+      font-weight: 600;
+      color: var(--text-primary, #1a1a1a);
+    }
+
+    span {
+      color: var(--text-secondary, #666);
+    }
+  }
+
+  .confirm-warning {
+    font-size: 0.875rem;
+    color: #dc3545;
+    font-weight: 500;
+    margin: 0;
+    margin-top: 1rem;
+  }
+}

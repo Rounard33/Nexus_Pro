@@ -311,14 +311,15 @@
     *ngIf="showDetailsModal && selectedAppointment"
     appBodyScrollLock
     (click)="closeDetails()">
-    <div class="modal-content" (click)="$event.stopPropagation()">
-      <button class="modal-close" (click)="closeDetails()" aria-label="Fermer">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M18 6L6 18M6 6l12 12"/>
-        </svg>
-      </button>
-
-      <h2 class="modal-title">Détails du rendez-vous</h2>
+    <div class="modal-content modal-content--wide" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <button type="button" class="modal-close" (click)="closeDetails()" aria-label="Fermer">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </button>
+        <h2 class="modal-title">Détails du rendez-vous</h2>
+      </div>
 
       <div class="modal-body">
         <div class="detail-row">
@@ -459,17 +460,19 @@
     appBodyScrollLock
     (click)="closeCompleteModal()">
     <div class="modal-content modal-content--complete" (click)="$event.stopPropagation()">
-      <button class="modal-close" type="button" (click)="closeCompleteModal()" aria-label="Fermer">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M18 6L6 18M6 6l12 12"/>
-        </svg>
-      </button>
-      <h2 class="modal-title">Terminer le rendez-vous</h2>
-      <p class="complete-lead" *ngIf="completeTarget">
-        <span class="complete-lead-name">{{ completeTarget.client_name }}</span>
-        <span class="complete-lead-presta">{{ getPrestationDisplayName(completeTarget) }}</span>
-      </p>
+      <div class="modal-header">
+        <button type="button" class="modal-close" (click)="closeCompleteModal()" aria-label="Fermer">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </button>
+        <h2 class="modal-title">Terminer le rendez-vous</h2>
+      </div>
       <div class="modal-body">
+        <p class="complete-lead" *ngIf="completeTarget">
+          <span class="complete-lead-name">{{ completeTarget.client_name }}</span>
+          <span class="complete-lead-presta">{{ getPrestationDisplayName(completeTarget) }}</span>
+        </p>
         <div class="complete-amounts">
           <div class="complete-amount-row">
             <span class="complete-amount-label">Prix séance (catalogue)</span>
@@ -535,6 +538,7 @@
           <p class="complete-pay-error">{{ payErr }}</p>
         </ng-container>
       </div>
+
       <div class="modal-actions">
         <button type="button" class="btn btn-secondary" (click)="closeCompleteModal()">Annuler</button>
         <button
@@ -551,13 +555,14 @@
   <!-- Modal création manuelle -->
   <div class="modal-overlay modal-sheet-mobile" *ngIf="showCreateModal" appBodyScrollLock (click)="closeCreateModal()">
     <div class="modal-content" (click)="$event.stopPropagation()">
-      <button class="modal-close" (click)="closeCreateModal()" aria-label="Fermer">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M18 6L6 18M6 6l12 12"/>
-        </svg>
-      </button>
-
-      <h2 class="modal-title">Nouveau rendez-vous</h2>
+      <div class="modal-header">
+        <button type="button" class="modal-close" (click)="closeCreateModal()" aria-label="Fermer">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </button>
+        <h2 class="modal-title">Nouveau rendez-vous</h2>
+      </div>
 
       <div class="modal-body">
         <div class="form-group client-picker">
@@ -644,13 +649,14 @@
     appBodyScrollLock
     (click)="closeNewClientModal()">
     <div class="modal-content modal-new-client" (click)="$event.stopPropagation()">
-      <button class="modal-close" (click)="closeNewClientModal()" aria-label="Fermer" type="button">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M18 6L6 18M6 6l12 12"/>
-        </svg>
-      </button>
-
-      <h2 class="modal-title">Nouveau client</h2>
+      <div class="modal-header">
+        <button type="button" class="modal-close" (click)="closeNewClientModal()" aria-label="Fermer">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </button>
+        <h2 class="modal-title">Nouveau client</h2>
+      </div>
       <div class="modal-body">
         <p class="modal-hint">Le client sera enregistré dans votre base et sélectionné pour ce rendez-vous.</p>
 
@@ -689,13 +695,14 @@
     appBodyScrollLock
     (click)="closeDeleteModal()">
     <div class="modal-content" (click)="$event.stopPropagation()">
-      <button class="modal-close" (click)="closeDeleteModal()" aria-label="Fermer">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M18 6L6 18M6 6l12 12"/>
-        </svg>
-      </button>
-
-      <h2 class="modal-title">Supprimer ce rendez-vous</h2>
+      <div class="modal-header">
+        <button type="button" class="modal-close" (click)="closeDeleteModal()" aria-label="Fermer">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </button>
+        <h2 class="modal-title">Supprimer ce rendez-vous</h2>
+      </div>
 
       <div class="modal-body">
         <div class="confirm-message">

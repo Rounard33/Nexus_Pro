@@ -506,6 +506,11 @@
       (click)="onDeleteModalOverlayClick($event)">
       <div class="modal-content confirm-modal" (click)="$event.stopPropagation()">
         <div class="modal-header">
+          <button type="button" class="modal-close" (click)="closeDeleteConfirmModal()" aria-label="Fermer">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+          </button>
           <h2 class="modal-title">Confirmer la suppression</h2>
         </div>
         <div class="modal-body">
@@ -624,6 +629,11 @@
       (click)="onDeleteClientModalOverlayClick($event)">
       <div class="modal-content confirm-modal" (click)="$event.stopPropagation()">
         <div class="modal-header">
+          <button type="button" class="modal-close" (click)="closeDeleteClientModal()" aria-label="Fermer">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+          </button>
           <h2 class="modal-title">Supprimer cette fiche client</h2>
         </div>
         <div class="modal-body">
