@@ -15,6 +15,7 @@ import { Appointment, Client, ContentService, Prestation } from '../../../servic
 import { AppointmentClientNotesSyncService } from '../../../services/appointment-client-notes-sync.service';
 import { NotificationService } from '../../../services/notification.service';
 import { parseEuroAmountFromLabel } from '../../../utils/accounting-revenue.utils';
+import { BodyScrollLockDirective } from '../../../directives/body-scroll-lock.directive';
 import { DateUtils } from '../../../utils/date.utils';
 
 registerLocaleData(localeFr);
@@ -22,7 +23,7 @@ registerLocaleData(localeFr);
 @Component({
   selector: 'app-appointments',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, BodyScrollLockDirective],
   providers: [{ provide: LOCALE_ID, useValue: 'fr-FR' }],
   templateUrl: './appointments.component.html',
   styleUrl: './appointments.component.scss'

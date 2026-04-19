@@ -154,6 +154,12 @@
       visibility: visible !important;
     }
     
+    /* Pas de bouton menu admin au-dessus du loader (même z-index qu’avant le bump loader) */
+    body.app-loading:not(.app-loaded) app-admin .mobile-menu-toggle {
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
+
     /* Masquer uniquement les sections qui dépendent des données de la base */
     body.app-loading:not(.app-loaded) app-root .app-layout app-services,
     body.app-loading:not(.app-loaded) app-root .app-layout app-products,

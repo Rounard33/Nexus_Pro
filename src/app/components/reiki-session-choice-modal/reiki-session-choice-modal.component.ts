@@ -1,12 +1,13 @@
 import {CommonModule} from '@angular/common';
 import {Component, EventEmitter, HostListener, inject, Input, Output} from '@angular/core';
 import {Router} from '@angular/router';
+import {BodyScrollLockDirective} from '../../directives/body-scroll-lock.directive';
 import {Prestation, PrestationGroup, reikiTabLabel} from '../services/services.component';
 
 @Component({
   selector: 'app-reiki-session-choice-modal',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, BodyScrollLockDirective],
   templateUrl: './reiki-session-choice-modal.component.html',
   styleUrl: './reiki-session-choice-modal.component.scss'
 })

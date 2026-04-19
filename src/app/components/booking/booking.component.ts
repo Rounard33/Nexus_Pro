@@ -15,13 +15,14 @@ import {AppointmentPayload} from '../../models/appointment.model';
 import {Appointment, AvailableSlot, BlockedSlot, ContentService, OpeningHours, Prestation} from '../../services/content.service';
 import {NotificationService} from '../../services/notification.service';
 import {DateUtils} from '../../utils/date.utils';
+import {BodyScrollLockDirective} from '../../directives/body-scroll-lock.directive';
 import {CaptchaComponent} from '../captcha/captcha.component';
 import {BookingCalendarService, BookingTimeSlotService} from './services';
 
 @Component({
   selector: 'app-booking',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, CaptchaComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, CaptchaComponent, BodyScrollLockDirective],
   templateUrl: './booking.component.html',
   styleUrl: './booking.component.scss'
 })

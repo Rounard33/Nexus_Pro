@@ -306,7 +306,11 @@
   </div>
 
   <!-- Modal détails -->
-  <div class="modal-overlay" *ngIf="showDetailsModal && selectedAppointment" (click)="closeDetails()">
+  <div
+    class="modal-overlay modal-sheet-mobile"
+    *ngIf="showDetailsModal && selectedAppointment"
+    appBodyScrollLock
+    (click)="closeDetails()">
     <div class="modal-content" (click)="$event.stopPropagation()">
       <button class="modal-close" (click)="closeDetails()" aria-label="Fermer">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -449,7 +453,11 @@
   </div>
 
   <!-- Modale : terminer le RDV (paiement + carte cadeau) -->
-  <div class="modal-overlay" *ngIf="showCompleteModal && completeTarget" (click)="closeCompleteModal()">
+  <div
+    class="modal-overlay modal-sheet-mobile"
+    *ngIf="showCompleteModal && completeTarget"
+    appBodyScrollLock
+    (click)="closeCompleteModal()">
     <div class="modal-content modal-content--complete" (click)="$event.stopPropagation()">
       <button class="modal-close" type="button" (click)="closeCompleteModal()" aria-label="Fermer">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -541,7 +549,7 @@
   </div>
 
   <!-- Modal création manuelle -->
-  <div class="modal-overlay" *ngIf="showCreateModal" (click)="closeCreateModal()">
+  <div class="modal-overlay modal-sheet-mobile" *ngIf="showCreateModal" appBodyScrollLock (click)="closeCreateModal()">
     <div class="modal-content" (click)="$event.stopPropagation()">
       <button class="modal-close" (click)="closeCreateModal()" aria-label="Fermer">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -630,7 +638,11 @@
   </div>
 
   <!-- Modale création client (au-dessus du formulaire RDV) -->
-  <div class="modal-overlay modal-nested" *ngIf="showCreateModal && showNewClientModal" (click)="closeNewClientModal()">
+  <div
+    class="modal-overlay modal-nested modal-sheet-mobile"
+    *ngIf="showCreateModal && showNewClientModal"
+    appBodyScrollLock
+    (click)="closeNewClientModal()">
     <div class="modal-content modal-new-client" (click)="$event.stopPropagation()">
       <button class="modal-close" (click)="closeNewClientModal()" aria-label="Fermer" type="button">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -671,7 +683,11 @@
   </div>
 
   <!-- Modal suppression rendez-vous -->
-  <div class="modal-overlay" *ngIf="showDeleteModal && appointmentToDelete" (click)="closeDeleteModal()">
+  <div
+    class="modal-overlay modal-sheet-mobile"
+    *ngIf="showDeleteModal && appointmentToDelete"
+    appBodyScrollLock
+    (click)="closeDeleteModal()">
     <div class="modal-content" (click)="$event.stopPropagation()">
       <button class="modal-close" (click)="closeDeleteModal()" aria-label="Fermer">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

@@ -1,4 +1,8 @@
-<div class="modal-overlay" *ngIf="prestation" (click)="onOverlayClick($event)">
+<div
+  class="modal-overlay modal-sheet-mobile"
+  *ngIf="prestation"
+  appBodyScrollLock
+  (click)="onOverlayClick($event)">
   <div class="modal-content booking-modal" (click)="$event.stopPropagation()">
 
     <div class="modal-header">

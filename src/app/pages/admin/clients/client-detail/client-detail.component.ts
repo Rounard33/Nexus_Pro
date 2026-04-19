@@ -22,13 +22,14 @@ import {
 } from '../../../../utils/accounting-revenue.utils';
 import {BirthdayUtils} from '../../../../utils/birthday.utils';
 import {FormatUtils} from '../../../../utils/format.utils';
+import {BodyScrollLockDirective} from '../../../../directives/body-scroll-lock.directive';
 import {GiftCardFormModalComponent} from '../../../../components/gift-card-form-modal/gift-card-form-modal.component';
 import {FORFAITS_CATALOG} from '../../../../data/forfaits.catalog';
 
 @Component({
   selector: 'app-client-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, GiftCardFormModalComponent],
+  imports: [CommonModule, RouterModule, FormsModule, GiftCardFormModalComponent, BodyScrollLockDirective],
   templateUrl: './client-detail.component.html',
   styleUrl: './client-detail.component.scss'
 })

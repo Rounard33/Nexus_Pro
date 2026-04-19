@@ -499,7 +499,11 @@
     </div>
 
     <!-- Modal de confirmation de suppression -->
-    <div class="modal-overlay" *ngIf="showDeleteConfirmModal" (click)="onDeleteModalOverlayClick($event)">
+    <div
+      class="modal-overlay modal-sheet-mobile"
+      *ngIf="showDeleteConfirmModal"
+      appBodyScrollLock
+      (click)="onDeleteModalOverlayClick($event)">
       <div class="modal-content confirm-modal" (click)="$event.stopPropagation()">
         <div class="modal-header">
           <h2 class="modal-title">Confirmer la suppression</h2>
@@ -613,7 +617,11 @@
     </div>
 
     <!-- Modal de confirmation de suppression client -->
-    <div class="modal-overlay" *ngIf="showDeleteClientModal" (click)="onDeleteClientModalOverlayClick($event)">
+    <div
+      class="modal-overlay modal-sheet-mobile"
+      *ngIf="showDeleteClientModal"
+      appBodyScrollLock
+      (click)="onDeleteClientModalOverlayClick($event)">
       <div class="modal-content confirm-modal" (click)="$event.stopPropagation()">
         <div class="modal-header">
           <h2 class="modal-title">Supprimer cette fiche client</h2>

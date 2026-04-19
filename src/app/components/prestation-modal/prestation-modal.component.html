@@ -1,4 +1,8 @@
-<div class="modal-overlay" *ngIf="(prestation && activeVariant) as v" (click)="onOverlayClick($event)">
+<div
+  class="modal-overlay modal-sheet-mobile"
+  *ngIf="(prestation && activeVariant) as v"
+  appBodyScrollLock
+  (click)="onOverlayClick($event)">
   <div class="modal-content" (click)="$event.stopPropagation()">
     <div class="modal-header">
     <button class="modal-close" (click)="closeModal()" aria-label="Fermer">

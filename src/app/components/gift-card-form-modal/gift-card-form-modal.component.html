@@ -1,7 +1,15 @@
-<div class="modal-overlay" *ngIf="visible" (click)="closeModal()">
+<div class="modal-overlay modal-sheet-mobile" *ngIf="visible" appBodyScrollLock (click)="closeModal()">
     <div class="modal" (click)="$event.stopPropagation()">
-      <h2>{{ editingId ? 'Modifier la carte' : 'Nouvelle carte cadeau' }}</h2>
+      <div class="modal-header">
+        <button type="button" class="modal-close" (click)="closeModal()" aria-label="Fermer la fenêtre">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </button>
+        <h2 class="modal-title">{{ editingId ? 'Modifier la carte' : 'Nouvelle carte cadeau' }}</h2>
+      </div>
 
+      <div class="modal-body">
       <div class="field buyer-locked" *ngIf="fixedBuyer">
         <span class="label-text">Acheteur (fiche en cours)</span>
         <p class="buyer-locked-text">{{ fixedBuyer.name }} — {{ fixedBuyer.email }}</p>
@@ -116,12 +124,26 @@
           {{ saving ? 'Enregistrement…' : 'Enregistrer' }}
         </button>
       </div>
+      </div>
     </div>
   </div>
 
-  <div class="modal-overlay modal-nested" *ngIf="showNewClientModal" (click)="closeNewClientModal()">
+  <div
+    class="modal-overlay modal-nested modal-sheet-mobile"
+    *ngIf="showNewClientModal"
+    appBodyScrollLock
+    (click)="closeNewClientModal()">
     <div class="modal modal-new-client" (click)="$event.stopPropagation()">
-      <h2>Nouveau client</h2>
+      <div class="modal-header">
+        <button type="button" class="modal-close" (click)="closeNewClientModal()" aria-label="Fermer la fenêtre">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </button>
+        <h2 class="modal-title">Nouveau client</h2>
+      </div>
+
+      <div class="modal-body">
       <p class="modal-hint">Le client sera ajouté à votre base et sélectionné pour ce champ.</p>
 
       <div class="field">
@@ -146,6 +168,7 @@
         <button type="button" class="btn-primary" (click)="submitNewClient()" [disabled]="isCreatingClient || !newClient.name.trim()">
           {{ isCreatingClient ? 'Création…' : 'Créer le client' }}
         </button>
+      </div>
       </div>
     </div>
   </div>

@@ -5,12 +5,13 @@ import {Client, ContentService, GiftCard} from '../../services/content.service';
 
 /** Libellé stocké côté API (champ requis) : le bénéficiaire choisit le soin au moment de la réservation. */
 const DEFAULT_GIFT_SERVICE_LABEL = 'Soin au choix';
+import {BodyScrollLockDirective} from '../../directives/body-scroll-lock.directive';
 import {NotificationService} from '../../services/notification.service';
 
 @Component({
   selector: 'app-gift-card-form-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, BodyScrollLockDirective],
   templateUrl: './gift-card-form-modal.component.html',
   styleUrl: './gift-card-form-modal.component.scss'
 })

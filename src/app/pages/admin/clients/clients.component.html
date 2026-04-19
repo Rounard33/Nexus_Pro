@@ -106,7 +106,7 @@
   </div>
 
   <!-- Modal création client -->
-  <div class="modal-overlay" *ngIf="showCreateModal" (click)="closeCreateClientModal()">
+  <div class="modal-overlay modal-sheet-mobile" *ngIf="showCreateModal" appBodyScrollLock (click)="closeCreateClientModal()">
     <div class="modal-content" (click)="$event.stopPropagation()">
       <button class="modal-close" (click)="closeCreateClientModal()" aria-label="Fermer">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

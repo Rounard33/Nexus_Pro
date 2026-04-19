@@ -9,12 +9,13 @@ import {ClientService} from '../../../services/client.service';
 import {Client, ContentService} from '../../../services/content.service';
 import {BirthdayUtils} from '../../../utils/birthday.utils';
 import {generateTemporaryClientId} from '../../../utils/client-id-helper';
+import {BodyScrollLockDirective} from '../../../directives/body-scroll-lock.directive';
 import {FormatUtils} from '../../../utils/format.utils';
 
 @Component({
   selector: 'app-clients',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, BodyScrollLockDirective],
   templateUrl: './clients.component.html',
   styleUrl: './clients.component.scss'
 })

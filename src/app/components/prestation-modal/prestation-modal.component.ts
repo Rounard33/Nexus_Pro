@@ -16,11 +16,12 @@ import {
   PrestationGroup,
   reikiTabLabel
 } from '../services/services.component';
+import {BodyScrollLockDirective} from '../../directives/body-scroll-lock.directive';
 
 @Component({
   selector: 'app-prestation-modal',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, BodyScrollLockDirective],
   templateUrl: './prestation-modal.component.html',
   styleUrl: './prestation-modal.component.scss'
 })
