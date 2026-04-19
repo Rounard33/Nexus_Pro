@@ -13,12 +13,15 @@ export class BodyScrollLockService {
     if (this.depth === 0) {
       this.savedScrollY = window.scrollY || document.documentElement.scrollTop || 0;
       const body = document.body;
+      const html = document.documentElement;
       body.style.overflow = 'hidden';
       body.style.position = 'fixed';
       body.style.top = `-${this.savedScrollY}px`;
       body.style.left = '0';
       body.style.right = '0';
       body.style.width = '100%';
+      html.style.overflow = 'hidden';
+      html.style.overscrollBehavior = 'none';
     }
     this.depth++;
   }
@@ -32,12 +35,15 @@ export class BodyScrollLockService {
       return;
     }
     const body = document.body;
+    const html = document.documentElement;
     body.style.removeProperty('overflow');
     body.style.removeProperty('position');
     body.style.removeProperty('top');
     body.style.removeProperty('left');
     body.style.removeProperty('right');
     body.style.removeProperty('width');
+    html.style.removeProperty('overflow');
+    html.style.removeProperty('overscroll-behavior');
     window.scrollTo(0, this.savedScrollY);
   }
 }

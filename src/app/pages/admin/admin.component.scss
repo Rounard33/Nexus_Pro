@@ -59,7 +59,8 @@
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.5);
-  z-index: 99;
+  /* Sous la sidebar, au-dessus du contenu — mais au-dessus du header fixe du site (--z-fixed: 1030) */
+  z-index: calc(var(--z-fixed) + 1);
   backdrop-filter: blur(2px);
 }
 
@@ -71,10 +72,16 @@
   flex-direction: column;
   position: fixed;
   height: 100vh;
+  height: 100dvh; /* viewport dynamique : évite de couper le bas (Déconnexion) sur mobile */
+  max-height: 100dvh;
   left: 0;
   top: 0;
-  z-index: 100;
+  /* Au-dessus du header du site : sinon le menu admin passe en dessous et le 1er lien est coupé */
+  z-index: calc(var(--z-fixed) + 2);
   transition: transform 0.3s ease;
+  overflow: hidden;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top);
 }
 
 .sidebar-header {
@@ -96,11 +103,14 @@
 }
 
 .sidebar-nav {
-  flex: 1;
+  flex: 1 1 auto;
   min-height: 0;
-  padding: 1rem 0;
+  padding: 0.75rem 0 1rem;
+  overflow-x: hidden;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
+  touch-action: pan-y;
   scrollbar-width: none;
   -ms-overflow-style: none;
 
@@ -157,9 +167,11 @@
 }
 
 .sidebar-footer {
-  flex-shrink: 0;
-  padding: 1.5rem;
-  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  flex: 0 0 auto;
+  padding: 1rem 1.5rem 1.5rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  background: #fff;
+  box-shadow: 0 -6px 16px rgba(0, 0, 0, 0.06);
 }
 
 .logout-btn {
@@ -266,18 +278,22 @@
 
   .mobile-overlay {
     display: block; // Afficher l'overlay quand le menu est ouvert
-    z-index: 99;
+    z-index: calc(var(--z-fixed) + 1);
   }
 
   .admin-sidebar {
     width: 280px;
     max-width: 85vw; // Max 85% de la largeur de l'écran
-    height: 100vh;
+    height: 100dvh;
+    max-height: 100dvh;
     position: fixed;
     transform: translateX(-100%); // Masqué par défaut
     box-shadow: 2px 0 10px rgba(0, 0, 0, 0.15);
-    z-index: 100;
+    z-index: calc(var(--z-fixed) + 2);
     transition: transform 0.4s ease; // synchroniser avec le bouton
+    overflow: hidden;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top);
 
     &.sidebar-open {
       transform: translateX(0); // Visible quand ouvert
@@ -285,12 +301,14 @@
   }
 
   .sidebar-nav {
-    flex: 1;
+    flex: 1 1 auto;
     min-height: 0;
-    padding: 1rem 0;
+    padding: 0.75rem 0 1rem;
+    overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
   }
 
   .nav-section-title {
@@ -318,10 +336,11 @@
   }
 
   .sidebar-footer {
-    padding: 1.5rem;
-    border-top: 1px solid rgba(0, 0, 0, 0.05);
-    flex-shrink: 0;
-    margin-top: auto;
+    flex: 0 0 auto;
+    padding: 1rem 1.25rem max(1rem, env(safe-area-inset-bottom));
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    background: #fff;
+    box-shadow: 0 -6px 16px rgba(0, 0, 0, 0.06);
   }
 
   .logout-btn {
@@ -354,6 +373,19 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  padding-top: 80px;
   width: 100%;
+}
+
+/* Padding haut aligné avec la zone admin principale (header fixe) — pas sur mobile drawer */
+@media (min-width: 769px) {
+  .wrapper {
+    padding-top: 80px;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Décalage haut géré par .admin-sidebar (safe-area) — pas de double marge */
+  .wrapper {
+    padding-top: 0;
+  }
 }

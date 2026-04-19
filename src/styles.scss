@@ -1008,10 +1008,16 @@ body.app-loaded {
 // Modales : feuille depuis le bas (comme admin Rendez-vous)
 // Ajouter modal-sheet-mobile sur le .modal-overlay concerné
 // ========================================
+.modal-overlay {
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
+}
+
 @media (max-width: 768px) {
   .modal-overlay.modal-sheet-mobile {
     padding: 0;
     align-items: flex-end;
+    touch-action: none; /* fond : pas de pan ; le pan vertical est sur la feuille */
   }
 
   .modal-overlay.modal-sheet-mobile .modal-content,
@@ -1023,8 +1029,11 @@ body.app-loaded {
     margin: 0;
     width: 100%;
     max-width: 100%;
+    overflow-x: hidden;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    overscroll-behavior-y: contain;
   }
 
   .modal-overlay.modal-sheet-mobile .modal-title {
