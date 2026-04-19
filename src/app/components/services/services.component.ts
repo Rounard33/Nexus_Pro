@@ -55,7 +55,7 @@ export function reikiTabLabel(p: Prestation): string {
   if (n.includes('distance')) {
     return 'À distance';
   }
-  return 'Usui';
+  return 'Sur place';
 }
 
 /**
@@ -82,7 +82,7 @@ export function buildPrestationCards(prestations: Prestation[]): (Prestation | P
     groupKey: 'reiki',
     cardTitle: 'Reiki',
     shortDescription:
-      'Séances Usui au cabinet, sur les animaux ou à distance — choisissez le format au moment de la réservation.',
+      'Séances de reiki sur place, sur les animaux ou à distance — choisissez le format au moment de la réservation.',
     image: reiki[0].image,
     variants: reiki,
     forfaitSuggestion

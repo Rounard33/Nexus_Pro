@@ -61,8 +61,8 @@ export const FORFAITS_CATALOG: ForfaitCatalogEntry[] = [
     eligibleNameSubstrings: ['reiki']
   },
   {
-    id: 'deconnexion-a-soi',
-    name: 'Forfait Déconnexion à Soi',
+    id: 'reconnexion-a-soi',
+    name: 'Forfait Reconnexion à Soi',
     description: 'Un duo de séances pour un lâcher-prise complet.',
     details: [
       'Une première séance de massage crânien énergétique pour lâcher prise, faire un « reset intérieur ».',
