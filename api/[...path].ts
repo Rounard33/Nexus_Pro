@@ -554,8 +554,9 @@ function parseGiftCardAmountEur(body: Record<string, unknown>): number | null {
 
 /**
  * Met à jour les fiches clients après création d'une carte cadeau :
- * — acheteur : vente additionnelle (bloc [ADDITIONAL_SALES]) ;
- * — bénéficiaire (autre e-mail) : ligne libre dans les notes.
+ * — même personne (e-mails identiques ou un seul e-mail) : vente gift_card sur sa fiche ;
+ * — acheteur ≠ bénéficiaire : vente gift_card consommable **uniquement** sur la fiche du bénéficiaire (pas d’entrée structurée chez l’acheteur) ;
+ * — seul l’e-mail acheteur est renseigné : vente sur l’acheteur (pas de fiche bénéficiaire).
  */
 async function appendGiftCardPurchaseToClientNotes(
   supabase: any,
@@ -571,35 +572,15 @@ async function appendGiftCardPurchaseToClientNotes(
     amount_eur?: number | null;
   }
 ): Promise<void> {
-  const appendRecipientLine = async (email: string, line: string) => {
-    const normalized = email.trim().toLowerCase();
-    if (!normalized || !normalized.includes('@')) return;
-    const { data: client, error } = await supabase
-      .from('clients')
-      .select('id, notes')
-      .eq('email', normalized)
-      .maybeSingle();
-    if (error || !client?.id) return;
-    const prev = (client.notes && String(client.notes).trim()) || '';
-    const newNotes = prev ? `${prev}\n\n${line}` : line;
-    const { error: upErr } = await supabase.from('clients').update({ notes: newNotes }).eq('id', client.id);
-    if (upErr) {
-      console.error('[gift-cards] Notes bénéficiaire:', upErr.message);
-    }
-  };
-
   const buyerEmail = (opts.buyer_email || '').trim().toLowerCase();
   const recipientEmail = (opts.recipient_email || '').trim().toLowerCase();
 
-  const recipientLine =
-    `Carte cadeau reçue : ${opts.service_label} (valide jusqu'au ${opts.valid_until}). Acheteur : ${opts.buyer_name}.`;
-
-  const appendBuyerAdditionalSale = async (): Promise<void> => {
-    if (!buyerEmail) return;
+  const appendConsumableGiftCardSale = async (clientEmail: string, saleNotes: string): Promise<void> => {
+    if (!clientEmail || !clientEmail.includes('@')) return;
     const { data: client, error } = await supabase
       .from('clients')
       .select('id, notes')
-      .eq('email', buyerEmail)
+      .eq('email', clientEmail)
       .maybeSingle();
     if (error || !client?.id) return;
 
@@ -608,7 +589,7 @@ async function appendGiftCardPurchaseToClientNotes(
       date: opts.purchase_date,
       type: 'gift_card',
       gift_card_id: opts.gift_card_id,
-      notes: `${opts.service_label} — bénéficiaire : ${opts.recipient_name}, valide jusqu'au ${opts.valid_until}`
+      notes: saleNotes
     };
     if (opts.amount_eur != null && opts.amount_eur > 0) {
       sale.giftCardAmount = opts.amount_eur;
@@ -617,16 +598,42 @@ async function appendGiftCardPurchaseToClientNotes(
     const newNotes = formatNotesWithAdditionalSales(client.notes, updatedSales);
     const { error: upErr } = await supabase.from('clients').update({ notes: newNotes }).eq('id', client.id);
     if (upErr) {
-      console.error('[gift-cards] Ventes additionnelles (acheteur):', upErr.message);
+      console.error('[gift-cards] Ventes additionnelles (carte cadeau):', upErr.message);
     }
   };
 
-  if (buyerEmail && recipientEmail && buyerEmail === recipientEmail) {
-    await appendBuyerAdditionalSale();
+  if (!buyerEmail && !recipientEmail) {
     return;
   }
-  if (buyerEmail) await appendBuyerAdditionalSale();
-  if (recipientEmail && recipientEmail !== buyerEmail) await appendRecipientLine(recipientEmail, recipientLine);
+
+  if (buyerEmail && recipientEmail && buyerEmail === recipientEmail) {
+    await appendConsumableGiftCardSale(
+      buyerEmail,
+      `${opts.service_label} — bénéficiaire : ${opts.recipient_name}, valide jusqu'au ${opts.valid_until}`
+    );
+    return;
+  }
+
+  if (buyerEmail && recipientEmail && buyerEmail !== recipientEmail) {
+    await appendConsumableGiftCardSale(
+      recipientEmail,
+      `${opts.service_label} — offert par ${opts.buyer_name}, valide jusqu'au ${opts.valid_until}`
+    );
+    return;
+  }
+
+  if (recipientEmail) {
+    await appendConsumableGiftCardSale(
+      recipientEmail,
+      `${opts.service_label} — valide jusqu'au ${opts.valid_until}`
+    );
+    return;
+  }
+
+  await appendConsumableGiftCardSale(
+    buyerEmail,
+    `${opts.service_label} — bénéficiaire : ${opts.recipient_name}, valide jusqu'au ${opts.valid_until}`
+  );
 }
 
 /**
@@ -646,19 +653,19 @@ async function markGiftCardUsedInClientNotes(
 ): Promise<void> {
   const usageDate = new Date().toISOString().slice(0, 10);
   const gid = opts.gift_card_id;
+  const be = (opts.buyer_email || '').trim().toLowerCase();
+  const re = (opts.recipient_email || '').trim().toLowerCase();
 
-  const updateBuyer = async (): Promise<void> => {
-    const email = (opts.buyer_email || '').trim().toLowerCase();
-    if (!email || !email.includes('@')) return;
+  const tryMarkUsedOnClientEmail = async (email: string): Promise<boolean> => {
+    if (!email || !email.includes('@')) return false;
     const { data: client, error } = await supabase
       .from('clients')
       .select('id, notes')
       .eq('email', email)
       .maybeSingle();
-    if (error || !client?.id) return;
+    if (error || !client?.id) return false;
 
     let sales = parseAdditionalSalesFromNotes(client.notes);
-    // Anciennes lignes « utilisation » ajoutées comme 2e vente (sans gift_card_id)
     sales = sales.filter(
       (s) =>
         !(
@@ -678,7 +685,7 @@ async function markGiftCardUsedInClientNotes(
           s.notes.includes(opts.service_label)
       );
     }
-    if (idx === -1) return;
+    if (idx === -1) return false;
     const next = [...sales];
     next[idx] = {
       ...next[idx],
@@ -687,42 +694,18 @@ async function markGiftCardUsedInClientNotes(
     };
     const newNotes = formatNotesWithAdditionalSales(client.notes, next);
     await supabase.from('clients').update({ notes: newNotes }).eq('id', client.id);
+    return true;
   };
 
-  const appendRecipientPlain = async (): Promise<void> => {
-    const be = (opts.buyer_email || '').trim().toLowerCase();
-    const re = (opts.recipient_email || '').trim().toLowerCase();
-    if (!re || !re.includes('@') || re === be) return;
-    const { data: client, error } = await supabase
-      .from('clients')
-      .select('id, notes')
-      .eq('email', re)
-      .maybeSingle();
-    if (error || !client?.id) return;
-
-    let sales = parseAdditionalSalesFromNotes(client.notes);
-    const before = sales.length;
-    sales = sales.filter(
-      (s) =>
-        !(
-          s.type === 'gift_card' &&
-          typeof s.notes === 'string' &&
-          s.notes.startsWith('Soin offert utilisé') &&
-          s.notes.includes(opts.service_label)
-        )
-    );
-    let notes = client.notes;
-    if (sales.length !== before) {
-      notes = formatNotesWithAdditionalSales(notes, sales);
+  if (be && re && be !== re) {
+    const okRecipient = await tryMarkUsedOnClientEmail(re);
+    if (!okRecipient) {
+      await tryMarkUsedOnClientEmail(be);
     }
-    const marker = `→ Carte cadeau « ${opts.service_label} » utilisée le ${usageDate}`;
-    if (notes.includes(marker)) return;
-    const suffix = `\n\n${marker}.`;
-    await supabase.from('clients').update({ notes: (notes || '') + suffix }).eq('id', client.id);
-  };
+    return;
+  }
 
-  await updateBuyer();
-  await appendRecipientPlain();
+  await tryMarkUsedOnClientEmail(be || re);
 }
 
 async function handleGiftCards(req: VercelRequest, res: VercelResponse, supabase: any) {
