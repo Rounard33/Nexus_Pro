@@ -39,6 +39,7 @@
         <span>Séances à l’unité : <strong>{{ stats.revenueAppointmentsUnit | number:'1.0-0':'fr' }}€</strong></span>
         <span *ngIf="stats.revenueForfaits > 0"> · Forfaits vendus : <strong>{{ stats.revenueForfaits | number:'1.0-0':'fr' }}€</strong></span>
         <span *ngIf="stats.revenueGiftCards > 0"> · Cartes cadeaux : <strong>{{ stats.revenueGiftCards | number:'1.0-0':'fr' }}€</strong></span>
+        <span *ngIf="stats.revenueCreations > 0"> · Créations : <strong>{{ stats.revenueCreations | number:'1.0-0':'fr' }}€</strong></span>
       </div>
       <div class="card-change" [class.positive]="stats.revenueChange >= 0" [class.negative]="stats.revenueChange < 0">
         <svg *ngIf="stats.revenueChange >= 0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

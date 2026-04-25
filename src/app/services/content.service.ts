@@ -1,11 +1,23 @@
 import {HttpClient, HttpHeaders} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
 import {from, Observable, of} from 'rxjs';
-import {catchError, switchMap} from 'rxjs/operators';
+import {catchError, map, switchMap} from 'rxjs/operators';
 import {environment} from '../../environments/environment';
 import {AuthService} from './auth.service';
 
 const API_URL = environment.apiUrl;
+
+/** Unifie la clé de montant (API / intermédiaires) pour le front. */
+function mapAppointmentResponse(row: Appointment | any): Appointment {
+  if (row == null) {
+    return row;
+  }
+  const s = (row as any).session_amount_eur ?? (row as any).sessionAmountEur;
+  if (s !== undefined && s !== null) {
+    return {...row, session_amount_eur: s} as Appointment;
+  }
+  return row as Appointment;
+}
 
 export interface Prestation {
   id?: string;
@@ -116,6 +128,10 @@ export interface Appointment {
     | 'virement'
     | 'chèque'
     | null;
+  /**
+   * Montant de la séance pour ce RDV (€). NULL/undefined = prix issu de la prestation.
+   */
+  session_amount_eur?: number | null;
   notes?: string;
   referral_source?: string; // Source de référence : search, social, friend, advertisement, other
   referral_friend_name?: string; // Nom de la personne qui a recommandé (si referral_source = friend)
@@ -256,7 +272,9 @@ export class ContentService {
     if (status) params.status = status;
     if (startDate) params.startDate = startDate;
     if (endDate) params.endDate = endDate;
-    return this.http.get<Appointment[]>(`${API_URL}/appointments`, { params });
+    return this.http
+      .get<Appointment[]>(`${API_URL}/appointments`, { params })
+      .pipe(map((rows) => (rows || []).map((r) => mapAppointmentResponse(r))));
   }
 
   // Créer un rendez-vous (public, nécessite captcha)
@@ -282,9 +300,12 @@ export class ContentService {
     return from(this.authService.getSessionToken()).pipe(
       switchMap(token => {
         const headers = new HttpHeaders({
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         });
-        return this.http.patch<Appointment>(`${API_URL}/appointments?id=${id}`, updates, {headers});
+        return this.http
+          .patch<Appointment>(`${API_URL}/appointments?id=${id}`, updates, { headers })
+          .pipe(map((row) => mapAppointmentResponse(row)));
       })
     );
   }

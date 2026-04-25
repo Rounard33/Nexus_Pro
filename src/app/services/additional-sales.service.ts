@@ -6,6 +6,7 @@ export type CreateSaleParams =
       type: 'creation';
       creationId: string;
       creationName: string;
+      creationAmountEur: number;
       notes?: string;
     }
   | {
@@ -88,6 +89,7 @@ export class AdditionalSalesService {
     if (params.type === 'creation') {
       sale.creationId = params.creationId;
       sale.creationName = params.creationName;
+      sale.creationAmountEur = Math.max(0, Math.round(params.creationAmountEur * 100) / 100);
     } else if (params.type === 'gift_card') {
       if (params.giftCardAmount != null && params.giftCardAmount > 0) {
         sale.giftCardAmount = params.giftCardAmount;

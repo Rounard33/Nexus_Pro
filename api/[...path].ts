@@ -1494,6 +1494,21 @@ async function handleAppointments(req: VercelRequest, res: VercelResponse, supab
       }
       updateData.mixte_complement_payment_method = req.body.mixte_complement_payment_method;
     }
+
+    if (req.body.session_amount_eur !== undefined) {
+      const v = req.body.session_amount_eur;
+      if (v === null) {
+        updateData.session_amount_eur = null;
+      } else {
+        const n = typeof v === 'number' ? v : parseFloat(String(v));
+        if (!Number.isFinite(n) || n < 0 || n > 10000) {
+          return res.status(400).json({
+            error: 'Invalid session_amount_eur. Expect null or a number between 0 and 10000.',
+          });
+        }
+        updateData.session_amount_eur = Math.round(n * 100) / 100;
+      }
+    }
     
     // Vérifier qu'au moins un champ est fourni
     if (Object.keys(updateData).length === 0) {

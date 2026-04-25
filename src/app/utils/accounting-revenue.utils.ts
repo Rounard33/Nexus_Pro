@@ -63,7 +63,7 @@ export function collectGiftCardCoverageEuroByAppointment(
   return m;
 }
 
-/** CA reconnu pour une vente additionnelle (forfait ou carte cadeau), à la date de vente. */
+/** CA reconnu pour une vente additionnelle, à la date de vente. */
 export function revenueFromAdditionalSale(s: AdditionalSale): number {
   if (s.type === 'gift_card' && s.giftCardAmount != null && s.giftCardAmount > 0) {
     return Math.round(s.giftCardAmount * 100) / 100;
@@ -78,7 +78,96 @@ export function revenueFromAdditionalSale(s: AdditionalSale): number {
     }
     return Math.round(amt * 100) / 100;
   }
+  if (s.type === 'creation' && s.creationAmountEur != null && s.creationAmountEur > 0) {
+    return Math.round(s.creationAmountEur * 100) / 100;
+  }
   return 0;
+}
+
+/**
+ * Interprète une valeur de colonne `session_amount_eur` (nombre, string JSON, null) ;
+ * repli : marqueur `|MS=…|` dans `notes` ; sinon prix catalogue.
+ */
+function parseSessionAmountEurValue(v: unknown): number | null {
+  if (v === null || v === undefined) {
+    return null;
+  }
+  if (typeof v === 'string' && v.trim() === '') {
+    return null;
+  }
+  if (typeof v === 'string') {
+    const n = parseEuroAmountFromLabel(v);
+    if (Number.isFinite(n) && n >= 0) {
+      return Math.round(n * 100) / 100;
+    }
+    const alt = parseFloat(v.replace(/\s/g, '').replace(',', '.'));
+    if (Number.isFinite(alt) && alt >= 0) {
+      return Math.round(alt * 100) / 100;
+    }
+    return null;
+  }
+  const n = Number(v);
+  if (Number.isFinite(n) && n >= 0) {
+    return Math.round(n * 100) / 100;
+  }
+  return null;
+}
+
+/** Suffixe de secours (notes RDV) si `session_amount_eur` en base n’est pas dispo. */
+const MACHINE_MS = /\s*\|MS=([0-9.,]+)\|/g;
+
+export function mergeMachineSessionAmountIntoNotes(
+  notes: string | undefined | null,
+  amount: number
+): string {
+  const base = (notes || '').replace(MACHINE_MS, '').trim();
+  const tag = `|MS=${amount.toFixed(2).replace('.', ',')}|`;
+  return base ? `${base} ${tag}` : tag;
+}
+
+export function stripMachineSessionFromNotes(notes: string | undefined | null): string {
+  if (notes == null) {
+    return '';
+  }
+  return notes.replace(MACHINE_MS, '').trim();
+}
+
+function parseMachineSessionFromNotes(notes: string | undefined | null): number | null {
+  if (notes == null || notes.trim() === '') {
+    return null;
+  }
+  const m = notes.match(/\|MS=([0-9.,]+)\|/);
+  if (!m) {
+    return null;
+  }
+  return parseSessionAmountEurValue(m[1].replace(/\s/g, '').replace(',', '.'));
+}
+
+export function getResolvedSessionAmountEur(
+  apt: Pick<Appointment, 'prestation_id' | 'session_amount_eur' | 'notes'>,
+  prestations: { id?: string; price?: string | null }[]
+): number {
+  const a = apt as { session_amount_eur?: unknown; sessionAmountEur?: unknown; notes?: string | null | undefined; prestation_id?: string | null };
+  const raw =
+    a.session_amount_eur !== undefined && a.session_amount_eur !== null
+      ? a.session_amount_eur
+      : a.sessionAmountEur;
+  const parsed = parseSessionAmountEurValue(raw);
+  if (parsed !== null) {
+    return parsed;
+  }
+  const fromNotes = parseMachineSessionFromNotes(a.notes);
+  if (fromNotes !== null) {
+    return fromNotes;
+  }
+  if (!apt.prestation_id) {
+    return 0;
+  }
+  const p = prestations.find((x) => x.id === apt.prestation_id);
+  if (!p?.price) {
+    return 0;
+  }
+  return parseEuroAmountFromLabel(p.price);
 }
 
 export function sumAdditionalSalesInDateRange(
@@ -86,9 +175,10 @@ export function sumAdditionalSalesInDateRange(
   clients: Pick<Client, 'notes'>[],
   startInclusive: string,
   endInclusive: string
-): { forfaits: number; giftCards: number; total: number } {
+): { forfaits: number; giftCards: number; creations: number; total: number } {
   let forfaits = 0;
   let giftCards = 0;
+  let creations = 0;
   for (const c of clients) {
     const sales = parseSales(c.notes);
     for (const s of sales) {
@@ -99,12 +189,20 @@ export function sumAdditionalSalesInDateRange(
         forfaits += revenueFromAdditionalSale(s);
       } else if (s.type === 'gift_card') {
         giftCards += revenueFromAdditionalSale(s);
+      } else if (s.type === 'creation') {
+        creations += revenueFromAdditionalSale(s);
       }
     }
   }
   forfaits = Math.round(forfaits * 100) / 100;
   giftCards = Math.round(giftCards * 100) / 100;
-  return { forfaits, giftCards, total: Math.round((forfaits + giftCards) * 100) / 100 };
+  creations = Math.round(creations * 100) / 100;
+  return {
+    forfaits,
+    giftCards,
+    creations,
+    total: Math.round((forfaits + giftCards + creations) * 100) / 100
+  };
 }
 
 /**
@@ -120,14 +218,7 @@ export function appointmentUnitPortionEur(
   if (aid && forfaitCountedIds.has(aid)) {
     return 0;
   }
-  if (!apt.prestation_id) {
-    return 0;
-  }
-  const prestation = prestations.find((p) => p.id === apt.prestation_id);
-  if (!prestation?.price) {
-    return 0;
-  }
-  const price = parseEuroAmountFromLabel(prestation.price);
+  const price = getResolvedSessionAmountEur(apt, prestations);
   const giftPart = aid ? giftCoverageByAppointment.get(aid) ?? 0 : 0;
   return Math.max(0, Math.round((price - giftPart) * 100) / 100);
 }

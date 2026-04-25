@@ -15,7 +15,9 @@ export type Forfait = ForfaitCatalogEntry;
 export class ForfaitsComponent {
   @Output() scrollToPrestation = new EventEmitter<string>();
 
-  readonly forfaits: ForfaitCatalogEntry[] = FORFAITS_CATALOG;
+  readonly forfaits: ForfaitCatalogEntry[] = FORFAITS_CATALOG.filter(
+    (f) => f.id !== 'ambassadeur-5'
+  );
 
   faqItems = [
     { question: 'Qu\'est-ce que le Reiki ?', prestationKeyword: 'reiki' },

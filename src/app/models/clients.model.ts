@@ -11,6 +11,8 @@ export interface AdditionalSale {
   type: 'creation' | 'gift_card' | 'forfait';
   creationId?: string; // ID de la création si type = 'creation'
   creationName?: string; // Nom de la création
+  /** Montant encaissé (€) — saisi à la vente. */
+  creationAmountEur?: number;
   /** ID du forfait (catalogue) si type = 'forfait' */
   forfaitId?: string;
   /** Libellé affiché si type = 'forfait' */

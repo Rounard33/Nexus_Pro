@@ -881,6 +881,13 @@
   color: var(--text-secondary, #666);
 }
 
+.complete-catalogue-hint {
+  font-size: 0.8rem;
+  color: var(--text-secondary, #666);
+  margin: 0.35rem 0 0;
+  line-height: 1.35;
+}
+
 .complete-no-gift-hint {
   font-size: 0.82rem;
   color: var(--text-secondary, #666);

@@ -4,7 +4,7 @@ import {catchError, map, switchMap} from 'rxjs/operators';
 import {AdditionalSale} from '../models/clients.model';
 import {Appointment, ContentService, Prestation} from './content.service';
 import {AdditionalSalesService} from './additional-sales.service';
-import {parseEuroAmountFromLabel} from '../utils/accounting-revenue.utils';
+import {getResolvedSessionAmountEur} from '../utils/accounting-revenue.utils';
 
 export type GiftCardCompleteOptions = {
   /** Montant saisi pour le mode « mixte » (€ prélevés sur carte). */
@@ -137,7 +137,7 @@ export class GiftCardProgressService {
       }
     }
 
-    const prestationPrice = this.getPrestationPrice(appointment, prestations);
+    const prestationPrice = getResolvedSessionAmountEur(appointment, prestations);
     if (prestationPrice <= 0) {
       return {sales: next, changed: false};
     }
@@ -256,17 +256,5 @@ export class GiftCardProgressService {
       changed: true,
       message: messages.length ? `Carte cadeau : ${messages.join(', ')}.` : undefined
     };
-  }
-
-  private getPrestationPrice(appointment: Appointment, prestations: Prestation[]): number {
-    const pid = appointment.prestation_id?.trim();
-    if (!pid) {
-      return 0;
-    }
-    const p = prestations.find((x) => x.id === pid);
-    if (!p?.price) {
-      return 0;
-    }
-    return parseEuroAmountFromLabel(p.price);
   }
 }

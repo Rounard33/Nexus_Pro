@@ -49,6 +49,8 @@ export class ClientDetailComponent implements OnInit {
   saleType: 'creation' | 'gift_card' | 'forfait' = 'creation';
   selectedCreationId: string = '';
   selectedForfaitId: string = '';
+  /** Montant encaissé pour une vente « création » (€). */
+  creationAmountEur = 0;
   saleNotes: string = '';
   showGiftCardModal = false;
 
@@ -335,6 +337,7 @@ export class ClientDetailComponent implements OnInit {
     this.saleType = 'creation';
     this.selectedCreationId = '';
     this.selectedForfaitId = '';
+    this.creationAmountEur = 0;
     this.saleNotes = '';
     this.showGiftCardModal = false;
   }
@@ -344,6 +347,7 @@ export class ClientDetailComponent implements OnInit {
     this.saleType = 'creation';
     this.selectedCreationId = '';
     this.selectedForfaitId = '';
+    this.creationAmountEur = 0;
     this.saleNotes = '';
     this.showGiftCardModal = false;
   }
@@ -385,6 +389,13 @@ export class ClientDetailComponent implements OnInit {
       this.notificationService.error('Veuillez sélectionner une création');
       return;
     }
+    if (this.saleType === 'creation') {
+      const amt = Number(this.creationAmountEur);
+      if (!Number.isFinite(amt) || amt <= 0) {
+        this.notificationService.error('Indiquez un prix de vente supérieur à 0');
+        return;
+      }
+    }
     if (this.saleType === 'forfait' && !this.selectedForfaitId) {
       this.notificationService.error('Veuillez sélectionner un forfait');
       return;
@@ -396,6 +407,7 @@ export class ClientDetailComponent implements OnInit {
             type: 'creation',
             creationId: this.selectedCreationId,
             creationName: this.creations.find((c) => c.id === this.selectedCreationId)?.name || '',
+            creationAmountEur: Number(this.creationAmountEur),
             notes: this.saleNotes || undefined
           })
         : this.additionalSalesService.createSale({
@@ -437,7 +449,11 @@ export class ClientDetailComponent implements OnInit {
 
   getSaleDescription(sale: AdditionalSale): string {
     if (sale.type === 'creation') {
-      return sale.creationName || 'Création';
+      const name = sale.creationName || 'Création';
+      if (sale.creationAmountEur != null && sale.creationAmountEur > 0) {
+        return `${name} — ${sale.creationAmountEur} €`;
+      }
+      return name;
     }
     if (sale.type === 'forfait') {
       const name = sale.forfaitName || 'Forfait';

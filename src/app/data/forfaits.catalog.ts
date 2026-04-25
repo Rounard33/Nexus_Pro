@@ -74,6 +74,22 @@ export const FORFAITS_CATALOG: ForfaitCatalogEntry[] = [
     sessionsTotal: 2,
     eligiblePrestationIds: [],
     eligibleNameSubstrings: ['crânien', 'reiki']
+  },
+  {
+    id: 'ambassadeur-5',
+    name: 'Crédit ambassadeur (5 séances offertes)',
+    description: 'Cinq séances de Reiki ou de massage crânien énergétique offertes (partenariat, renouvellement manuel chaque année si besoin).',
+    details: [
+      'À attribuer côté admin sur la fiche client comme une vente « forfait ».',
+      'Les séances éligibles sont décomptées automatiquement à chaque rendez-vous terminé, comme pour un forfait classique.',
+      'CA reconnu : 0 € (prestation offerte).'
+    ],
+    price: '0 €',
+    originalPrice: '0 €',
+    savings: '0 €',
+    sessionsTotal: 5,
+    eligiblePrestationIds: [],
+    eligibleNameSubstrings: ['reiki', 'crânien', 'massage crânien']
   }
 ];
 

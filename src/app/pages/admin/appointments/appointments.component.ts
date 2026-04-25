@@ -14,7 +14,12 @@ import { AdditionalSalesService } from '../../../services/additional-sales.servi
 import { Appointment, Client, ContentService, Prestation } from '../../../services/content.service';
 import { AppointmentClientNotesSyncService } from '../../../services/appointment-client-notes-sync.service';
 import { NotificationService } from '../../../services/notification.service';
-import { parseEuroAmountFromLabel } from '../../../utils/accounting-revenue.utils';
+import {
+  getResolvedSessionAmountEur,
+  mergeMachineSessionAmountIntoNotes,
+  parseEuroAmountFromLabel,
+  stripMachineSessionFromNotes
+} from '../../../utils/accounting-revenue.utils';
 import { BodyScrollLockDirective } from '../../../directives/body-scroll-lock.directive';
 import { DateUtils } from '../../../utils/date.utils';
 
@@ -79,10 +84,13 @@ export class AppointmentsComponent implements OnInit, OnDestroy {
     payment_method: string;
     mixteGiftEur: number;
     mixteComplementMethod: 'espèces' | 'carte' | 'virement' | 'chèque';
+    /** Montant facturable pour ce RDV (saisi à la clôture). `string` possible via le navigateur / ngModel. */
+    sessionAmountEur: number | string;
   } = {
     payment_method: 'espèces',
     mixteGiftEur: 0,
-    mixteComplementMethod: 'espèces'
+    mixteComplementMethod: 'espèces',
+    sessionAmountEur: 0
   };
   /** Somme des soldes cartes cadeau sur la fiche client (indicatif). */
   giftBalanceHint: number | null = null;
@@ -289,26 +297,43 @@ export class AppointmentsComponent implements OnInit, OnDestroy {
       this.notificationService.error('Erreur: Rendez-vous invalide (ID manquant)');
       return;
     }
-    if (this.prestations.length === 0) {
-      this.contentService
-        .getPrestations()
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: (data) => (this.prestations = data),
-          error: () => this.notificationService.error('Impossible de charger les prestations')
-        });
-    }
     this.completeTarget = appointment;
     const comp = appointment.mixte_complement_payment_method;
     const mixteComplementMethod =
       comp === 'carte' || comp === 'virement' || comp === 'chèque' || comp === 'espèces'
         ? comp
         : 'espèces';
-    this.completeForm = {
-      payment_method: appointment.payment_method || 'espèces',
-      mixteGiftEur: 0,
-      mixteComplementMethod
+
+    const applyForm = (): void => {
+      const sessionAmountEur = getResolvedSessionAmountEur(appointment, this.prestations);
+      this.completeForm = {
+        payment_method: appointment.payment_method || 'espèces',
+        mixteGiftEur: 0,
+        mixteComplementMethod,
+        sessionAmountEur
+      };
     };
+
+    if (this.prestations.length === 0) {
+      this.contentService
+        .getPrestations()
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (data) => {
+            this.prestations = data;
+            applyForm();
+            this.showCompleteModal = true;
+            this.loadGiftBalanceHint(appointment);
+          },
+          error: () => {
+            this.notificationService.error('Impossible de charger les prestations');
+            this.completeTarget = null;
+          }
+        });
+      return;
+    }
+
+    applyForm();
     this.showCompleteModal = true;
     this.loadGiftBalanceHint(appointment);
   }
@@ -346,12 +371,74 @@ export class AppointmentsComponent implements OnInit, OnDestroy {
     this.giftBalanceHint = null;
   }
 
-  getCompletePrestationPriceEuro(): number {
+  /** Montant de référence (catalogue) pour l’aide à la saisie. */
+  /** Affiche les notes du RDV sans le marqueur interne de montant (|MS=…|). */
+  getAppointmentNotesForDisplay(apt: Appointment | null | undefined): string {
+    if (apt == null) {
+      return '';
+    }
+    return stripMachineSessionFromNotes(apt.notes);
+  }
+
+  getCompleteCataloguePriceEuro(): number {
     if (!this.completeTarget?.prestation_id) {
       return 0;
     }
     const p = this.prestations.find((x) => x.id === this.completeTarget!.prestation_id);
     return p?.price ? parseEuroAmountFromLabel(p.price) : 0;
+  }
+
+  /**
+   * Recopie le montant depuis l’input DOM (évite le décalage d’un tick connu avec
+   * `[(ngModel)]` sur un `<input type="number">` au clic sur « Confirmer »).
+   */
+  private refreshSessionAmountFromInput(): void {
+    if (typeof document === 'undefined') {
+      return;
+    }
+    const el = document.getElementById('complete-session-amount') as HTMLInputElement | null;
+    if (!el) {
+      return;
+    }
+    const raw = (el.value ?? '').trim();
+    if (raw === '' && this.completeTarget) {
+      this.completeForm.sessionAmountEur = getResolvedSessionAmountEur(
+        this.completeTarget,
+        this.prestations
+      );
+      return;
+    }
+    if (raw === '') {
+      return;
+    }
+    const n = parseFloat(raw.replace(/\s/g, '').replace(',', '.'));
+    if (Number.isFinite(n) && n >= 0) {
+      this.completeForm.sessionAmountEur = Math.round(n * 100) / 100;
+    }
+  }
+
+  /** Montant de séance effectif (saisi) pour cette clôture. */
+  getCompleteSessionAmountEuro(): number {
+    const v = this.completeForm?.sessionAmountEur;
+    if (v === null || v === undefined) {
+      return 0;
+    }
+    if (typeof v === 'string') {
+      const s = v.trim();
+      if (s === '') {
+        return 0;
+      }
+      const n = parseFloat(s.replace(/\s/g, '').replace(',', '.'));
+      if (Number.isFinite(n) && n >= 0) {
+        return Math.round(n * 100) / 100;
+      }
+      return 0;
+    }
+    const n = Number(v);
+    if (!Number.isFinite(n) || n < 0) {
+      return 0;
+    }
+    return Math.round(n * 100) / 100;
   }
 
   /** Montant qui sera prélevé sur les cartes (estimation FIFO = solde global). */
@@ -360,7 +447,7 @@ export class AppointmentsComponent implements OnInit, OnDestroy {
     if (hint == null || hint <= 0) {
       return 0;
     }
-    const price = this.getCompletePrestationPriceEuro();
+    const price = this.getCompleteSessionAmountEuro();
     const pm = this.completeForm.payment_method;
     if (pm === 'carte_cadeau') {
       return Math.round(Math.min(price, hint) * 100) / 100;
@@ -408,13 +495,17 @@ export class AppointmentsComponent implements OnInit, OnDestroy {
       return null;
     }
 
-    const price = this.getCompletePrestationPriceEuro();
-    if (price <= 0) {
-      return 'Prix de la prestation introuvable : impossible de valider le paiement carte.';
+    const price = this.getCompleteSessionAmountEuro();
+    if (price < 0) {
+      return 'Montant de séance invalide.';
     }
 
     if (this.giftBalanceHint == null) {
       return 'Solde cartes indisponible : vérifiez l’e-mail du rendez-vous ou réessayez après chargement.';
+    }
+
+    if (price === 0) {
+      return null;
     }
 
     if (pm === 'carte_cadeau') {
@@ -447,6 +538,8 @@ export class AppointmentsComponent implements OnInit, OnDestroy {
       return;
     }
 
+    this.refreshSessionAmountFromInput();
+
     const paymentErr = this.getCompleteModalPaymentError();
     if (paymentErr) {
       this.notificationService.error(paymentErr);
@@ -458,11 +551,15 @@ export class AppointmentsComponent implements OnInit, OnDestroy {
     const previousStatus = apt.status;
     this.updatingAppointmentId = apt.id;
 
+    const sessionEur = this.getCompleteSessionAmountEuro();
+    const notesWithAmount = mergeMachineSessionAmountIntoNotes(apt.notes, sessionEur);
     const patch: Partial<Appointment> = {
       status: 'completed',
       payment_method: pm as Appointment['payment_method'],
       mixte_complement_payment_method:
-        pm === 'mixte' ? this.completeForm.mixteComplementMethod : null
+        pm === 'mixte' ? this.completeForm.mixteComplementMethod : null,
+      session_amount_eur: sessionEur,
+      notes: notesWithAmount
     };
 
     this.contentService
@@ -475,7 +572,11 @@ export class AppointmentsComponent implements OnInit, OnDestroy {
             ...updated,
             status: 'completed',
             payment_method: pmResolved,
-            mixte_complement_payment_method: updated.mixte_complement_payment_method ?? null
+            mixte_complement_payment_method: updated.mixte_complement_payment_method ?? null,
+            // Toujours le montant saisi (sync carte cadeau / forfait) : la réponse API
+            // peut omettre le champ ou le typer en string selon PostgREST.
+            session_amount_eur: sessionEur,
+            notes: updated.notes ?? notesWithAmount
           };
           return this.appointmentClientNotesSync
             .syncAfterAppointmentStatusChange(merged, previousStatus, 'completed', {
@@ -490,6 +591,10 @@ export class AppointmentsComponent implements OnInit, OnDestroy {
           apt.status = 'completed';
           apt.payment_method = merged.payment_method;
           apt.mixte_complement_payment_method = merged.mixte_complement_payment_method;
+          apt.session_amount_eur = merged.session_amount_eur;
+          if (merged.notes !== undefined) {
+            apt.notes = merged.notes;
+          }
           const idx = this.appointments.findIndex((a) => a.id === apt.id);
           if (idx !== -1) {
             this.appointments[idx] = { ...this.appointments[idx], ...merged };
@@ -499,6 +604,10 @@ export class AppointmentsComponent implements OnInit, OnDestroy {
             selected.status = 'completed';
             selected.payment_method = merged.payment_method;
             selected.mixte_complement_payment_method = merged.mixte_complement_payment_method;
+            selected.session_amount_eur = merged.session_amount_eur;
+            if (merged.notes !== undefined) {
+              selected.notes = merged.notes;
+            }
           }
 
           this.applyFilters();

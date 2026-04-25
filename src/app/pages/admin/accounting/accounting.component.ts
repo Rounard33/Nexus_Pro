@@ -23,6 +23,8 @@ interface MonthlyStats {
   revenueForfaits: number;
   /** Ventes de cartes cadeaux ce mois (date de vente). */
   revenueGiftCards: number;
+  /** Ventes de créations (montant saisi à la vente). */
+  revenueCreations: number;
   revenueLastMonth: number;
   revenueChange: number;
   completedAppointments: number;
@@ -50,6 +52,7 @@ export class AccountingComponent implements OnInit {
     revenueAppointmentsUnit: 0,
     revenueForfaits: 0,
     revenueGiftCards: 0,
+    revenueCreations: 0,
     revenueLastMonth: 0,
     revenueChange: 0,
     completedAppointments: 0,
@@ -158,6 +161,7 @@ export class AccountingComponent implements OnInit {
     this.stats.revenueAppointmentsUnit = unitRevThis;
     this.stats.revenueForfaits = salesCurrent.forfaits;
     this.stats.revenueGiftCards = salesCurrent.giftCards;
+    this.stats.revenueCreations = salesCurrent.creations;
     this.stats.revenue = Math.round((unitRevThis + salesCurrent.total) * 100) / 100;
 
     const revLastTotal = Math.round((unitRevLast + salesLast.total) * 100) / 100;
@@ -233,7 +237,7 @@ export class AccountingComponent implements OnInit {
 
   private calculatePaymentMethods(
     appointments: Appointment[],
-    salesMonth: { forfaits: number; giftCards: number },
+    salesMonth: { forfaits: number; giftCards: number; creations: number },
     giftCoverageByAppointment: Map<string, number>
   ): { method: string; amount: number; percentage: number }[] {
     const methods: { [key: string]: number } = {
@@ -242,7 +246,8 @@ export class AccountingComponent implements OnInit {
       virement: 0,
       chèque: 0,
       forfaits: salesMonth.forfaits,
-      cartes_cadeaux: salesMonth.giftCards
+      cartes_cadeaux: salesMonth.giftCards,
+      creations: salesMonth.creations
     };
 
     appointments.forEach((apt) => {
@@ -326,6 +331,7 @@ export class AccountingComponent implements OnInit {
       case 'chèque': return '📝';
       case 'forfaits': return '📦';
       case 'cartes_cadeaux': return '🎁';
+      case 'creations': return '✨';
       default: return '💰';
     }
   }
@@ -338,6 +344,7 @@ export class AccountingComponent implements OnInit {
       case 'chèque': return 'Chèque';
       case 'forfaits': return 'Ventes forfaits';
       case 'cartes_cadeaux': return 'Cartes cadeaux';
+      case 'creations': return 'Ventes créations';
       default: return method;
     }
   }

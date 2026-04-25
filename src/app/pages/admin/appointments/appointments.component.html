@@ -362,6 +362,12 @@
             {{ getStatusLabel(selectedAppointment.status) }}
           </span>
         </div>
+        <div
+          class="detail-row"
+          *ngIf="selectedAppointment.status === 'completed' && selectedAppointment.session_amount_eur != null">
+          <strong>Montant de la séance (enregistré)&nbsp;:</strong>
+          <span>{{ selectedAppointment.session_amount_eur | number:'1.2-2':'fr' }} €</span>
+        </div>
         <div class="detail-row detail-row-editable">
           <strong>Mode de paiement:</strong>
           <select 
@@ -396,9 +402,9 @@
             <option value="chèque">Chèque</option>
           </select>
         </div>
-        <div class="detail-row" *ngIf="selectedAppointment.notes">
+        <div class="detail-row" *ngIf="getAppointmentNotesForDisplay(selectedAppointment)">
           <strong>Notes:</strong>
-          <span>{{ selectedAppointment.notes }}</span>
+          <span>{{ getAppointmentNotesForDisplay(selectedAppointment) }}</span>
         </div>
         <div class="detail-row" *ngIf="selectedAppointment.referral_source">
           <strong>Comment avez-vous connu le site ?</strong>
@@ -474,9 +480,26 @@
           <span class="complete-lead-presta">{{ getPrestationDisplayName(completeTarget) }}</span>
         </p>
         <div class="complete-amounts">
+          <div class="form-group">
+            <label class="form-label" for="complete-session-amount">Montant de la séance (€)</label>
+            <input
+              id="complete-session-amount"
+              type="number"
+              min="0"
+              max="10000"
+              step="0.01"
+              class="form-input"
+              [(ngModel)]="completeForm.sessionAmountEur"
+              placeholder="ex. 60"
+            />
+            <p class="complete-catalogue-hint" *ngIf="getCompleteCataloguePriceEuro() > 0">
+              Prix indiqué au catalogue (réf.)&nbsp;:
+              {{ getCompleteCataloguePriceEuro() | number:'1.2-2':'fr' }}&nbsp;€
+            </p>
+          </div>
           <div class="complete-amount-row">
-            <span class="complete-amount-label">Prix séance (catalogue)</span>
-            <span class="complete-amount-value">{{ getCompletePrestationPriceEuro() | number:'1.2-2':'fr' }} €</span>
+            <span class="complete-amount-label">Montant retenu pour le paiement</span>
+            <span class="complete-amount-value">{{ getCompleteSessionAmountEuro() | number:'1.2-2':'fr' }} €</span>
           </div>
           <div class="complete-amount-row" *ngIf="giftBalanceHint != null">
             <span class="complete-amount-label">Solde cartes cadeau (total)</span>
@@ -512,7 +535,7 @@
           <input
             id="complete-mixte"
             type="number"
-            min="0.01"
+            min="0"
             step="0.01"
             class="form-input"
             [(ngModel)]="completeForm.mixteGiftEur"

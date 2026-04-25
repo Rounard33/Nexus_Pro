@@ -380,9 +380,24 @@
             [disabled]="isSaving">
             <option value="">Sélectionner une création</option>
             <option *ngFor="let creation of creations" [value]="creation.id">
-              {{ creation.name }} - {{ creation.price }}
+              {{ creation.name }}
             </option>
           </select>
+        </div>
+
+        <div class="form-group" *ngIf="saleType === 'creation'">
+          <label for="creation-amount" class="form-label">Prix de vente (€) *</label>
+          <input
+            id="creation-amount"
+            type="number"
+            min="0.01"
+            step="0.01"
+            class="form-input"
+            [disabled]="isSaving || !selectedCreationId"
+            [(ngModel)]="creationAmountEur"
+            placeholder="ex. 8"
+            aria-label="Prix de vente en euros"
+          />
         </div>
 
         <div class="form-group" *ngIf="saleType === 'forfait'">
@@ -420,7 +435,7 @@
             class="save-btn" 
             type="button"
             (click)="saveSale()"
-            [disabled]="isSaving || (saleType === 'creation' && !selectedCreationId) || (saleType === 'forfait' && !selectedForfaitId)">
+            [disabled]="isSaving || (saleType === 'creation' && (!selectedCreationId || creationAmountEur == null || creationAmountEur <= 0)) || (saleType === 'forfait' && !selectedForfaitId)">
             <span *ngIf="!isSaving">Enregistrer</span>
             <span *ngIf="isSaving">Enregistrement...</span>
           </button>
