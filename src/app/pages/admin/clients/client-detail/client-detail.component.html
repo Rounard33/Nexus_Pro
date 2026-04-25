@@ -380,7 +380,7 @@
             [disabled]="isSaving">
             <option value="">Sélectionner une création</option>
             <option *ngFor="let creation of creations" [value]="creation.id">
-              {{ creation.name }}
+              {{ creation.name }}{{ creation.is_active === false ? ' (masqué vitrine)' : '' }}
             </option>
           </select>
         </div>

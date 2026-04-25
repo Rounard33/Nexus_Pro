@@ -1,6 +1,6 @@
 import {HttpClient, HttpHeaders} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
-import {from, Observable, of} from 'rxjs';
+import {from, Observable, of, throwError} from 'rxjs';
 import {catchError, map, switchMap} from 'rxjs/operators';
 import {environment} from '../../environments/environment';
 import {AuthService} from './auth.service';
@@ -47,7 +47,10 @@ export interface Creation {
   name: string;
   price: string;
   description: string;
-  image_url?: string;
+  image_url?: string | null;
+  /** Faux = masqué sur le site (liste admin inchangée). */
+  is_active?: boolean;
+  display_order?: number;
 }
 
 export interface Testimonial {
@@ -172,9 +175,116 @@ export class ContentService {
     return this.http.get<Prestation[]>(`${API_URL}/prestations`);
   }
 
-  // Créations
+  // Créations (site public : actives uniquement)
   getCreations(): Observable<Creation[]> {
     return this.http.get<Creation[]>(`${API_URL}/creations`);
+  }
+
+  /** Liste complète (admin) : toutes les lignes, Bearer requis. */
+  getCreationsForAdmin(): Observable<Creation[]> {
+    return from(this.authService.getSessionToken()).pipe(
+      switchMap((token) => {
+        const headers = new HttpHeaders({
+          Authorization: `Bearer ${token}`
+        });
+        return this.http.get<Creation[]>(`${API_URL}/creations`, {headers});
+      })
+    );
+  }
+
+  createCreation(row: {
+    name: string;
+    price: string;
+    description: string;
+    image_url?: string | null;
+    is_active?: boolean;
+    display_order?: number;
+  }): Observable<Creation> {
+    return from(this.authService.getSessionToken()).pipe(
+      switchMap((token) => {
+        const headers = new HttpHeaders({
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        });
+        return this.http.post<Creation>(`${API_URL}/creations`, row, {headers});
+      })
+    );
+  }
+
+  updateCreation(
+    id: string,
+    updates: Partial<Pick<Creation, 'name' | 'price' | 'description' | 'image_url' | 'is_active' | 'display_order'>>
+  ): Observable<Creation> {
+    return from(this.authService.getSessionToken()).pipe(
+      switchMap((token) => {
+        const headers = new HttpHeaders({
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        });
+        return this.http.patch<Creation>(`${API_URL}/creations?id=${encodeURIComponent(id)}`, updates, {headers});
+      })
+    );
+  }
+
+  deleteCreation(id: string): Observable<void> {
+    return from(this.authService.getSessionToken()).pipe(
+      switchMap((token) => {
+        const headers = new HttpHeaders({
+          Authorization: `Bearer ${token}`
+        });
+        return this.http.delete<void>(`${API_URL}/creations?id=${encodeURIComponent(id)}`, {headers});
+      })
+    );
+  }
+
+  /**
+   * Téléverse une image (admin) via l’API : vérification JWT + table `admin` côté serveur,
+   * écriture Storage avec le service role (pas de RLS navigateur).
+   */
+  uploadCreationImage(file: File): Observable<{ path: string }> {
+    const allowed = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif']);
+    if (!file.type || !allowed.has(file.type)) {
+      return throwError(
+        () => new Error("Format d'image non pris en charge (JPG, PNG, WebP, GIF, AVIF).")
+      );
+    }
+    if (file.size > 6 * 1024 * 1024) {
+      return throwError(() => new Error('Fichier trop volumineux (6 Mo max.).'));
+    }
+    return from(
+      new Promise<string>((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => {
+          const s = r.result as string;
+          const i = s.indexOf(',');
+          resolve(i >= 0 ? s.slice(i + 1) : s);
+        };
+        r.onerror = () => reject(new Error('Lecture du fichier impossible'));
+        r.readAsDataURL(file);
+      })
+    ).pipe(
+      switchMap((content_base64) =>
+        from(this.authService.getSessionToken()).pipe(
+          switchMap((token) => {
+            if (!token) {
+              return throwError(() => new Error('Session expirée. Reconnectez-vous.'));
+            }
+            const headers = new HttpHeaders({
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            });
+            return this.http.post<{ path: string }>(
+              `${API_URL}/creations/upload`,
+              {
+                content_base64,
+                content_type: file.type
+              },
+              { headers }
+            );
+          })
+        )
+      )
+    );
   }
 
   // Témoignages

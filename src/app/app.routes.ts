@@ -67,6 +67,10 @@ export const routes: Routes = [
       {
         path: 'gift-cards',
         loadComponent: () => import('./pages/admin/gift-cards/gift-cards.component').then(m => m.GiftCardsComponent)
+      },
+      {
+        path: 'creations',
+        loadComponent: () => import('./pages/admin/creations/creations.component').then(m => m.CreationsComponent)
       }
     ]
   },

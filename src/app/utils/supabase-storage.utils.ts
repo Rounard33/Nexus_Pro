@@ -1,9 +1,12 @@
 import {environment} from '../../environments/environment';
 
+/** Bucket unique du projet (sous-dossiers : creations/, prestations/, about/, …) */
+const SITE_MEDIA_BUCKET = 'site-media';
+
 /**
  * Construit l'URL publique d'un fichier dans Supabase Storage
- * @param bucketName Nom du bucket (ex: 'prestations', 'creations')
- * @param filePath Chemin du fichier dans le bucket (ex: 'image1.jpg' ou 'folder/image1.jpg')
+ * @param bucketName ID du bucket (souvent `site-media`)
+ * @param filePath Chemin du fichier dans le bucket (ex: 'creations/photo.jpg')
  * @returns URL publique complète
  */
 export function getSupabaseStorageUrl(bucketName: string, filePath: string): string {
@@ -36,19 +39,32 @@ export function getPrestationImageUrl(imagePath: string | null | undefined): str
   if (!imagePath) {
     return '';
   }
-  return getSupabaseStorageUrl('prestations', imagePath);
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+    return imagePath;
+  }
+  const clean = (imagePath.startsWith('/') ? imagePath.slice(1) : imagePath).replace(/^\/+/, '');
+  if (clean.startsWith('prestations/')) {
+    return getSupabaseStorageUrl(SITE_MEDIA_BUCKET, clean);
+  }
+  return getSupabaseStorageUrl(SITE_MEDIA_BUCKET, `prestations/${clean}`);
 }
 
 /**
  * Construit l'URL publique d'une image de création
- * @param imagePath Chemin de l'image dans le bucket 'creations'
- * @returns URL publique complète
+ * (dossier `creations` dans le bucket `site-media`)
  */
 export function getCreationImageUrl(imagePath: string | null | undefined): string {
   if (!imagePath) {
     return '';
   }
-  return getSupabaseStorageUrl('creations', imagePath);
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+    return imagePath;
+  }
+  const clean = (imagePath.startsWith('/') ? imagePath.slice(1) : imagePath).replace(/^\/+/, '');
+  if (clean.startsWith('creations/')) {
+    return getSupabaseStorageUrl(SITE_MEDIA_BUCKET, clean);
+  }
+  return getSupabaseStorageUrl(SITE_MEDIA_BUCKET, `creations/${clean}`);
 }
 
 /**
@@ -79,7 +95,10 @@ export function getAboutImageUrl(imagePath: string | null | undefined): string {
   if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
     return imagePath;
   }
-  // Essayer d'abord 'about', puis 'images'
-  return getSupabaseStorageUrl('about', imagePath);
+  const clean = (imagePath.startsWith('/') ? imagePath.slice(1) : imagePath).replace(/^\/+/, '');
+  if (clean.startsWith('about/')) {
+    return getSupabaseStorageUrl(SITE_MEDIA_BUCKET, clean);
+  }
+  return getSupabaseStorageUrl(SITE_MEDIA_BUCKET, `about/${clean}`);
 }
 

@@ -89,13 +89,20 @@ export class ClientDetailComponent implements OnInit {
     this.loadPrestations();
   }
 
+  /**
+   * Toutes les créations (y compris non visibles sur le site) pour saisir une vente
+   * depuis le panneau admin — requiert le même JWT que le reste de l’admin.
+   */
   loadCreations(): void {
-    this.contentService.getCreations().subscribe({
-      next: (creations) => {
-        this.creations = creations;
+    this.contentService.getCreationsForAdmin().subscribe({
+      next: (list) => {
+        this.creations = (list || []).sort(
+          (a, b) => (a.display_order ?? 0) - (b.display_order ?? 0)
+        );
       },
       error: () => {
-        // Erreur silencieuse
+        this.creations = [];
+        this.notificationService.error('Impossible de charger le catalogue des créations.');
       }
     });
   }

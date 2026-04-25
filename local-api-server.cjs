@@ -408,15 +408,209 @@ const server = http.createServer(async (req, res) => {
       res.end(JSON.stringify(data));
     }
     else if (pathname === '/api/creations') {
-      const { data, error } = await supabase
-        .from('creations')
-        .select('*')
-        .eq('is_active', true)
-        .order('display_order', { ascending: true });
-      
-      if (error) throw error;
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(data));
+      if (req.method !== 'GET') {
+        if (!applyRateLimit(req, res, 30, 60000)) {
+          return;
+        }
+      }
+      if (req.method === 'GET') {
+        const hasBearer =
+          typeof req.headers.authorization === 'string' &&
+          req.headers.authorization.startsWith('Bearer ');
+        if (hasBearer) {
+          const auth = await verifyAuth(req, supabaseAuth);
+          if (!auth.authenticated) {
+            res.writeHead(401, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Unauthorized' }));
+            return;
+          }
+          const adminCheck = await verifyAdmin(auth.user, supabase);
+          if (!adminCheck.isAdmin) {
+            res.writeHead(403, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Forbidden: Admin access required' }));
+            return;
+          }
+          const { data, error } = await supabase
+            .from('creations')
+            .select('*')
+            .order('display_order', { ascending: true });
+          if (error) throw error;
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(data || []));
+          return;
+        }
+        const { data, error } = await supabase
+          .from('creations')
+          .select('*')
+          .eq('is_active', true)
+          .order('display_order', { ascending: true });
+        if (error) throw error;
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(data || []));
+        return;
+      }
+      if (req.method === 'POST') {
+        const auth = await verifyAuth(req, supabaseAuth);
+        if (!auth.authenticated) {
+          res.writeHead(401, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Unauthorized' }));
+          return;
+        }
+        const adminCheck = await verifyAdmin(auth.user, supabase);
+        if (!adminCheck.isAdmin) {
+          res.writeHead(403, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Forbidden: Admin access required' }));
+          return;
+        }
+        const body = await readBody(req);
+        const name = typeof body.name === 'string' ? body.name.trim() : '';
+        if (!name) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Le nom est requis' }));
+          return;
+        }
+        const price = typeof body.price === 'string' && body.price.trim() ? body.price.trim() : '0 €';
+        const description = typeof body.description === 'string' ? body.description : '';
+        let imageUrl = null;
+        if (body.image_url != null && body.image_url !== '') {
+          imageUrl = String(body.image_url).trim() || null;
+        }
+        const is_active = body.is_active !== false;
+        let display_order = 0;
+        if (body.display_order !== undefined && body.display_order !== null) {
+          const n = Number(body.display_order);
+          if (Number.isFinite(n)) {
+            display_order = Math.round(n);
+          }
+        }
+        const { data, error } = await supabase
+          .from('creations')
+          .insert([
+            {
+              name,
+              price,
+              description,
+              image_url: imageUrl,
+              is_active,
+              display_order
+            }
+          ])
+          .select('*')
+          .single();
+        if (error) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Erreur lors de la création', details: error.message }));
+          return;
+        }
+        res.writeHead(201, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(data));
+        return;
+      }
+      if (req.method === 'PATCH') {
+        const auth = await verifyAuth(req, supabaseAuth);
+        if (!auth.authenticated) {
+          res.writeHead(401, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Unauthorized' }));
+          return;
+        }
+        const adminCheck = await verifyAdmin(auth.user, supabase);
+        if (!adminCheck.isAdmin) {
+          res.writeHead(403, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Forbidden: Admin access required' }));
+          return;
+        }
+        const { id } = parsedUrl.query;
+        if (!id || String(id).trim() === '') {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'id est requis' }));
+          return;
+        }
+        const body = await readBody(req);
+        const updateData = {};
+        if (body.name !== undefined) {
+          const n = String(body.name).trim();
+          if (!n) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Le nom ne peut pas être vide' }));
+            return;
+          }
+          updateData.name = n;
+        }
+        if (body.price !== undefined) {
+          updateData.price = String(body.price).trim() || '0 €';
+        }
+        if (body.description !== undefined) {
+          updateData.description = String(body.description);
+        }
+        if (body.image_url !== undefined) {
+          const v = body.image_url;
+          updateData.image_url = v == null || v === '' ? null : String(v).trim();
+        }
+        if (body.is_active !== undefined) {
+          updateData.is_active = !!body.is_active;
+        }
+        if (body.display_order !== undefined && body.display_order !== null) {
+          const n = Number(body.display_order);
+          if (Number.isFinite(n)) {
+            updateData.display_order = Math.round(n);
+          }
+        }
+        if (Object.keys(updateData).length === 0) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Aucun champ à mettre à jour' }));
+          return;
+        }
+        const { data, error } = await supabase
+          .from('creations')
+          .update(updateData)
+          .eq('id', id)
+          .select('*')
+          .single();
+        if (error) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Erreur lors de la mise à jour', details: error.message }));
+          return;
+        }
+        if (!data) {
+          res.writeHead(404, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Création introuvable' }));
+          return;
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(data));
+        return;
+      }
+      if (req.method === 'DELETE') {
+        const auth = await verifyAuth(req, supabaseAuth);
+        if (!auth.authenticated) {
+          res.writeHead(401, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Unauthorized' }));
+          return;
+        }
+        const adminCheck = await verifyAdmin(auth.user, supabase);
+        if (!adminCheck.isAdmin) {
+          res.writeHead(403, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Forbidden: Admin access required' }));
+          return;
+        }
+        const { id } = parsedUrl.query;
+        if (!id || String(id).trim() === '') {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'id est requis' }));
+          return;
+        }
+        const { error } = await supabase.from('creations').delete().eq('id', id);
+        if (error) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Erreur lors de la suppression', details: error.message }));
+          return;
+        }
+        res.writeHead(204);
+        res.end();
+        return;
+      }
+      res.writeHead(405, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Method not allowed' }));
     }
     else if (pathname === '/api/testimonials') {
       const { data, error } = await supabase
@@ -2014,6 +2208,96 @@ const server = http.createServer(async (req, res) => {
       else {
         res.writeHead(405, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Method not allowed' }));
+      }
+    }
+    // POST /api/creations/upload | /api/creations-image — image admin (même logique que api/[...path].ts)
+    else if (
+      (pathname === '/api/creations/upload' || pathname === '/api/creations-image') &&
+      req.method === 'POST'
+    ) {
+      if (!applyRateLimit(req, res, 20, 60000)) {
+        return;
+      }
+      const auth = await verifyAuth(req, supabaseAuth);
+      if (!auth.authenticated) {
+        res.writeHead(401, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Unauthorized' }));
+        return;
+      }
+      const adminCheck = await verifyAdmin(auth.user, supabase);
+      if (!adminCheck.isAdmin) {
+        res.writeHead(403, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Forbidden: Admin access required' }));
+        return;
+      }
+      try {
+        const body = await readBody(req);
+        const b64 = typeof body.content_base64 === 'string' ? String(body.content_base64).trim() : '';
+        if (!b64) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'content_base64 est requis' }));
+          return;
+        }
+        if (b64.length > 9200000) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Fichier trop volumineux' }));
+          return;
+        }
+        let buffer;
+        try {
+          buffer = Buffer.from(b64, 'base64');
+        } catch (e) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Encodage base64 invalide' }));
+          return;
+        }
+        const maxBytes = 6 * 1024 * 1024;
+        if (buffer.length > maxBytes) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Fichier trop volumineux (6 Mo max.)' }));
+          return;
+        }
+        if (buffer.length < 8) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Fichier image invalide ou vide' }));
+          return;
+        }
+        const contentType = typeof body.content_type === 'string' && String(body.content_type).trim()
+          ? String(body.content_type).trim().toLowerCase()
+          : '';
+        const extByType = {
+          'image/jpeg': 'jpg',
+          'image/png': 'png',
+          'image/gif': 'gif',
+          'image/webp': 'webp',
+          'image/avif': 'avif'
+        };
+        const ext = extByType[contentType] || '';
+        if (!ext) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: "Type d'image non autorisé" }));
+          return;
+        }
+        const objectPath = `creations/${Date.now()}-${Math.random().toString(36).slice(2, 12)}.${ext}`;
+        const { data, error: upErr } = await supabase.storage
+          .from('site-media')
+          .upload(objectPath, buffer, { contentType, cacheControl: '3600', upsert: true });
+        if (upErr) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Échec du téléversement', details: upErr.message }));
+          return;
+        }
+        if (!data || !data.path) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Échec du téléversement' }));
+          return;
+        }
+        res.writeHead(201, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ path: data.path }));
+      } catch (err) {
+        console.error('[creations/upload]', err);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: err.message || 'Internal server error' }));
       }
     }
     // ROUTE : Contact (envoi d'email)

@@ -1,0 +1,131 @@
+<div class="creations-page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Créations (boutique)</h1>
+      <p class="page-subtitle">
+        Produits affichés sur l’accueil. Prix indicatif : la vente sur une fiche client reste saisie librement.
+      </p>
+    </div>
+    <button type="button" class="btn-primary" (click)="openCreate()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="12" y1="5" x2="12" y2="19" />
+        <line x1="5" y1="12" x2="19" y2="12" />
+      </svg>
+      Nouvelle création
+    </button>
+  </div>
+
+  <div class="loading" *ngIf="isLoading">Chargement…</div>
+
+  <div class="table-wrap" *ngIf="!isLoading">
+    <table class="data-table" *ngIf="list.length > 0">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Nom</th>
+          <th>Prix (vitrine)</th>
+          <th>Ordre</th>
+          <th>Visible</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let c of list" [class.row-inactive]="c.is_active === false">
+          <td class="thumb-cell">
+            <img
+              *ngIf="c.image_url"
+              [src]="imagePreview(c.image_url)"
+              alt=""
+              class="thumb" />
+            <span *ngIf="!c.image_url" class="thumb-empty">—</span>
+          </td>
+          <td>{{ c.name }}</td>
+          <td>{{ c.price }}</td>
+          <td>{{ c.display_order ?? 0 }}</td>
+          <td>
+            <span class="badge" [class.badge-off]="c.is_active === false">{{
+              c.is_active === false ? 'Non' : 'Oui'
+            }}</span>
+          </td>
+          <td class="actions">
+            <button type="button" class="btn-icon" (click)="openEdit(c)" title="Modifier" aria-label="Modifier">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              class="btn-icon btn-danger"
+              (click)="confirmDelete(c)"
+              title="Supprimer"
+              aria-label="Supprimer">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+              </svg>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="empty" *ngIf="list.length === 0">Aucune création. Ajoutez-en une pour la vitrine.</p>
+  </div>
+
+  <div class="modal-overlay" *ngIf="showForm" (click)="closeForm()"></div>
+  <div class="modal-panel" *ngIf="showForm" (click)="$event.stopPropagation()">
+    <h2 class="modal-title">{{ editing ? 'Modifier la création' : 'Nouvelle création' }}</h2>
+    <form class="form" (ngSubmit)="save()">
+      <div class="form-group">
+        <label for="c-name" class="form-label">Nom *</label>
+        <input id="c-name" class="form-input" name="cName" [(ngModel)]="formName" required />
+      </div>
+      <div class="form-group">
+        <label for="c-price" class="form-label">Prix affiché *</label>
+        <input id="c-price" class="form-input" name="cPrice" [(ngModel)]="formPrice" placeholder="ex. 8 €" />
+      </div>
+      <div class="form-group">
+        <label for="c-desc" class="form-label">Description</label>
+        <textarea id="c-desc" class="form-textarea" name="cDesc" rows="4" [(ngModel)]="formDescription"></textarea>
+      </div>
+      <div class="form-group">
+        <label for="c-file" class="form-label">Image</label>
+        <input
+          id="c-file"
+          type="file"
+          class="form-file"
+          accept="image/jpeg,image/png,image/gif,image/webp,image/avif"
+          [disabled]="uploadingImage"
+          (change)="onImageFile($event)" />
+        <p class="form-hint" *ngIf="uploadingImage">Téléversement en cours…</p>
+        <div class="preview-row" *ngIf="formImageUrl && !uploadingImage">
+          <img [src]="imagePreview(formImageUrl)" alt="Aperçu" class="preview-img" />
+          <button type="button" class="btn-text" (click)="clearImage()">Retirer l’image</button>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group grow">
+          <label for="c-order" class="form-label">Ordre d’affichage</label>
+          <input
+            id="c-order"
+            class="form-input"
+            type="number"
+            name="cOrder"
+            [(ngModel)]="formDisplayOrder" />
+        </div>
+        <div class="form-group check-line">
+          <label class="check-label">
+            <input type="checkbox" name="cActive" [(ngModel)]="formActive" />
+            Visible sur le site
+          </label>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" (click)="closeForm()" [disabled]="saving">Annuler</button>
+        <button type="submit" class="btn-primary" [disabled]="saving || uploadingImage">
+          {{ saving ? 'Enregistrement…' : 'Enregistrer' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

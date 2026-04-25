@@ -211,8 +211,11 @@ export default async function handler(
   
   // Router vers le handler approprié
   try {
-    // Normaliser le chemin (enlever les espaces, etc.)
-    const normalizedPath = path.trim().toLowerCase();
+    // Normaliser le chemin (espaces, slashes en trop) — ex. "creations/upload"
+    const normalizedPath = path
+      .trim()
+      .toLowerCase()
+      .replace(/^\/+|\/+$/g, '');
     
     console.log(`[API Router] Routing to: "${normalizedPath}"`);
     
@@ -222,6 +225,11 @@ export default async function handler(
       
       case 'creations':
         return await handleCreations(req, res, supabase);
+
+      /** Upload image admin (service role). Préférer creations/upload (catch-all Vercel). */
+      case 'creations/upload':
+      case 'creations-image':
+        return await handleCreationsImageUpload(req, res, supabase);
       
       case 'testimonials':
         return await handleTestimonials(req, res, supabase);
@@ -301,23 +309,258 @@ async function handlePrestations(req: VercelRequest, res: VercelResponse, supaba
 }
 
 async function handleCreations(req: VercelRequest, res: VercelResponse, supabase: any) {
-  setCORSHeaders(res, req.headers.origin as string, 'GET, OPTIONS', 'Content-Type');
+  setCORSHeaders(
+    res,
+    req.headers.origin as string,
+    'GET, POST, PATCH, DELETE, OPTIONS',
+    'Content-Type, Authorization'
+  );
   res.setHeader('Content-Type', 'application/json');
-  if (!applyRateLimit(req, res, 100)) return;
-  
+
+  const maxRequests = req.method === 'GET' ? 100 : 30;
+  if (!applyRateLimit(req, res, maxRequests)) {
+    return;
+  }
+
+  const requireAdmin = async () => {
+    const auth = await verifyAuth(req, supabase);
+    if (!auth.authenticated || !auth.isAdmin) {
+      return {
+        ok: false as const,
+        status: auth.authenticated ? 403 : 401,
+        body: { error: auth.authenticated ? 'Forbidden: Admin access required' : 'Unauthorized' }
+      };
+    }
+    return { ok: true as const };
+  };
+
   if (req.method === 'GET') {
+    const hasBearer = typeof req.headers.authorization === 'string' && req.headers.authorization.startsWith('Bearer ');
+    if (hasBearer) {
+      const gate = await requireAdmin();
+      if (!gate.ok) {
+        return res.status(gate.status).json(gate.body);
+      }
+      const { data, error } = await supabase.from('creations').select('*').order('display_order', { ascending: true });
+      if (error) {
+        return res.status(500).json({ error: 'Erreur lors de la récupération des créations', details: error.message });
+      }
+      return res.json(data || []);
+    }
     const { data, error } = await supabase
       .from('creations')
       .select('*')
       .eq('is_active', true)
       .order('display_order', { ascending: true });
-    
+
     if (error) {
       return res.status(500).json({ error: 'Erreur lors de la récupération des créations', details: error.message });
     }
+    return res.json(data || []);
+  }
+
+  if (req.method === 'POST') {
+    const gate = await requireAdmin();
+    if (!gate.ok) {
+      return res.status(gate.status).json(gate.body);
+    }
+    const body = req.body || {};
+    const name = typeof body.name === 'string' ? body.name.trim() : '';
+    if (!name) {
+      return res.status(400).json({ error: 'Le nom est requis' });
+    }
+    const price = typeof body.price === 'string' && body.price.trim() ? body.price.trim() : '0 €';
+    const description = typeof body.description === 'string' ? body.description : '';
+    let imageUrl: string | null = null;
+    if (body.image_url != null && body.image_url !== '') {
+      imageUrl = String(body.image_url).trim() || null;
+    }
+    const is_active = body.is_active !== false;
+    let display_order = 0;
+    if (body.display_order !== undefined && body.display_order !== null) {
+      const n = Number(body.display_order);
+      if (Number.isFinite(n)) {
+        display_order = Math.round(n);
+      }
+    }
+    const { data, error } = await supabase
+      .from('creations')
+      .insert([
+        {
+          name,
+          price,
+          description,
+          image_url: imageUrl,
+          is_active,
+          display_order
+        }
+      ])
+      .select('*')
+      .single();
+    if (error) {
+      return res.status(500).json({ error: 'Erreur lors de la création', details: error.message });
+    }
+    return res.status(201).json(data);
+  }
+
+  if (req.method === 'PATCH') {
+    const gate = await requireAdmin();
+    if (!gate.ok) {
+      return res.status(gate.status).json(gate.body);
+    }
+    const { id } = req.query;
+    if (!id || typeof id !== 'string') {
+      return res.status(400).json({ error: 'id est requis' });
+    }
+    const body = req.body || {};
+    const updateData: Record<string, unknown> = {};
+    if (body.name !== undefined) {
+      const name = String(body.name).trim();
+      if (!name) {
+        return res.status(400).json({ error: 'Le nom ne peut pas être vide' });
+      }
+      updateData['name'] = name;
+    }
+    if (body.price !== undefined) {
+      updateData['price'] = String(body.price).trim() || '0 €';
+    }
+    if (body.description !== undefined) {
+      updateData['description'] = String(body.description);
+    }
+    if (body.image_url !== undefined) {
+      const v = body.image_url;
+      updateData['image_url'] = v == null || v === '' ? null : String(v).trim();
+    }
+    if (body.is_active !== undefined) {
+      updateData['is_active'] = !!body.is_active;
+    }
+    if (body.display_order !== undefined && body.display_order !== null) {
+      const n = Number(body.display_order);
+      if (Number.isFinite(n)) {
+        updateData['display_order'] = Math.round(n);
+      }
+    }
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ error: 'Aucun champ à mettre à jour' });
+    }
+    const { data, error } = await supabase.from('creations').update(updateData).eq('id', id).select('*').single();
+    if (error) {
+      return res.status(500).json({ error: 'Erreur lors de la mise à jour', details: error.message });
+    }
+    if (!data) {
+      return res.status(404).json({ error: 'Création introuvable' });
+    }
     return res.json(data);
   }
+
+  if (req.method === 'DELETE') {
+    const gate = await requireAdmin();
+    if (!gate.ok) {
+      return res.status(gate.status).json(gate.body);
+    }
+    const { id } = req.query;
+    if (!id || typeof id !== 'string') {
+      return res.status(400).json({ error: 'id est requis' });
+    }
+    const { error } = await supabase.from('creations').delete().eq('id', id);
+    if (error) {
+      return res.status(500).json({ error: 'Erreur lors de la suppression', details: error.message });
+    }
+    return res.status(204).end();
+  }
+
   return res.status(405).json({ error: 'Method not allowed' });
+}
+
+const CREATION_IMAGE_MAX_BYTES = 6 * 1024 * 1024;
+/** ~ taille max base64 pour 6 Mo binaire + marge. */
+const CREATION_IMAGE_MAX_BASE64_CHARS = 9_200_000;
+const CREATION_IMAGE_EXT: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/gif': 'gif',
+  'image/webp': 'webp',
+  'image/avif': 'avif'
+};
+
+/**
+ * Téléverse une image dans `site-media/creations/...` (service role).
+ * Accès : Bearer valide + entrée `admin` (verifyAuth), pas de chemin client injectable.
+ */
+async function handleCreationsImageUpload(req: VercelRequest, res: VercelResponse, supabase: any) {
+  setCORSHeaders(
+    res,
+    req.headers.origin as string,
+    'POST, OPTIONS',
+    'Content-Type, Authorization'
+  );
+  res.setHeader('Content-Type', 'application/json');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  if (!applyRateLimit(req, res, 20)) {
+    return;
+  }
+
+  const auth = await verifyAuth(req, supabase);
+  if (!auth.authenticated || !auth.isAdmin) {
+    return res.status(auth.authenticated ? 403 : 401).json({
+      error: auth.authenticated ? 'Forbidden: Admin access required' : 'Unauthorized'
+    });
+  }
+
+  const body = (req.body || {}) as Record<string, unknown>;
+  const b64 = typeof body['content_base64'] === 'string' ? String(body['content_base64']).trim() : '';
+  if (!b64) {
+    return res.status(400).json({ error: 'content_base64 est requis' });
+  }
+  if (b64.length > CREATION_IMAGE_MAX_BASE64_CHARS) {
+    return res.status(400).json({ error: 'Fichier trop volumineux' });
+  }
+
+  let buffer: Buffer;
+  try {
+    buffer = Buffer.from(b64, 'base64');
+  } catch {
+    return res.status(400).json({ error: 'Encodage base64 invalide' });
+  }
+
+  if (buffer.length > CREATION_IMAGE_MAX_BYTES) {
+    return res.status(400).json({ error: 'Fichier trop volumineux (6 Mo max.)' });
+  }
+  if (buffer.length < 8) {
+    return res.status(400).json({ error: 'Fichier image invalide ou vide' });
+  }
+
+  const contentType =
+    typeof body['content_type'] === 'string' && String(body['content_type']).trim()
+      ? String(body['content_type']).trim().toLowerCase()
+      : '';
+  const ext = contentType && CREATION_IMAGE_EXT[contentType] ? CREATION_IMAGE_EXT[contentType] : '';
+  if (!ext) {
+    return res.status(400).json({ error: "Type d'image non autorisé" });
+  }
+
+  const safe = `${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
+  const objectPath = `creations/${safe}.${ext}`;
+
+  const { data, error } = await supabase.storage
+    .from('site-media')
+    .upload(objectPath, buffer, { contentType, cacheControl: '3600', upsert: true });
+
+  if (error) {
+    return res.status(500).json({ error: 'Échec du téléversement', details: error.message });
+  }
+  if (!data?.path) {
+    return res.status(500).json({ error: 'Échec du téléversement' });
+  }
+  return res.status(201).json({ path: data.path });
 }
 
 async function handleTestimonials(req: VercelRequest, res: VercelResponse, supabase: any) {
