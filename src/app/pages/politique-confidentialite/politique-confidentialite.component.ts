@@ -17,7 +17,7 @@ export class PolitiqueConfidentialiteComponent implements AfterViewInit, OnDestr
   @ViewChild('title') title!: ElementRef;
   @ViewChild('description') description!: ElementRef;
 
-  lastUpdate = '01/12/2025';
+  lastUpdate = '24/04/2026';
 
   ngAfterViewInit(): void {
     this.initAnimations();
