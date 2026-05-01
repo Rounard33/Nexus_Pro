@@ -2164,41 +2164,105 @@ async function handleClients(req: VercelRequest, res: VercelResponse, supabase: 
   }
   
   if (req.method === 'PATCH') {
-    const email = req.query['email'] as string;
+    const emailQuery = req.query['email'] as string;
     const updates = req.body;
 
-    if (!email) {
+    if (!emailQuery) {
       return res.status(400).json({ error: 'Email requis' });
     }
 
-    const normalizedEmail = email.toLowerCase().trim();
-    
-    // S'assurer que le client_id est à jour lors de la mise à jour
-    const clientId = generateClientId(normalizedEmail);
+    const oldEmail = emailQuery.toLowerCase().trim();
 
-    const dataToUpdate: any = {
-      client_id: clientId // Toujours mettre à jour le client_id
+    const { data: currentRow, error: fetchErr } = await supabase
+      .from('clients')
+      .select('id, email')
+      .eq('email', oldEmail)
+      .maybeSingle();
+
+    if (fetchErr) {
+      return res.status(500).json({ error: 'Erreur lors de la récupération du client', details: fetchErr.message });
+    }
+    if (!currentRow?.id) {
+      return res.status(404).json({ error: 'Client non trouvé' });
+    }
+
+    let newEmail = oldEmail;
+    if (updates['email'] !== undefined && updates['email'] !== null) {
+      const raw = String(updates['email']).trim().toLowerCase();
+      if (!raw || !raw.includes('@') || raw.length > 254) {
+        return res.status(400).json({ error: 'Adresse e-mail invalide' });
+      }
+      newEmail = raw;
+    }
+
+    if (newEmail !== oldEmail) {
+      const { data: other, error: conflictErr } = await supabase
+        .from('clients')
+        .select('id')
+        .eq('email', newEmail)
+        .maybeSingle();
+      if (conflictErr) {
+        return res.status(500).json({ error: 'Erreur lors de la vérification de l’e-mail', details: conflictErr.message });
+      }
+      if (other?.id && other.id !== currentRow.id) {
+        return res.status(409).json({ error: 'Cette adresse e-mail est déjà utilisée' });
+      }
+
+      const { error: aptErr } = await supabase
+        .from('appointments')
+        .update({ client_email: newEmail })
+        .eq('client_email', oldEmail);
+      if (aptErr) {
+        return res.status(500).json({ error: 'Erreur lors de la mise à jour des rendez-vous', details: aptErr.message });
+      }
+
+      const { error: gcBuyerErr } = await supabase
+        .from('gift_cards')
+        .update({ buyer_email: newEmail })
+        .eq('buyer_email', oldEmail);
+      if (gcBuyerErr) {
+        return res.status(500).json({ error: 'Erreur lors de la mise à jour des cartes cadeaux', details: gcBuyerErr.message });
+      }
+
+      const { error: gcRecErr } = await supabase
+        .from('gift_cards')
+        .update({ recipient_email: newEmail })
+        .eq('recipient_email', oldEmail);
+      if (gcRecErr) {
+        return res.status(500).json({ error: 'Erreur lors de la mise à jour des cartes cadeaux', details: gcRecErr.message });
+      }
+    }
+
+    const clientId = generateClientId(newEmail);
+    const dataToUpdate: Record<string, unknown> = {
+      client_id: clientId
     };
-    if (updates['name'] !== undefined) dataToUpdate.name = updates['name'];
-    if (updates['phone'] !== undefined) dataToUpdate.phone = updates['phone'] || null;
-    if (updates['birthdate'] !== undefined) dataToUpdate.birthdate = updates['birthdate'] || null;
-    if (updates['notes'] !== undefined) dataToUpdate.notes = updates['notes'] || null;
+
+    if (newEmail !== oldEmail) {
+      dataToUpdate['email'] = newEmail;
+    }
+    if (updates['name'] !== undefined) dataToUpdate['name'] = updates['name'];
+    if (updates['phone'] !== undefined) dataToUpdate['phone'] = updates['phone'] || null;
+    if (updates['birthdate'] !== undefined) dataToUpdate['birthdate'] = updates['birthdate'] || null;
+    if (updates['notes'] !== undefined) dataToUpdate['notes'] = updates['notes'] || null;
 
     const { data, error } = await supabase
       .from('clients')
       .update(dataToUpdate)
-      .eq('email', normalizedEmail)
+      .eq('email', oldEmail)
       .select()
       .single();
 
     if (error) {
+      if (error.code === '23505') {
+        return res.status(409).json({ error: 'Cette adresse e-mail est déjà utilisée' });
+      }
       if (error.code === 'PGRST116') {
         return res.status(404).json({ error: 'Client non trouvé' });
       }
       return res.status(500).json({ error: 'Erreur lors de la mise à jour du client', details: error.message });
     }
 
-    // Ajouter clientId dans la réponse (pour compatibilité)
     if (data) {
       data.clientId = data.client_id || generateClientId(data.email);
     }

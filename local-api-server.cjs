@@ -2084,11 +2084,121 @@ const server = http.createServer(async (req, res) => {
           return;
         }
 
-        // Normaliser l'email
-        const normalizedEmail = email.toLowerCase().trim();
+        const computeClientId = (normEmail) => {
+          const crypto = require('crypto');
+          const secret = process.env.CLIENT_ID_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY;
+          if (!secret) return null;
+          const hmac = crypto.createHmac('sha256', secret);
+          hmac.update(normEmail);
+          const hash = hmac.digest('base64');
+          return hash.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '').substring(0, 16);
+        };
 
-        // Préparer les mises à jour (seulement les champs fournis)
+        const oldEmail = email.toLowerCase().trim();
+
+        const { data: currentRow, error: fetchErr } = await supabase
+          .from('clients')
+          .select('id, email')
+          .eq('email', oldEmail)
+          .maybeSingle();
+
+        if (fetchErr) {
+          const isDevelopment = !process.env.NODE_ENV || process.env.NODE_ENV === 'development';
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({
+            error: 'Erreur lors de la récupération du client',
+            ...(isDevelopment && { details: fetchErr.message })
+          }));
+          return;
+        }
+        if (!currentRow?.id) {
+          res.writeHead(404, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Client non trouvé' }));
+          return;
+        }
+
+        let newEmail = oldEmail;
+        if (updates.email !== undefined && updates.email !== null) {
+          const raw = String(updates.email).trim().toLowerCase();
+          if (!raw || !raw.includes('@') || raw.length > 254) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Adresse e-mail invalide' }));
+            return;
+          }
+          newEmail = raw;
+        }
+
+        if (newEmail !== oldEmail) {
+          const { data: other, error: conflictErr } = await supabase
+            .from('clients')
+            .select('id')
+            .eq('email', newEmail)
+            .maybeSingle();
+
+          if (conflictErr) {
+            const isDevelopment = !process.env.NODE_ENV || process.env.NODE_ENV === 'development';
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({
+              error: 'Erreur lors de la vérification de l\'e-mail',
+              ...(isDevelopment && { details: conflictErr.message })
+            }));
+            return;
+          }
+
+          if (other?.id && other.id !== currentRow.id) {
+            res.writeHead(409, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Cette adresse e-mail est déjà utilisée' }));
+            return;
+          }
+
+          const { error: aptErr } = await supabase
+            .from('appointments')
+            .update({ client_email: newEmail })
+            .eq('client_email', oldEmail);
+          if (aptErr) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({
+              error: 'Erreur lors de la mise à jour des rendez-vous',
+              details: aptErr.message
+            }));
+            return;
+          }
+
+          const { error: gcBuyerErr } = await supabase
+            .from('gift_cards')
+            .update({ buyer_email: newEmail })
+            .eq('buyer_email', oldEmail);
+          if (gcBuyerErr) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({
+              error: 'Erreur lors de la mise à jour des cartes cadeaux',
+              details: gcBuyerErr.message
+            }));
+            return;
+          }
+
+          const { error: gcRecErr } = await supabase
+            .from('gift_cards')
+            .update({ recipient_email: newEmail })
+            .eq('recipient_email', oldEmail);
+          if (gcRecErr) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({
+              error: 'Erreur lors de la mise à jour des cartes cadeaux',
+              details: gcRecErr.message
+            }));
+            return;
+          }
+        }
+
         const dataToUpdate = {};
+        const cid = computeClientId(newEmail);
+        if (cid) {
+          dataToUpdate.client_id = cid;
+        }
+        if (newEmail !== oldEmail) {
+          dataToUpdate.email = newEmail;
+        }
         if (updates.name !== undefined) dataToUpdate.name = updates.name;
         if (updates.phone !== undefined) dataToUpdate.phone = updates.phone || null;
         if (updates.birthdate !== undefined) dataToUpdate.birthdate = updates.birthdate || null;
@@ -2097,11 +2207,16 @@ const server = http.createServer(async (req, res) => {
         const { data, error } = await supabase
           .from('clients')
           .update(dataToUpdate)
-          .eq('email', normalizedEmail)
+          .eq('email', oldEmail)
           .select()
           .single();
 
         if (error) {
+          if (error.code === '23505') {
+            res.writeHead(409, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Cette adresse e-mail est déjà utilisée' }));
+            return;
+          }
           if (error.code === 'PGRST116') {
             res.writeHead(404, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ error: 'Client non trouvé' }));
@@ -2109,11 +2224,23 @@ const server = http.createServer(async (req, res) => {
           }
           const isDevelopment = !process.env.NODE_ENV || process.env.NODE_ENV === 'development';
           res.writeHead(500, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ 
+          res.end(JSON.stringify({
             error: 'Erreur lors de la mise à jour du client',
             ...(isDevelopment && { details: error.message })
           }));
           return;
+        }
+
+        if (data && data.email && !data.clientId) {
+          const secret = process.env.CLIENT_ID_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY;
+          if (secret) {
+            const crypto = require('crypto');
+            const normalizedEmail = data.email.toLowerCase().trim();
+            const hmac = crypto.createHmac('sha256', secret);
+            hmac.update(normalizedEmail);
+            const hash = hmac.digest('base64');
+            data.clientId = hash.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '').substring(0, 16);
+          }
         }
 
         res.writeHead(200, { 'Content-Type': 'application/json' });

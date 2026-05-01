@@ -21,15 +21,77 @@
           <span class="avatar-initial">{{ client.name.charAt(0).toUpperCase() }}</span>
         </div>
         <div class="client-header-info">
-          <h1 class="client-detail-name">{{ client.name }}</h1>
-          <button class="btn-delete-client" (click)="confirmDeleteClient()" [disabled]="isSaving" title="Supprimer cette fiche client">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="3 6 5 6 21 6"/>
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-            </svg>
-            <span>Supprimer</span>
-          </button>
-          <div class="client-contact-info">
+          <div class="client-header-top" *ngIf="!isEditingContact">
+            <h1 class="client-detail-name">{{ client.name }}</h1>
+            <div class="client-header-actions">
+              <button
+                type="button"
+                class="edit-birthdate-btn contact-edit-trigger contact-header-delete"
+                (click)="confirmDeleteClient()"
+                [disabled]="isSaving"
+                title="Supprimer cette fiche client">
+                Supprimer
+              </button>
+              <button
+                type="button"
+                class="edit-birthdate-btn contact-edit-trigger"
+                (click)="startEditingContact()"
+                [disabled]="isSaving">
+                Modifier les coordonnées
+              </button>
+            </div>
+          </div>
+
+          <ng-container *ngIf="isEditingContact">
+            <div class="edit-form">
+              <label for="contact-name-input" class="edit-label">Nom</label>
+              <input
+                id="contact-name-input"
+                type="text"
+                [(ngModel)]="contactNameInput"
+                class="edit-input"
+                autocomplete="name"
+                [disabled]="isSaving">
+              <label for="contact-phone-input" class="edit-label">Téléphone</label>
+              <input
+                id="contact-phone-input"
+                type="tel"
+                [(ngModel)]="contactPhoneInput"
+                class="edit-input"
+                autocomplete="tel"
+                [disabled]="isSaving">
+              <label for="contact-email-input" class="edit-label">E-mail</label>
+              <input
+                id="contact-email-input"
+                type="text"
+                inputmode="email"
+                autocomplete="off"
+                spellcheck="false"
+                name="contact-email-edit-field"
+                [(ngModel)]="contactEmailInput"
+                class="edit-input contact-email-input"
+                [disabled]="isSaving">
+              <div class="contact-edit-actions-row">
+                <button type="button" class="save-btn" (click)="saveContact()" [disabled]="isSaving">
+                  <span *ngIf="!isSaving">Enregistrer</span>
+                  <span *ngIf="isSaving">Enregistrement...</span>
+                </button>
+                <button
+                  type="button"
+                  class="cancel-btn contact-delete-btn"
+                  (click)="confirmDeleteClient()"
+                  [disabled]="isSaving"
+                  title="Supprimer cette fiche client">
+                  Supprimer
+                </button>
+                <button type="button" class="cancel-btn" (click)="cancelEditingContact()" [disabled]="isSaving">
+                  Annuler
+                </button>
+              </div>
+            </div>
+          </ng-container>
+
+          <div class="client-contact-info" *ngIf="!isEditingContact">
             <div class="contact-item">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
@@ -37,11 +99,12 @@
               </svg>
               <span>{{ client.email }}</span>
             </div>
-            <div class="contact-item" *ngIf="client.phone">
+            <div class="contact-item">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
               </svg>
-              <span>{{ client.phone }}</span>
+              <span *ngIf="client.phone">{{ client.phone }}</span>
+              <span *ngIf="!client.phone" class="contact-item-empty">Non renseigné</span>
             </div>
           </div>
         </div>

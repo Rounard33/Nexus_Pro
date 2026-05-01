@@ -1,4 +1,5 @@
 import {CommonModule} from '@angular/common';
+import {HttpErrorResponse} from '@angular/common/http';
 import {Component, OnInit} from '@angular/core';
 import {FormsModule} from '@angular/forms';
 import {ActivatedRoute, Router, RouterModule} from '@angular/router';
@@ -39,8 +40,12 @@ export class ClientDetailComponent implements OnInit {
   isLoading = false;
   isSaving = false;
   isEditingBirthdate = false;
+  isEditingContact = false;
   clientId: string = '';
   birthdateInput: string = '';
+  contactNameInput = '';
+  contactPhoneInput = '';
+  contactEmailInput = '';
   
   // Ventes additionnelles
   creations: Creation[] = [];
@@ -155,6 +160,9 @@ export class ClientDetailComponent implements OnInit {
               return;
             }
 
+            this.isEditingContact = false;
+            this.isEditingBirthdate = false;
+
             // Ajouter les données de fidélité
             this.client.loyaltyRewards = this.loyaltyService.parseLoyaltyRewards(clientData?.notes);
             this.client.lastRewardDate = this.client.loyaltyRewards.length > 0 
@@ -205,6 +213,81 @@ export class ClientDetailComponent implements OnInit {
 
   hasPrestation(appointment: Appointment): boolean {
     return appointment.prestations !== null && appointment.prestations !== undefined;
+  }
+
+  startEditingContact(): void {
+    if (!this.client) return;
+    this.isEditingContact = true;
+    this.contactNameInput = this.client.name?.trim() ? this.client.name : '';
+    this.contactPhoneInput = this.client.phone || '';
+    this.contactEmailInput = (this.client.email || '').trim();
+  }
+
+  cancelEditingContact(): void {
+    this.isEditingContact = false;
+  }
+
+  saveContact(): void {
+    if (!this.client) return;
+    const name = this.contactNameInput.trim();
+    if (!name) {
+      this.notificationService.error('Le nom est obligatoire');
+      return;
+    }
+
+    const emailTrim = this.contactEmailInput.trim().toLowerCase();
+    if (!emailTrim || !emailTrim.includes('@')) {
+      this.notificationService.error('Adresse e-mail invalide');
+      return;
+    }
+
+    const anchorEmail = this.client.email.trim().toLowerCase();
+
+    const phoneTrim = this.contactPhoneInput.trim();
+    const payload: Partial<Client> = {
+      name,
+      phone: phoneTrim === '' ? '' : phoneTrim
+    };
+    if (emailTrim !== anchorEmail) {
+      payload.email = emailTrim;
+    }
+
+    this.isSaving = true;
+    this.contentService.updateClient(this.client.email, payload).subscribe({
+      next: (updated) => {
+        const emailChanged =
+          anchorEmail !== (updated.email || '').trim().toLowerCase();
+        const nextClientId =
+          typeof updated.clientId === 'string' ? updated.clientId : undefined;
+
+        if (emailChanged && nextClientId && nextClientId !== this.clientId) {
+          this.isSaving = false;
+          this.isEditingContact = false;
+          this.router.navigate(['/admin/clients', nextClientId], {replaceUrl: true});
+          return;
+        }
+
+        this.clientData = updated;
+        this.client!.name = updated.name || name;
+        this.client!.phone = updated.phone ?? undefined;
+        this.client!.email = updated.email || emailTrim;
+        this.isEditingContact = false;
+        this.isSaving = false;
+        this.notificationService.success('Coordonnées mises à jour');
+      },
+      error: (err: unknown) => {
+        this.isSaving = false;
+        let msg = 'Erreur lors de la mise à jour';
+        if (
+          err instanceof HttpErrorResponse &&
+          err.error?.error &&
+          typeof err.error.error === 'string'
+        ) {
+          msg = err.error.error;
+        }
+        this.notificationService.error(msg);
+      }
+    });
   }
 
   startEditingBirthdate(): void {

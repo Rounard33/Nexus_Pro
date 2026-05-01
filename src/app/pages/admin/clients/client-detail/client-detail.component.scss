@@ -91,6 +91,42 @@
 
 .client-header-info {
   flex: 1;
+  min-width: 0;
+}
+
+.client-header-top {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem 1.5rem;
+  margin-bottom: 1rem;
+
+  .client-detail-name {
+    flex: 1 1 12rem;
+    min-width: 0;
+    margin: 0;
+  }
+}
+
+.client-header-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+@media (max-width: 480px) {
+  .client-header-actions {
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .client-header-actions .edit-birthdate-btn {
+    justify-content: center;
+    width: 100%;
+  }
 }
 
 .client-detail-name {
@@ -100,34 +136,19 @@
   margin: 0 0 0.5rem 0;
 }
 
-.btn-delete-client {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.5rem 1rem;
-  background: transparent;
+.client-header-actions .contact-header-delete {
   color: #c53030;
-  border: 1px solid #c53030;
-  border-radius: 8px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  font-family: inherit;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  margin-bottom: 0.5rem;
+  border-color: #c53030;
 
   &:hover:not(:disabled) {
     background: #fff5f5;
+    border-color: #9b2c2c;
+    color: #9b2c2c;
   }
 
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-  }
-
-  svg {
-    width: 16px;
-    height: 16px;
   }
 }
 
@@ -147,6 +168,41 @@
   svg {
     flex-shrink: 0;
     color: var(--primary-600, #a8967a);
+  }
+}
+
+.contact-item-empty {
+  color: var(--text-muted, #999);
+  font-style: italic;
+}
+
+.contact-edit-trigger {
+  margin-top: 0;
+}
+
+.contact-edit-actions-row {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.75rem;
+  padding-top: 0.25rem;
+}
+
+.contact-edit-actions-row .save-btn,
+.contact-edit-actions-row .cancel-btn {
+  width: 100%;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.contact-edit-actions-row .contact-delete-btn {
+  color: #c53030;
+  border-color: #c53030;
+
+  &:hover:not(:disabled) {
+    background: #fff5f5;
+    border-color: #9b2c2c;
+    color: #9b2c2c;
   }
 }
 
@@ -397,6 +453,8 @@
   color: var(--text-primary, #1a1a1a);
   background: white;
   transition: all 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
 
   &:focus {
     outline: none;
@@ -408,6 +466,12 @@
     background: var(--primary-50, #faf8f3);
     cursor: not-allowed;
   }
+}
+
+/* type=email était parfois remplacé / masqué par l’UA ou des extensions → texte nu ; on force un champ classique visible */
+.contact-email-input {
+  display: block;
+  min-height: 2.75rem;
 }
 
 .edit-actions {
