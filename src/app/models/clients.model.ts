@@ -55,6 +55,8 @@ export interface ClientProfile {
   age?: number | null;
   eligibleTreatments?: number; // Nombre de séances pour la fidélité (= completed)
   referralsCount?: number; // Nombre de parrainages (personnes venues de sa part)
+  /** Points fidélité ajoutés manuellement (colonne `loyalty_manual_sessions`). */
+  loyaltyManualSessions?: number;
   loyaltyRewards?: LoyaltyReward[];
   lastRewardDate?: string | null;
   additionalSales?: AdditionalSale[];

@@ -307,6 +307,28 @@
             <span class="detail-label">💜 Séances (hors tirages)</span>
             <span class="detail-value">{{ client.eligibleTreatments || 0 }}</span>
           </div>
+          <div class="loyalty-detail-item loyalty-detail-item--manual">
+            <span class="detail-label">✋ Bonus manuel</span>
+            <div class="loyalty-manual-stepper" role="group" aria-label="Ajuster le bonus fidélité">
+              <button
+                type="button"
+                class="loyalty-step-btn"
+                (click)="adjustManualLoyalty(-1)"
+                [disabled]="isSaving || (client.loyaltyManualSessions || 0) <= 0"
+                aria-label="Retirer une séance bonus">
+                −
+              </button>
+              <span class="detail-value manual-value">{{ client.loyaltyManualSessions || 0 }}</span>
+              <button
+                type="button"
+                class="loyalty-step-btn"
+                (click)="adjustManualLoyalty(1)"
+                [disabled]="isSaving"
+                aria-label="Ajouter une séance bonus">
+                +
+              </button>
+            </div>
+          </div>
           <div class="loyalty-detail-item" *ngIf="client.referralsCount && client.referralsCount > 0">
             <span class="detail-label">🤝 Parrainages</span>
             <span class="detail-value referral-value">+{{ client.referralsCount }}</span>

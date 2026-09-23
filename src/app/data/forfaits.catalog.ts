@@ -34,31 +34,32 @@ export const FORFAITS_CATALOG: ForfaitCatalogEntry[] = [
     name: 'Forfait Accompagnement Global',
     description: 'Un parcours complet pour une transformation en profondeur.',
     details: [
-      'Une séance de PNL (programmation neuro linguistique) afin de faire l\'état des lieux. Identifier ensemble les blocages, les schémas, définir des objectifs clairs afin d\'agir là où vous en avez le plus besoin.',
-      'Suivi d\'une séance de massage crânien énergétique pour lâcher prise et faire un « reset » intérieur.',
-      'Pour terminer une séance de reiki pour intégrer le travail effectué, permet une véritable harmonisation et favorise l\'ancrage.'
+      "Une séance de PNL (programmation neuro linguistique) afin de faire l'état des lieux. Identifier ensemble les blocages, les schémas, définir des objectifs clairs afin d'agir là où vous en avez le plus besoin.",
+      "Suivi d'une séance de massage crânien énergétique pour lâcher prise et faire un « reset » intérieur.",
+      "Pour terminer une séance de reiki pour intégrer le travail effectué, permet une véritable harmonisation et favorise l'ancrage.",
     ],
-    price: '165 €',
+    price: '170 €',
     originalPrice: '195 €',
-    savings: '30 €',
+    savings: '25 €',
     sessionsTotal: 3,
     eligiblePrestationIds: [],
-    eligibleNameSubstrings: ['pnl', 'programmation neuro', 'crânien', 'reiki']
+    eligibleNameSubstrings: ['pnl', 'programmation neuro', 'crânien', 'reiki'],
   },
   {
     id: 'cure-energetique',
     name: 'Forfait Cure Énergétique',
-    description: '4 séances de Reiki à utiliser comme vous le souhaitez sur une année.',
+    description:
+      '4 séances de Reiki à utiliser comme vous le souhaitez sur une année.',
     details: [
       'Soit de manière rapprochée pour un travail en profondeur sur un « sujet » spécifique.',
-      'Soit de manière plus espacée, quand vous en ressentez le besoin, avant un événement important ou aux changements de saisons.'
+      'Soit de manière plus espacée, quand vous en ressentez le besoin, avant un événement important ou aux changements de saisons.',
     ],
-    price: '200 €',
+    price: '220 €',
     originalPrice: '240 €',
-    savings: '40 €',
+    savings: '20 €',
     sessionsTotal: 4,
     eligiblePrestationIds: [],
-    eligibleNameSubstrings: ['reiki']
+    eligibleNameSubstrings: ['reiki'],
   },
   {
     id: 'reconnexion-a-soi',
@@ -66,33 +67,36 @@ export const FORFAITS_CATALOG: ForfaitCatalogEntry[] = [
     description: 'Un duo de séances pour un lâcher-prise complet.',
     details: [
       'Une première séance de massage crânien énergétique pour lâcher prise, faire un « reset intérieur ».',
-      'Une séance de Reiki pour harmoniser, réaligner et ancrer.'
+      'Une séance de Reiki pour harmoniser, réaligner et ancrer.',
     ],
-    price: '100 €',
+    price: '110 €',
     originalPrice: '120 €',
-    savings: '20 €',
+    savings: '10 €',
     sessionsTotal: 2,
     eligiblePrestationIds: [],
-    eligibleNameSubstrings: ['crânien', 'reiki']
+    eligibleNameSubstrings: ['crânien', 'reiki'],
   },
   {
     id: 'ambassadeur-5',
     name: 'Crédit ambassadeur (5 séances offertes)',
-    description: 'Cinq séances de Reiki ou de massage crânien énergétique offertes (partenariat, renouvellement manuel chaque année si besoin).',
+    description:
+      'Cinq séances de Reiki ou de massage crânien énergétique offertes (partenariat, renouvellement manuel chaque année si besoin).',
     details: [
       'À attribuer côté admin sur la fiche client comme une vente « forfait ».',
       'Les séances éligibles sont décomptées automatiquement à chaque rendez-vous terminé, comme pour un forfait classique.',
-      'CA reconnu : 0 € (prestation offerte).'
+      'CA reconnu : 0 € (prestation offerte).',
     ],
     price: '0 €',
     originalPrice: '0 €',
     savings: '0 €',
     sessionsTotal: 5,
     eligiblePrestationIds: [],
-    eligibleNameSubstrings: ['reiki', 'crânien', 'massage crânien']
-  }
+    eligibleNameSubstrings: ['reiki', 'crânien', 'massage crânien'],
+  },
 ];
 
-export function getForfaitCatalogEntry(id: string): ForfaitCatalogEntry | undefined {
+export function getForfaitCatalogEntry(
+  id: string,
+): ForfaitCatalogEntry | undefined {
   return FORFAITS_CATALOG.find((f) => f.id === id);
 }

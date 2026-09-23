@@ -2203,6 +2203,15 @@ const server = http.createServer(async (req, res) => {
         if (updates.phone !== undefined) dataToUpdate.phone = updates.phone || null;
         if (updates.birthdate !== undefined) dataToUpdate.birthdate = updates.birthdate || null;
         if (updates.notes !== undefined) dataToUpdate.notes = updates.notes || null;
+        if (updates.loyalty_manual_sessions !== undefined) {
+          const parsed = parseInt(String(updates.loyalty_manual_sessions), 10);
+          if (!Number.isFinite(parsed) || parsed < 0 || parsed > 10) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'loyalty_manual_sessions invalide (0–10)' }));
+            return;
+          }
+          dataToUpdate.loyalty_manual_sessions = parsed;
+        }
 
         const { data, error } = await supabase
           .from('clients')

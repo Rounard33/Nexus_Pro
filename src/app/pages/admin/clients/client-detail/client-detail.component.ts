@@ -175,6 +175,8 @@ export class ClientDetailComponent implements OnInit {
             // Calculer les statistiques client
             this.calculateClientStats();
 
+            this.syncManualLoyaltySessionsIfNeeded();
+
             // Initialiser le champ d'édition
             this.birthdateInput = clientData?.birthdate || '';
 
@@ -345,11 +347,78 @@ export class ClientDetailComponent implements OnInit {
     return FormatUtils.getMaxDate();
   }
 
-  // Calcule le total brut des points de fidélité (séances + parrainages)
-  private getTotalRawPoints(): number {
+  private getFixedLoyaltyPoints(): number {
     const treatments = this.client?.eligibleTreatments || 0;
     const referrals = this.client?.referralsCount || 0;
     return treatments + referrals;
+  }
+
+  // Calcule le total brut des points de fidélité (séances + parrainages + bonus manuel)
+  private getTotalRawPoints(): number {
+    return this.getFixedLoyaltyPoints() + (this.client?.loyaltyManualSessions || 0);
+  }
+
+  /** Corrige en base un bonus manuel > 10 ou incohérent avec le plafond du cycle. */
+  private syncManualLoyaltySessionsIfNeeded(): void {
+    if (!this.client?.email) return;
+
+    const fixed = this.getFixedLoyaltyPoints();
+    const current = this.client.loyaltyManualSessions ?? 0;
+    const normalized = this.loyaltyService.normalizeManualSessions(fixed, current);
+    if (normalized === current) return;
+
+    this.contentService.updateClient(this.client.email, { loyalty_manual_sessions: normalized }).subscribe({
+      next: (updatedClient) => {
+        const value = updatedClient.loyalty_manual_sessions ?? normalized;
+        if (this.client) {
+          this.client.loyaltyManualSessions = value;
+        }
+        if (this.clientData) {
+          this.clientData.loyalty_manual_sessions = value;
+        }
+      },
+      error: () => {
+        // Affichage local cohérent même si la synchro échoue
+        if (this.client) {
+          this.client.loyaltyManualSessions = normalized;
+        }
+      }
+    });
+  }
+
+  adjustManualLoyalty(delta: number): void {
+    if (!this.client?.email || delta === 0) return;
+
+    const fixed = this.getFixedLoyaltyPoints();
+    const current = this.client.loyaltyManualSessions ?? 0;
+    const next = this.loyaltyService.computeNextManualSessions(fixed, current, delta);
+    if (next === current) return;
+
+    const wrappedToZero = delta > 0 && next === 0 && current > 0;
+
+    this.isSaving = true;
+    this.contentService.updateClient(this.client.email, { loyalty_manual_sessions: next }).subscribe({
+      next: (updatedClient) => {
+        if (this.client) {
+          this.client.loyaltyManualSessions = updatedClient.loyalty_manual_sessions ?? next;
+        }
+        if (this.clientData) {
+          this.clientData.loyalty_manual_sessions = updatedClient.loyalty_manual_sessions ?? next;
+        }
+        this.isSaving = false;
+        if (wrappedToZero) {
+          this.notificationService.success('Plafond atteint : nouveau cycle, bonus manuel remis à 0');
+        } else {
+          this.notificationService.success(
+            delta > 0 ? 'Séance ajoutée sur la carte fidélité' : 'Ajustement fidélité enregistré'
+          );
+        }
+      },
+      error: () => {
+        this.isSaving = false;
+        this.notificationService.error('Impossible de mettre à jour la carte fidélité');
+      }
+    });
   }
 
   // Calcule les points disponibles dans le cycle actuel (après déduction des cycles complétés)
@@ -360,8 +429,9 @@ export class ClientDetailComponent implements OnInit {
   }
 
   hasReachedLoyaltyThreshold(): boolean {
-    // Seuil de 10 points dans le cycle actuel
-    return this.getTotalLoyaltyPoints() >= 10;
+    const totalRaw = this.getTotalRawPoints();
+    const rewards = this.client?.loyaltyRewards || [];
+    return this.loyaltyService.hasRewardThresholdReached(totalRaw, rewards, 10);
   }
 
   getRemainingTreatments(): number {

@@ -7,6 +7,7 @@ import {catchError, debounceTime, distinctUntilChanged, takeUntil} from 'rxjs/op
 import {ClientProfile} from '../../../models/clients.model';
 import {ClientService} from '../../../services/client.service';
 import {Client, ContentService} from '../../../services/content.service';
+import {LoyaltyService} from '../../../services/loyalty.service';
 import {BirthdayUtils} from '../../../utils/birthday.utils';
 import {generateTemporaryClientId} from '../../../utils/client-id-helper';
 import {BodyScrollLockDirective} from '../../../directives/body-scroll-lock.directive';
@@ -37,6 +38,7 @@ export class ClientsComponent implements OnInit, OnDestroy {
   constructor(
     private contentService: ContentService,
     private clientService: ClientService,
+    private loyaltyService: LoyaltyService,
     private router: Router
   ) {}
 
@@ -111,7 +113,8 @@ export class ClientsComponent implements OnInit, OnDestroy {
               lastAppointmentDate: null,
               firstAppointmentDate: null,
               eligibleTreatments: 0,
-              referralsCount: dbClient.referrals_count || 0
+              referralsCount: dbClient.referrals_count || 0,
+              loyaltyManualSessions: dbClient.loyalty_manual_sessions ?? 0
             };
             if (dbClient.birthdate) {
               const { nextBirthday, age } = BirthdayUtils.calculateBirthdayInfo(dbClient.birthdate);
@@ -151,6 +154,8 @@ export class ClientsComponent implements OnInit, OnDestroy {
     client.id = dbClient.id;
     client.clientId = dbClient.clientId || client.clientId;
     client.referralsCount = dbClient.referrals_count || 0;
+    client.loyaltyManualSessions = dbClient.loyalty_manual_sessions ?? 0;
+    client.loyaltyRewards = this.loyaltyService.parseLoyaltyRewards(dbClient.notes);
     if (dbClient.birthdate) {
       client.birthdate = dbClient.birthdate;
       const { nextBirthday, age } = BirthdayUtils.calculateBirthdayInfo(dbClient.birthdate);
@@ -223,21 +228,36 @@ export class ClientsComponent implements OnInit, OnDestroy {
   }
 
   // Calcule le pourcentage de progression vers la récompense fidélité
+  private getLoyaltyTotalRaw(client: ClientProfile): number {
+    return (
+      (client.eligibleTreatments || 0) +
+      (client.referralsCount || 0) +
+      (client.loyaltyManualSessions || 0)
+    );
+  }
+
+  getLoyaltyDisplayPoints(client: ClientProfile): number {
+    const total = this.getLoyaltyTotalRaw(client);
+    return this.loyaltyService.getAvailablePoints(total, client.loyaltyRewards || [], 10);
+  }
+
   getLoyaltyProgress(client: ClientProfile): number {
-    const total = (client.eligibleTreatments || 0) + (client.referralsCount || 0);
-    return Math.min((total / 10) * 100, 100);
+    return Math.min((this.getLoyaltyDisplayPoints(client) / 10) * 100, 100);
   }
 
   // Vérifie si le client est proche de la récompense (8 ou 9 séances)
   isCloseToReward(client: ClientProfile): boolean {
-    const total = (client.eligibleTreatments || 0) + (client.referralsCount || 0);
-    return total >= 8 && total < 10;
+    const points = this.getLoyaltyDisplayPoints(client);
+    return points >= 8 && points < 10;
   }
 
   // Vérifie si le client a atteint la récompense
   hasReachedReward(client: ClientProfile): boolean {
-    const total = (client.eligibleTreatments || 0) + (client.referralsCount || 0);
-    return total >= 10;
+    return this.loyaltyService.hasRewardThresholdReached(
+      this.getLoyaltyTotalRaw(client),
+      client.loyaltyRewards || [],
+      10
+    );
   }
 
   // ==================== Création manuelle de client ====================

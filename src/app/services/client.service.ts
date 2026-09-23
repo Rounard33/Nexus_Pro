@@ -69,7 +69,9 @@ export class ClientService {
         firstAppointmentDate: null,
         nextBirthday,
         age,
-        eligibleTreatments: 0
+        eligibleTreatments: 0,
+        referralsCount: clientData.referrals_count ?? 0,
+        loyaltyManualSessions: clientData.loyalty_manual_sessions ?? 0
       };
     }
 
@@ -103,7 +105,9 @@ export class ClientService {
       firstAppointmentDate: this.getFirstAppointmentDate(confirmedAppointments),
       nextBirthday,
       age,
-      eligibleTreatments: eligibleForLoyalty.length
+      eligibleTreatments: eligibleForLoyalty.length,
+      referralsCount: clientData?.referrals_count ?? 0,
+      loyaltyManualSessions: clientData?.loyalty_manual_sessions ?? 0
     };
   }
 

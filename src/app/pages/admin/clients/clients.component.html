@@ -69,7 +69,7 @@
           <div class="loyalty-progress" [style.width.%]="getLoyaltyProgress(client)"></div>
         </div>
         <span class="loyalty-text" [class.loyalty-close]="isCloseToReward(client)" [class.loyalty-reached]="hasReachedReward(client)">
-          💜 {{ client.eligibleTreatments || 0 }}/10 séances
+          💜 {{ getLoyaltyDisplayPoints(client) }}/10 points
           <span *ngIf="client.referralsCount && client.referralsCount > 0" class="referrals-badge">
             +{{ client.referralsCount }} parr.
           </span>

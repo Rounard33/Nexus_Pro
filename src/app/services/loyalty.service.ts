@@ -6,6 +6,10 @@ export class LoyaltyService {
   private readonly LOYALTY_TAG_START = '[LOYALTY_REWARDS]';
   private readonly LOYALTY_TAG_END = '[/LOYALTY_REWARDS]';
   private readonly DEFAULT_THRESHOLD = 5;
+  /** Seuil affiché sur la carte fidélité (admin). */
+  readonly cycleThreshold = 10;
+  /** Bonus manuel stocké en base : 0–10 uniquement. */
+  readonly manualSessionsMax = 10;
 
   /**
    * Parse les récompenses de fidélité depuis les notes du client
@@ -106,16 +110,65 @@ export class LoyaltyService {
   }
 
   /**
-   * Calcule les points de fidélité disponibles après déduction des cycles complétés
-   * @param totalPoints Total des points (séances + parrainages)
-   * @param rewards Liste des récompenses
-   * @param threshold Seuil pour un cycle (défaut: 10)
-   * @returns Points disponibles dans le cycle actuel
+   * Points bruts du cycle en cours (après déduction des cycles déjà clôturés).
    */
-  getAvailablePoints(totalPoints: number, rewards: LoyaltyReward[], threshold: number = 10): number {
+  getRawCyclePoints(totalPoints: number, rewards: LoyaltyReward[], threshold: number = 10): number {
     const completedCycles = this.countCompletedCycles(rewards);
     const usedPoints = completedCycles * threshold;
     return Math.max(0, totalPoints - usedPoints);
+  }
+
+  /**
+   * Points affichés sur la carte (0–10). Au-delà de 10 sans clôture de cycle, on repart à 0 (11→0, 12→1, …).
+   */
+  getAvailablePoints(totalPoints: number, rewards: LoyaltyReward[], threshold: number = 10): number {
+    const raw = this.getRawCyclePoints(totalPoints, rewards, threshold);
+    if (raw <= 0) {
+      return 0;
+    }
+    if (raw <= threshold) {
+      return raw;
+    }
+    return (raw - 1) % threshold;
+  }
+
+  /** Seuil atteint (10, 20, …) — récompense disponible. */
+  hasRewardThresholdReached(totalPoints: number, rewards: LoyaltyReward[], threshold: number = 10): boolean {
+    const raw = this.getRawCyclePoints(totalPoints, rewards, threshold);
+    return raw > 0 && raw % threshold === 0;
+  }
+
+  /**
+   * Valeur cohérente pour `loyalty_manual_sessions` (0–10, remise à 0 si le total dépasse 10).
+   */
+  normalizeManualSessions(fixedPoints: number, manualSessions: number): number {
+    const manual = Math.max(0, Math.floor(manualSessions || 0));
+    if (manual > this.manualSessionsMax) {
+      return 0;
+    }
+    if (fixedPoints + manual > this.cycleThreshold) {
+      return 0;
+    }
+    return manual;
+  }
+
+  /**
+   * Prochaine valeur du bonus manuel après + / − (repart à 0 si le total dépasserait 10).
+   */
+  computeNextManualSessions(fixedPoints: number, currentManual: number, delta: number): number {
+    const current = Math.max(0, Math.floor(currentManual || 0));
+    if (delta === 0) {
+      return current;
+    }
+    if (delta < 0) {
+      return Math.max(0, current + delta);
+    }
+    const proposed = current + delta;
+    const proposedTotal = fixedPoints + proposed;
+    if (proposedTotal > this.cycleThreshold) {
+      return 0;
+    }
+    return Math.min(this.manualSessionsMax, proposed);
   }
 
   /**

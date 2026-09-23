@@ -2245,6 +2245,14 @@ async function handleClients(req: VercelRequest, res: VercelResponse, supabase: 
     if (updates['phone'] !== undefined) dataToUpdate['phone'] = updates['phone'] || null;
     if (updates['birthdate'] !== undefined) dataToUpdate['birthdate'] = updates['birthdate'] || null;
     if (updates['notes'] !== undefined) dataToUpdate['notes'] = updates['notes'] || null;
+    if (updates['loyalty_manual_sessions'] !== undefined) {
+      const raw = updates['loyalty_manual_sessions'];
+      const parsed = typeof raw === 'number' ? raw : parseInt(String(raw), 10);
+      if (!Number.isFinite(parsed) || parsed < 0 || parsed > 10) {
+        return res.status(400).json({ error: 'loyalty_manual_sessions invalide (0–10)' });
+      }
+      dataToUpdate['loyalty_manual_sessions'] = parsed;
+    }
 
     const { data, error } = await supabase
       .from('clients')

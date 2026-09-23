@@ -109,6 +109,7 @@ export interface Client {
   birthdate?: string; // Format: YYYY-MM-DD
   notes?: string;
   referrals_count?: number; // Nombre de parrainages (personnes venues de sa part)
+  loyalty_manual_sessions?: number; // Séances / points ajoutés manuellement (fidélité)
   created_at?: string;
   updated_at?: string;
 }
